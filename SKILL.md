@@ -141,6 +141,16 @@ encoded before they confirm or correct the chain. This is the one deliberate gat
 it catches a misread theorem, a lemma applied outside its hypotheses, or a cited result quoted
 without its conditions, at the moment it is cheapest to fix.
 
+The chain also sizes the job, and the size goes to the reader with the chain. Count the rows that
+are case analyses, appendix tables, "verified by computer" steps, and inductions over a general
+parameter; look for an existing formalization of the same result and quote its size. One session
+delivers a chain of roughly ten rows with one or two computational cases; a theorem whose proof is
+seven directions, two appendix tables and a length induction (a conjecture of a paper under review:
+52 000 lines in its existing formalization) is a multi-week project, and saying so is the
+deliverable. For anything beyond one session, propose a split into lemma-sized pieces, each with
+its own chain and done criteria, and start with the first piece the user picks
+(`references/postmortems.md`, entry 2).
+
 ### 2. Choose encodings and fix names
 
 Write `NOTATION.md`: one row per paper object — paper symbol, Lean name, Lean type,
@@ -190,10 +200,15 @@ exist.
   the module once a lemma is finished, and batch several finished lemmas into one build. Keep
   the declaration headers fixed while proving; if a statement must change, go back to step 1
   and say so.
-- Budget: after a serious attempt (several tactic strategies, searched Mathlib), leave the
-  lemma as `sorry` with a comment stating the exact remaining goal and what was tried, and
-  move on. Never hide a gap by weakening the statement, and never close a general goal with
-  `native_decide`: it is for the computational cases of step 5b only.
+- Budget: after a serious attempt (several tactic strategies, searched Mathlib; about half an
+  hour or five builds for one lemma), leave the lemma as `sorry` with a comment stating the exact
+  remaining goal and what was tried, and move on. Never hide a gap by weakening the statement,
+  and never close a general goal with `native_decide`: it is for the computational cases of
+  step 5b only, and allowing it does not shorten a proof whose hard part is symbolic.
+- Global stop: when the remaining work turns out to be a known-large piece (a case analysis over
+  appendix tables, an induction over a general parameter, a certificate that will take hours),
+  stop, write the estimate with its evidence into README, and ask the user; a run of fifty
+  one-minute turns each ending in a full check is the failure mode this rule prevents.
 
 ### 5b. Cases the paper settles by computation
 

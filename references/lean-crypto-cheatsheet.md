@@ -218,6 +218,10 @@ a lemma yourself.
   end, not inside a `calc` chain.
 - When the proof is done, `scripts/trim_imports.py --apply`: the Halfspace example loads with
   9 modules instead of all of Mathlib.
+- Keep finite checks that use `native_decide` in their own file (`Checks.lean` next to `Main.lean`):
+  every build of a file re-elaborates its `native_decide` blocks, so a 1 000-line file with fifteen of
+  them makes every `check_lean.py` run cost minutes; one run burned 25 full checks in two hours
+  where `lean_eval.sh` on the one lemma was the right tool. After a build, `check_lean.py --no-build`.
 - Long builds: count the computational sites first (`scripts/build_profile.py --sites`), build the
   heaviest module alone under a written time budget, sample the process (CPU time rising, RSS
   flat, no swap = progress, not a hang), and never run probes or a second `lake build` beside it.

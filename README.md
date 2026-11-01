@@ -62,6 +62,24 @@ paper instead (`<repo>/formal/`, symlinked into the workspace).
   (needs `uv`); that server's documentation says it keeps Mathlib loaded between proof attempts.
   This option has not been tested from this skill.
 
+## What one session can deliver
+A theorem whose proof chain has about ten rows and one or two computational cases: pinned
+statement, confirmed chain and graph, definitions tested on a toy, lemmas proved, checks passed,
+review done. Verifying an *existing* formalization is a different job (`references/verify-existing.md`).
+A theorem whose proof is a long case analysis with appendix tables or an induction over a general
+parameter is a multi-week project; the skill's job is then to say so with an estimate and to
+deliver the first lemma-sized piece (`references/postmortems.md`).
+
+## Running outside Claude Code
+The scripts are plain bash and Python and the references are Markdown, so any agent harness that
+can read a `SKILL.md` can use the skill: clone it anywhere, set `SKILL` to the clone's path where the
+instructions write `$SKILL`, and run `scripts/setup_env.sh --install` once. The reviewer of step 8
+can be a second chat given `references/review-brief.md`; `REVIEW.md` is the record either way. Two
+cautions from a run in another harness: do not let the harness re-inject the task as a recurring
+"goal" (it produced fifty one-minute turns), and the workflow's judgement steps (1b, 5, 7b) need a
+frontier-class model; a small model is fine for the checks. One agent per workspace: the build lock
+serializes two agents, it does not make them fast.
+
 ## Growing the library
 After a formalization, `scripts/promote_candidates.py CipherLean/<Slug>/Main.lean` lists the
 declarations that are general enough for the shared library (class A/B/E/F) and those that are

@@ -74,6 +74,10 @@ assets/examples/         Feistel, Halfspace, SboxDDT, DdtInverse/ (complete run)
 assets/lib/           shared library CipherLean (installed as CipherLean/Lib/, compiled by the installer)
 ```
 
+## License
+MIT, see `LICENSE`. The statements formalized in the examples are cited to their sources in the
+file headers; the Lean code here is original.
+
 ## Versions
 Lean `v4.33.0`, Mathlib `v4.33.0` (commit `db584cd6`), pinned in `assets/workspace/`. Every
 lemma name in the cheatsheet was compiled against this pin; see `references/workspace.md`

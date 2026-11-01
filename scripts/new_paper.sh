@@ -29,10 +29,10 @@ if [ -n "$PAPER_DIR" ]; then
 else
   mkdir -p "$DEST"
 fi
-for pair in "file-template.lean:Main.lean" "README-template.md:README.md" "NOTATION-template.md:NOTATION.md"; do
+for pair in "file-template.lean:Main.lean" "README-template.md:README.md" "NOTATION-template.md:NOTATION.md" "CHAIN-template.md:CHAIN.md"; do
   src="${pair%%:*}"; dst="${pair##*:}"
   [ -e "$DEST/$dst" ] || sed "s/<Slug>/$SLUG/g" "$ASSETS/$src" > "$DEST/$dst"
 done
 ls -la "$DEST/"
-echo "next: fill README.md (statement, hypotheses, plan) and NOTATION.md; then"
+echo "next: fill README.md (statement, hypotheses) and CHAIN.md (the proof chain, step 1b), draw the graph with chain_graph.py, get the reader's confirmation; then NOTATION.md and"
 echo "      cd $WS && lake build CipherLean.$SLUG.Main"

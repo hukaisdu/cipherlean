@@ -37,13 +37,21 @@ duality, Walsh coefficients, the DDT, table S-boxes) with its lemmas machine-che
 bash ~/.claude/skills/cipherlean/scripts/setup_env.sh --update-library
 ```
 which copies the current `assets/lib/` over `CipherLean/Lib/` in the workspace and rebuilds it
-(the installer alone never overwrites files that already exist).
+(the installer alone never overwrites files that already exist). `setup_env.sh` keeps a copy of
+the library it installed last in `~/cipherlean/.lake/cipherlean-lib-installed/`; a file of
+`CipherLean/Lib/` that matches neither that copy nor the new `assets/lib/` counts as changed (a
+lemma promoted in step 7b, say), and the update then lists it and stops without copying anything.
+Send the change upstream first (*Contribute* below), or move the file out of `CipherLean/Lib/`,
+then rerun.
 
 ## Use
 In Claude Code, inside a paper's directory: "formalize Theorem 2 of this paper in Lean",
 "用 Lean 证明这个 lemma", "check whether the DDT row-sum identity holds for every S-box".
-Claude runs the environment check, pins the statement in `README.md` + `NOTATION.md`, writes
-`CipherLean/<Slug>/Main.lean`, proves it, and reports the status table. Results live in the
+Claude runs the environment check, pins the statement in `README.md`, writes the proof chain
+`CHAIN.md` with its TikZ dependency graph `CHAIN.pdf` and stops for you to confirm it (the one
+gate of the workflow), then encodes the chain in `CipherLean/<Slug>/Main.lean` with `NOTATION.md`,
+proves it, checks that Lean's dependency graph matches the confirmed chain (`chain_check.py`), and
+reports the status table. Results live in the
 workspace; `new_paper.sh <Slug> --paper-dir <your paper repo>` keeps the Lean files with the
 paper instead (`<repo>/formal/`, symlinked into the workspace).
 
@@ -72,18 +80,20 @@ workflow's step 8 stops only when the reviewer accepts and the check script pass
 
 ## Layout
 ```
-SKILL.md                 the workflow Claude follows (steps 0–8, with 7b = library promotion)
+SKILL.md                 the workflow Claude follows (steps 0–8; 1b = proof chain confirmed by the reader, 7b = library promotion)
 references/              cheatsheet of encodings + Mathlib lemma names, worked example,
                          workspace notes, survey of related tools
 scripts/setup_env.sh     environment check / installer      scripts/check_lean.py  final check
 scripts/new_paper.sh     scaffold a paper                   scripts/lake_build.sh  serialized build
 scripts/search_mathlib.sh  local grep + Loogle + LeanSearch
 scripts/lean_eval.sh     snippet runner (7 s)              scripts/trim_imports.py  minimal imports
+scripts/chain_graph.py   proof chain -> TikZ graph (step 1b)   scripts/chain_check.py  chain vs. Lean dependencies
 scripts/promote_candidates.py  what belongs in the library (step 7b)   scripts/sync_library.sh  workspace -> assets/lib
 CONTRIBUTING.md          how to send a pull request
 references/review-brief.md  instructions for the independent reviewer (step 8)
 assets/workspace/        pinned lakefile, lean-toolchain, lake-manifest.json, Smoke.lean
-assets/examples/         Feistel, Halfspace, SboxDDT, DdtInverse/ (complete run)
+assets/examples/         Feistel, Halfspace, SboxDDT, DdtInverse/ (complete run, with CHAIN.md + CHAIN.pdf)
+assets/CHAIN-template.md the proof-chain table filled in step 1b
 assets/lib/           shared library CipherLean (installed as CipherLean/Lib/, compiled by the installer)
 ```
 

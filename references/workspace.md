@@ -130,7 +130,7 @@ and is what this workspace uses.
 | `linarith failed to find a contradiction` (goal shown negated) | a hypothesis is missing from the context: `have h := lemma …` first |
 | `motive is not type correct` in `rw` | rewrite inside dependent types; use `simp only [...]` or `conv` |
 | `declaration uses 'sorry'` | expected while drafting; the check script fails on it |
-| `'thm' depends on axioms: [Lean.ofReduceBool]` | `native_decide` / `bv_decide`: trusts the compiler; keep only in labelled finite checks |
+| `'thm' depends on axioms: [thm._native.native_decide.ax_1_1]` (`bv_decide`: `thm._native.bv_decide.ax_*`; older toolchains: `Lean.ofReduceBool`) | `native_decide` / `bv_decide`: trusts the compiler; keep only in labelled finite checks |
 | `error: … lake-manifest.json: name: expected a Name` | package names must be Lean identifiers (no hyphens) |
 | `no default toolchain configured` | `elan default stable` (only affects files outside a project; this workspace pins its own) |
 | Lake starts building thousands of Mathlib files | the pin changed or `.lake/packages` is gone: stop, restore the pin or run `lake exe cache get` |

@@ -9,7 +9,8 @@ PaperFormalizer's referee stages do the same.
 
 ## You receive
 - the paper source (`.tex` preferred) and the label of the theorem(s);
-- the formalization directory: `README.md`, `NOTATION.md`, `Main.lean` (and any other `.lean`);
+- the formalization directory: `README.md`, `CHAIN.md` (+ `CHAIN.pdf`), `NOTATION.md`, `Main.lean`
+  (and any other `.lean`);
 - the workspace path and `$SKILL/scripts/check_lean.py`.
 
 You change nothing in that directory. You may build, run the check script, and compile scratch
@@ -29,9 +30,13 @@ files (`$SKILL/scripts/lean_eval.sh`). Your only output is `REVIEW.md` next to `
    over the right set); the conclusion is the same formula. Then look for junk-value traps that
    make a statement true for the wrong reason: division (`x / 0 = 0`), `Nat` subtraction, empty
    types, `0 ^ 0`, a toy instance too small to exercise a hypothesis.
-2. **Proof correspondence.** Build the table paper proof step → Lean lemma(s). Where the Lean
-   proof takes a different route, say so and whether it is sound. Where the paper cites an
-   external result, name the Mathlib lemma used and compare hypotheses.
+2. **Proof correspondence.** Start from `CHAIN.md` (the chain the reader confirmed): check every
+   row against the paper (statement, location, `uses`), rerun
+   `$SKILL/scripts/chain_check.py CHAIN.md Main.lean` and read its report: a missing edge is a
+   proof step the paper has and Lean does not, an extra edge a dependency the chain hides; a
+   `?`-marked edge is a route the paper takes and Lean does not, which must be explained in
+   CHAIN.md and be sound. Where the paper cites an external result, name the Mathlib lemma used
+   and compare hypotheses. The chain's `lean` column is the proof-correspondence table.
 3. **Mechanical checks, yourself.** Run `check_lean.py` and record the verdict and axioms; grep
    for `sorry`, `native_decide`, `axiom`; confirm the finite checks test what README says (recompute
    the toy numbers from the definitions by hand or with `lean_eval.sh`; confirm each counterexample

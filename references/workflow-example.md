@@ -23,6 +23,14 @@ two equations. Proof: (1) split `L` over `X₀ ∪ X₁`, which gives `L = I₀ 
 hypothesis on `E`; (2) since `E` is a bijection, `∑_x (−1)^{β·E(x)} = ∑_y (−1)^{β·y} = 0`,
 i.e. `I₀ + I₁ = 0`; (3) solve the two linear equations.
 
+## Step 1b — the proof chain (added to the workflow after this run)
+
+Today the run would continue with `CHAIN.md`: rows `thm:halfspace` (the identity), `step:split`
+(`L = I_0 − I_1`, no hypothesis), `step:balanced` (`I_0 + I_1 = 0`, uses bijectivity),
+`def:halfSum`, `def:linearSum`, `assume:perm`, `assume:mask` (the masks fixed to one coordinate, a
+departure), then `chain_graph.py` for the TikZ graph, and the reader's confirmation before step 2.
+A filled chain with its graph ships in `CipherLean/Examples/DdtInverse/CHAIN.md`.
+
 ## Step 2 — NOTATION.md (the correspondence table)
 
 | paper | Lean | type | meaning / scope |

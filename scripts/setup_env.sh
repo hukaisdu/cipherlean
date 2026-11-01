@@ -9,7 +9,7 @@
 #             --examples            with --install: also compile CipherLean/Examples (a few minutes)
 #             --build-from-source   if the prebuilt Mathlib cannot be downloaded, compile it (hours)
 #             --full-clone          let Lake clone the full git history instead of the shallow pre-clone
-#             --update-library      copy assets/lib over CipherLean/Lib in the workspace and rebuild it
+#             --update-library      copy assets/lib over CipherLean/Lib and rebuild it; stops if you changed a file there
 #             --mcp                 also register the lean-lsp-mcp server with Claude Code (needs uv and the
 #                                   claude CLI; optional; not tested from this script)
 #
@@ -167,8 +167,30 @@ fi
 
 step "shared library"
 LIB="$WS/CipherLean/Lib"
+# INST keeps a copy of the assets/lib last copied into LIB. A file of LIB that equals neither
+# assets/lib nor that copy was changed in the workspace (a lemma promoted in step 7b, say), so
+# --update-library lists it and stops instead of overwriting it. A workspace set up before this
+# check has no INST; there every file that differs from assets/lib counts as changed.
+INST="$WS/.lake/cipherlean-lib-installed"
+copy_lib() {
+  mkdir -p "$LIB" && cp -R "$SKILL/assets/lib/." "$LIB/" \
+    && rm -rf "$INST" && mkdir -p "$INST" && cp -R "$SKILL/assets/lib/." "$INST/"
+}
 if [ "$UPDATE_LIB" = 1 ] && [ -d "$WS" ] && command -v lake >/dev/null 2>&1; then
-  mkdir -p "$LIB" && cp -R "$SKILL/assets/lib/." "$LIB/"
+  CHANGED=()
+  while IFS= read -r f; do
+    [ -f "$LIB/$f" ] || continue
+    cmp -s "$LIB/$f" "$SKILL/assets/lib/$f" && continue
+    [ -f "$INST/$f" ] && cmp -s "$LIB/$f" "$INST/$f" && continue
+    CHANGED+=("$f")
+  done < <(cd "$SKILL/assets/lib" && find . -type f ! -name '.*' | sed 's|^\./||' | sort)
+  if [ ${#CHANGED[@]} -gt 0 ]; then
+    for f in "${CHANGED[@]}"; do printf '  changed  CipherLean/Lib/%s\n' "$f"; done
+    [ -d "$INST" ] || note "$INST does not exist (workspace set up before this check), so every file that differs from assets/lib is listed"
+    note "compare: diff -u $SKILL/assets/lib/<file> $LIB/<file>"
+    fail "nothing copied, so the changes listed above are kept. Send them upstream first (CONTRIBUTING.md), or move these files out of CipherLean/Lib, then rerun"
+  fi
+  copy_lib || fail "could not copy assets/lib to $LIB"
   if ( cd "$WS" && lake build CipherLean ) >"$WS/.lake/setup-library.log" 2>&1; then
     ok "CipherLean/Lib updated from assets/lib and rebuilt"
   else
@@ -177,7 +199,7 @@ if [ "$UPDATE_LIB" = 1 ] && [ -d "$WS" ] && command -v lake >/dev/null 2>&1; the
 elif [ -f "$LIB/F2/Vec.lean" ] && [ -f "$WS/CipherLean.lean" ]; then
   ok "CipherLean/Lib present"
 elif [ "$MODE" = install ]; then
-  mkdir -p "$LIB" && cp -R "$SKILL/assets/lib/." "$LIB/"
+  copy_lib || fail "could not copy assets/lib to $LIB"
   ok "copied assets/lib to CipherLean/Lib"
 else
   miss "CipherLean/Lib missing; --install copies and compiles it"

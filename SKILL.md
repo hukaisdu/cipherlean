@@ -19,8 +19,9 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebFetch", "As
 # Theorem → Lean 4 formalization
 
 Deliverable for one paper theorem: a directory `CipherLean/<Slug>/` in the workspace holding
-(1) `README.md` — the statement as the paper states it, every hypothesis, the proof plan,
-and a status table; (2) `NOTATION.md` — paper symbol ↔ Lean name; (3) `.lean` files that
+(1) `README.md` — the statement as the paper states it, every hypothesis and a status table;
+(1b) `CHAIN.md` with `CHAIN.pdf` — the proof chain and its dependency graph, confirmed by the
+reader before any Lean is written; (2) `NOTATION.md` — paper symbol ↔ Lean name; (3) `.lean` files that
 `lake build` accepts with no `sorry` and standard axioms only; (4) one toy instance where
 the theorem holds and one counterexample per hypothesis that the paper needs. The final
 message reports exactly what was proved, which hypotheses were added, and where the Lean
@@ -53,7 +54,9 @@ library lacks it.
 | task | command (from `~/cipherlean`) |
 |---|---|
 | check / create the environment | `$SKILL/scripts/setup_env.sh --check` (2 s) / `--install` (first time) |
-| scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>]` |
+| scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>]` (Main.lean, README, NOTATION, CHAIN) |
+| proof-chain graph (step 1b) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid |
+| chain vs. Lean (step 7) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/Main.lean` |
 | compile one file | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
 | final check | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean` |
 | find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` |
@@ -121,6 +124,21 @@ build to a check.
   its label first, then formalize the statements (with `sorry`) before proving any — so
   the user sees the full map early.
 
+### 1b. The proof chain and its graph, confirmed by the reader before any Lean
+
+Write `CipherLean/<Slug>/CHAIN.md` from the template (`new_paper.sh` creates it): one row per thing
+the proof relies on — the target theorem, every lemma and proof step, every definition, every cited
+result (checked in its own source, with the conditions the citing sentence omits), every hypothesis
+or modelling assumption — with its paper label, statement, `uses` (the rows it relies on directly),
+location, implicit hypotheses noticed, and `status: pending`. Then
+`$SKILL/scripts/chain_graph.py CHAIN.md`: it draws the dependency graph in TikZ (`CHAIN.tex`,
+compiled to `CHAIN.pdf`; target on top, definitions and cited results at the bottom, dashed arrows
+for a route the paper takes but Lean may not) and keeps a mermaid copy inside CHAIN.md. Give the
+reader the table, the graph and the "Questions for the reader" section, and stop: nothing is
+encoded before they confirm or correct the chain. This is the one deliberate gate of the workflow;
+it catches a misread theorem, a lemma applied outside its hypotheses, or a cited result quoted
+without its conditions, at the moment it is cheapest to fix.
+
 ### 2. Choose encodings and fix names
 
 Write `NOTATION.md`: one row per paper object — paper symbol, Lean name, Lean type,
@@ -136,8 +154,10 @@ mathematics. Derive the normalized form as a corollary if the user wants it.
 ### 3. Definitions and statement first, with `sorry`
 
 Create `CipherLean/<Slug>/Main.lean` from the template (`$SKILL/scripts/new_paper.sh` does this).
-Write the definitions, then the main theorem with `sorry`, and compile together with the
-finite checks of step 4 (they only need the definitions, so one build serves both). Give every
+Write the definitions, then every node of the confirmed chain as a Lean declaration with `sorry`, in
+dependency order (definitions, cited results as hypotheses or library lemmas, steps, lemmas, the
+target), and compile together with the finite checks of step 4 (they only need the definitions, so
+one build serves both). Fill the `lean` column of CHAIN.md as you go and set `status: stated`. Give every
 declaration a docstring with the paper's wording (`/-- Paper: Theorem 2, "..." -/`), the way
 formal-conjectures requires an English version next to each formal statement. Type errors
 at this stage are cheap; a wrong statement discovered after a 200-line proof is not.
@@ -174,6 +194,10 @@ exist.
 
 ### 6. Check
 
+`$SKILL/scripts/chain_check.py CHAIN.md CipherLean/<Slug>/Main.lean` compares the confirmed chain with
+the dependency graph Lean actually used (direct, transitive, missing and extra edges; a `?` after an id
+in `uses` marks the paper's route when Lean proves the step another way) and must end in
+`VERDICT: CONSISTENT`; explain every difference in CHAIN.md. Then
 `$SKILL/scripts/check_lean.py CipherLean/<Slug>/Main.lean` builds the module, lists every declaration
 with its axioms and its elaborated statement, and fails on `sorryAx`, on custom axioms, and
 on the compiler-trusting axioms that `native_decide` / `bv_decide` introduce
@@ -212,8 +236,9 @@ Lean checks the proof; nobody has yet checked that the *statement* is the paper'
 result the user will cite or publish, hand the directory to a reviewer that has not seen your
 reasoning: a fresh subagent (or a second Claude Code session) given `references/review-brief.md`,
 the paper source, the theorem label, the directory and the workspace path. It compares every
-Lean statement with the paper's text, builds the proof-correspondence table, reruns the check
-script and writes `REVIEW.md` ending in `VERDICT: ACCEPT` or `REVISE` with numbered objections.
+Lean statement with the paper's text, checks the confirmed CHAIN.md row by row against the paper
+and reruns `chain_check.py` and the check script, and writes `REVIEW.md` ending in
+`VERDICT: ACCEPT` or `REVISE` with numbered objections.
 Fix every BLOCKER and MAJOR, update README, ask for a new round. The task is finished when a
 round ends in ACCEPT and the check passes; after three rounds without ACCEPT, stop and give the
 user the open objections. Skip this step only for throwaway statements, and say so.
@@ -235,6 +260,9 @@ Asymptotic complexity claims and probabilistic statements over random keys need 
   Mathlib lemma names, tactic toolbox, pitfalls. Read before step 2.
 - `references/workflow-example.md` — one full run on the linear ↔ integral halfspace
   identity (ePrint 2026/2471), including the departure it records.
+- `assets/CHAIN-template.md` — the proof-chain table (step 1b); `scripts/chain_graph.py` draws it,
+  `scripts/chain_check.py` compares it with Lean's dependency graph; `CipherLean/Examples/DdtInverse/CHAIN.md`
+  is a filled example with its `CHAIN.pdf`.
 - `references/promotion.md` — step 7b: the candidate classes, the five questions, the moving
   checklist, and the first harvests as examples.
 - `references/review-brief.md` — the reviewer agent's instructions and the stopping rule (step 8).

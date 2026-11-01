@@ -1,0 +1,18 @@
+name = "LeanFormal"
+version = "0.1.0"
+keywords = ["lean", "cryptography", "formalization"]
+defaultTargets = ["Formal"]
+
+[leanOptions]
+pp.unicode.fun = true
+autoImplicit = false
+weak.linter.mathlibStandardSet = true
+maxSynthPendingDepth = 3
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.33.0"
+
+[[lean_lib]]
+name = "Formal"

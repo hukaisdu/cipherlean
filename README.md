@@ -1,4 +1,4 @@
-# lean-formalize — a Claude Code skill: paper theorem → checked Lean 4 proof
+# cipherlean — a Claude Code skill: paper theorem → checked Lean 4 proof
 
 Takes a theorem from a cryptanalysis paper (or a statement you type), pins its exact
 hypotheses, encodes it in Lean 4 + Mathlib, tests the definitions on a toy instance and a
@@ -15,14 +15,14 @@ duality, Walsh coefficients, the DDT, table S-boxes) with its lemmas machine-che
   skill's own script; nothing else is needed.
 
 ## Install
-1. Clone this repository to `~/.claude/skills/lean-formalize/` (keep the name):
+1. Clone this repository to `~/.claude/skills/cipherlean/` (keep the name):
    ```
-   git clone https://github.com/hukaisdu/lean-formalize ~/.claude/skills/lean-formalize
+   git clone https://github.com/hukaisdu/cipherlean ~/.claude/skills/cipherlean
    ```
-   (or unzip a `lean-formalize.skill` package to the same place).
-2. In a terminal, or by asking Claude "set up the lean-formalize environment":
+   (or unzip a `cipherlean.skill` package to the same place).
+2. In a terminal, or by asking Claude "set up the cipherlean environment":
    ```
-   bash ~/.claude/skills/lean-formalize/scripts/setup_env.sh --install --examples
+   bash ~/.claude/skills/cipherlean/scripts/setup_env.sh --install --examples
    ```
    This installs elan (official installer) and Lean `v4.33.0` if missing, creates the workspace
    `~/lean-formal` (override with `LEAN_FORMAL_WS`), downloads the prebuilt Mathlib `v4.33.0`,
@@ -31,9 +31,9 @@ duality, Walsh coefficients, the DDT, table S-boxes) with its lemmas machine-che
    `--check` only reports.
 
 ## Update
-`git pull` in `~/.claude/skills/lean-formalize`, then
+`git pull` in `~/.claude/skills/cipherlean`, then
 ```
-bash ~/.claude/skills/lean-formalize/scripts/setup_env.sh --update-library
+bash ~/.claude/skills/cipherlean/scripts/setup_env.sh --update-library
 ```
 which copies the current `assets/crypto/` over `Formal/Crypto/` in the workspace and rebuilds it
 (the installer alone never overwrites files that already exist).

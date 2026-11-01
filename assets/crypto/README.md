@@ -57,8 +57,8 @@ auxiliary function); those stay in `Formal/<Slug>/`.
 
 ```
 cd ~/lean-formal
-~/.claude/skills/lean-formalize/scripts/lake_build.sh Formal.Crypto
+~/.claude/skills/cipherlean/scripts/lake_build.sh Formal.Crypto
 for m in F2/Vec F2/Subspace Sbox Walsh DDT Links; do
-  ~/.claude/skills/lean-formalize/scripts/check_lean.py Formal/Crypto/$m.lean --no-build
+  ~/.claude/skills/cipherlean/scripts/check_lean.py Formal/Crypto/$m.lean --no-build
 done
 ```

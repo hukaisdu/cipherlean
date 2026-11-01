@@ -1,5 +1,5 @@
 ---
-name: lean-formalize
+name: cipherlean
 description: |
   Formalize a theorem from a cryptanalysis paper in Lean 4 + Mathlib: pin the statement
   and every hypothesis (implicit ones too), encode and state it, test it on a toy instance
@@ -48,7 +48,7 @@ starts with `import Formal.Crypto`; `Formal/Crypto/NOTATION.md` is the symbol ta
 objects and `Formal/Crypto/README.md` lists the lemmas. Define an object yourself only when the
 library lacks it.
 
-`$SKILL` below is this skill's directory, `~/.claude/skills/lean-formalize`.
+`$SKILL` below is this skill's directory, `~/.claude/skills/cipherlean`.
 
 | task | command (from `~/lean-formal`) |
 |---|---|

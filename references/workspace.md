@@ -43,12 +43,12 @@ second workspace with the same pin on the same machine unpacks instead of downlo
 
 | what | command |
 |---|---|
-| compile one module (preferred) | `~/.claude/skills/lean-formalize/scripts/lake_build.sh Formal.<Slug>.Main` (`lake build` under the workspace lock) |
+| compile one module (preferred) | `~/.claude/skills/cipherlean/scripts/lake_build.sh Formal.<Slug>.Main` (`lake build` under the workspace lock) |
 | quick pass on a file, no cache | `lake env lean Formal/<Slug>/Main.lean` |
 | axioms of one theorem | add `#print axioms <Slug>.main` to the file, or run the check script |
-| full check (build + axioms + statements) | `~/.claude/skills/lean-formalize/scripts/check_lean.py Formal/<Slug>/Main.lean` |
-| find a lemma | `~/.claude/skills/lean-formalize/scripts/search_mathlib.sh "<query>"` |
-| new paper | `~/.claude/skills/lean-formalize/scripts/new_paper.sh <Slug> [--paper-dir <dir>]` |
+| full check (build + axioms + statements) | `~/.claude/skills/cipherlean/scripts/check_lean.py Formal/<Slug>/Main.lean` |
+| find a lemma | `~/.claude/skills/cipherlean/scripts/search_mathlib.sh "<query>"` |
+| new paper | `~/.claude/skills/cipherlean/scripts/new_paper.sh <Slug> [--paper-dir <dir>]` |
 
 Module name = path with `/` → `.` and no `.lean`: `Formal/Foo/Main.lean` is `Formal.Foo.Main`.
 A file imports a sibling with `import Formal.Foo.Defs`; build the sibling first (or build the

@@ -87,5 +87,5 @@ migration to the library (Lean v4.33.0 + Mathlib v4.33.0); no `sorry`, no `nativ
 
 ## Rebuild
 ```
-cd ~/lean-formal && lake build Formal.Examples.DdtInverse.Main && ~/.claude/skills/lean-formalize/scripts/check_lean.py Formal/Examples/DdtInverse/Main.lean
+cd ~/lean-formal && lake build Formal.Examples.DdtInverse.Main && ~/.claude/skills/cipherlean/scripts/check_lean.py Formal/Examples/DdtInverse/Main.lean
 ```

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """check_lean.py — build one Lean file of the lean-formal workspace and check it.
 
-What it does (the trust model of the lean-formalize skill):
+What it does (the trust model of the cipherlean skill):
   1. `lake build <Module>` for the file (module name derived from its path; symlinked
      `Formal/<Slug>` directories are resolved).
   2. Loads the module in a scratch Lean file and prints, for EVERY non-internal

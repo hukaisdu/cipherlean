@@ -32,5 +32,5 @@
 
 ## Rebuild
 ```
-cd ~/lean-formal && ~/.claude/skills/lean-formalize/scripts/lake_build.sh Formal.<Slug>.Main && ~/.claude/skills/lean-formalize/scripts/check_lean.py Formal/<Slug>/Main.lean
+cd ~/lean-formal && ~/.claude/skills/cipherlean/scripts/lake_build.sh Formal.<Slug>.Main && ~/.claude/skills/cipherlean/scripts/check_lean.py Formal/<Slug>/Main.lean
 ```

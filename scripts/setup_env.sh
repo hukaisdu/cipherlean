@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup_env.sh — check, and on request create, everything the lean-formalize skill needs.
+# setup_env.sh — check, and on request create, everything the cipherlean skill needs.
 #
 #   setup_env.sh --check            report OK / MISSING per item, change nothing; exit 1 if anything is missing
 #   setup_env.sh --install          install / download / configure whatever is missing (idempotent,
@@ -51,7 +51,7 @@ miss() { printf '  MISSING  %s\n' "$*"; MISSING=1; }
 fail() { printf '  FAIL     %s\n' "$*" >&2; echo "SETUP FAILED (see above)"; exit 1; }
 step() { printf '\n== %s\n' "$*"; }
 
-echo "lean-formalize environment ($MODE): workspace $WS, toolchain $TOOLCHAIN"
+echo "cipherlean environment ($MODE): workspace $WS, toolchain $TOOLCHAIN"
 
 step "platform and tools"
 case "$(uname -s)" in

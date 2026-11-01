@@ -20,6 +20,8 @@ until this table and the graph below are confirmed.
 own source) · assumption (a hypothesis of the theorem or a modelling assumption stated as such).
 `uses`: comma-separated ids. `implicit`: a hypothesis the text uses without stating, or `—`.
 `lean`: the Lean declaration that discharges the row (filled in step 3; a library lemma is allowed).
+A row the paper settles by computation says so in `implicit` ("computation: 2^12 cases") and, once
+formalized, names the route in `lean` (`decide +kernel`, or the `checker_eval` of a native bridge).
 `status`: pending · stated (Lean statement with `sorry`) · proved · cited · assumed.
 
 ## External results

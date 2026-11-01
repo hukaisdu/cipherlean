@@ -147,6 +147,23 @@ formalization of a coset-average theorem that is not shipped, so those idioms ar
     `Vec` and move the computation to `BitVec` with `CipherLean.ddt_toFun` / `diffUniformity_toFun_le_iff`
     (`CipherLean.present_diffUniformity`: < 10 s).
 
+26. **A computational case with a semantic bridge** (step 5b), when `decide +kernel` cannot finish:
+    ```lean
+    /-- The finite computation, as a Boolean program (or a checker of an offline certificate). -/
+    def checker : Bool := (Finset.univ.filter fun x : BitVec 8 => …).card ≤ 4   -- decidable, closed
+    /-- Kernel-checked: `true` means the mathematical statement. Nothing native here. -/
+    theorem checker_true_iff : checker = true ↔ ∀ x : BitVec 8, … := by simp [checker, …]
+    /-- The only native step; `#print axioms` shows `checker_eval._native.native_decide.ax_1_1`. -/
+    theorem checker_eval : checker = true := by native_decide
+    /-- The case, proved relative to the compiler axiom. -/
+    theorem the_case : ∀ x : BitVec 8, … := checker_true_iff.mp checker_eval
+    ```
+    Keep `checker_eval` the one declaration that uses `native_decide`, so the trust is visible in one
+    place; `check_lean.py --allow-native` reports it as NATIVE and everything depending on it.
+    Measured on this machine: kernel `decide` handles a 4-bit DDT bound (256 × 16) in 8 s and one DDT
+    row of a 4-bit S-box on `Vec (Fin 4)` in 45 s; an 8-bit S-box's full DDT (2^16 × 256) needs the
+    native route or an offline certificate.
+
 ## 3. Tactics, in the order to try them
 
 `simp only [...]` (controlled) → `rw [...]` (literal pattern) → `ring` / `linarith` / `omega`

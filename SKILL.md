@@ -190,7 +190,35 @@ exist.
   and say so.
 - Budget: after a serious attempt (several tactic strategies, searched Mathlib), leave the
   lemma as `sorry` with a comment stating the exact remaining goal and what was tried, and
-  move on. Never hide a gap by weakening the statement or by `native_decide`.
+  move on. Never hide a gap by weakening the statement, and never close a general goal with
+  `native_decide`: it is for the computational cases of step 5b only.
+
+### 5b. Cases the paper settles by computation
+
+A paper proof that splits into cases and settles some of them "by computer" is formalized along
+the same split (so the paper's argument is what gets checked), with each computational case a
+closed, decidable statement over a finite domain. Symbolic case splits (`m` odd or even, `i = 0`
+or `1`, a parameter in a range) are not computations: `rcases`, `fin_cases`, `interval_cases`,
+`omega`, no axiom involved. For the computations, in this order:
+
+1. **`decide +kernel`** up to roughly 2^14–2^16 evaluations: the kernel does the computation and
+   no axiom is added (a 4-bit S-box's whole DDT bound on `BitVec`: about 8 s).
+2. **Make the kernel able to do it** before reaching for anything stronger: compute on `BitVec`
+   rather than `Vec (Fin n)` (an order of magnitude, see `ddt_toFun`); use `Nat` arithmetic (the
+   kernel has native `Nat` add/mul/mod); turn a search into a check — compute the certificate
+   offline (Python, C++), ship it as data in the file, and let the kernel only verify it
+   (verifying is cheaper than searching).
+3. **`native_decide`** only when the kernel cannot finish. It compiles the decision procedure and
+   adds, per declaration, an axiom saying the compiled program returned `true`
+   (`<decl>._native.native_decide.ax_*` on Lean v4.33.0; the trust extends to the compiler). It
+   is acceptable with two obligations: a *semantic bridge* — a kernel-checked lemma
+   `checker_true : checker = true → P` so that what is trusted is only "this program returned
+   `true`", never what it means (cheatsheet idiom 26) — and *disclosure*: `check_lean.py` lists
+   the declaration as NATIVE (run with `--allow-native`), the README status table shows the
+   axiom, and the report says "proved relative to the compiler axiom" for everything that depends
+   on it. `bv_decide` (SAT with an LRAT certificate) has the same trust and the same obligations.
+
+Record in CHAIN.md which rows are computational cases and how each is discharged.
 
 ### 6. Check
 
@@ -202,8 +230,8 @@ in `uses` marks the paper's route when Lean proves the step another way) and mus
 with its axioms and its elaborated statement, and fails on `sorryAx`, on custom axioms, and
 on the compiler-trusting axioms that `native_decide` / `bv_decide` introduce
 (`<decl>._native.*.ax_*`, `Lean.ofReduceBool`) unless `--allow-native` is passed for
-labelled finite checks. Read the printed statements against the paper one final time; this
-is the human half of the check.
+the computational cases of step 5b, each with its bridge lemma. Read the printed statements
+against the paper one final time; this is the human half of the check.
 
 ### 7. Trim and report
 

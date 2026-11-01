@@ -104,6 +104,14 @@ assets/lib/           shared library CipherLean (installed as CipherLean/Lib/, c
 MIT, see `LICENSE`. The statements formalized in the examples are cited to their sources in the
 file headers; the Lean code here is original.
 
+## Trust model
+Every result is reported with its axioms. The default is the standard three (`propext`,
+`Classical.choice`, `Quot.sound`) with `decide +kernel` for finite computations. When a case the
+paper settles by computation is too large for the kernel, `native_decide` is allowed under step 5b
+of the workflow: a kernel-checked bridge lemma ties the Boolean program to the mathematical
+statement, the declaration is reported as NATIVE, and the result is stated as proved relative to
+the compiler axiom. Nothing general is ever closed with `native_decide`.
+
 ## Versions
 Lean `v4.33.0`, Mathlib `v4.33.0` (commit `db584cd6`), pinned in `assets/workspace/`. Every
 lemma name in the cheatsheet was compiled against this pin; see `references/workspace.md`

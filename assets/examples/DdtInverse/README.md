@@ -6,7 +6,7 @@
 - Files: `Main.lean` (statements in the three spellings, matrix form, finite checks), `NOTATION.md`
   (symbol ↔ Lean name). Encodings and the proof come from the shared library `CipherLean`
   (`CipherLean.Vec`, `CipherLean.ddt`, `CipherLean.ddt_symm`, `CipherLean.ddt_eq_ddt_of_inverse`, `CipherLean.image_cond`);
-  migrated to it on 2026-11-01.
+  migrated to it on 2026-11-01; the other spellings of the lemma were promoted into the library the same day.
 
 ## Statement (verbatim)
 > Lemma (DDT of the inverse S-box). Let S be a permutation of F_2^n and S^{-1} its inverse.
@@ -63,10 +63,10 @@ migration to the library (Lean v4.33.0 + Mathlib v4.33.0); no `sorry`, no `nativ
 | source label | Lean declaration | status | axioms | note |
 |---|---|---|---|---|
 | Lemma (DDT of the inverse S-box) | `DdtInverse.ddt_symm` (= `CipherLean.ddt_symm`) | proved | propext, Classical.choice, Quot.sound | `S : Equiv.Perm (Vec ι)`, `S^{-1} = S.symm`; the main theorem |
-| same lemma, `S` a bijective function | `DdtInverse.ddt_invFun` | proved | propext, Classical.choice, Quot.sound | `S^{-1} = Function.invFun S` |
+| same lemma, `S` a bijective function | `DdtInverse.ddt_invFun` (= `CipherLean.ddt_invFun`) | proved | propext, Classical.choice, Quot.sound | `S^{-1} = Function.invFun S` |
 | same lemma, explicit inverse `T` (proof engine) | `CipherLean.ddt_eq_ddt_of_inverse` (library) | proved | propext, Classical.choice, Quot.sound | hypotheses `T (S x) = x`, `S (T y) = y` |
-| remark: one inverse equation suffices on `Vec ι` | `DdtInverse.ddt_eq_ddt_of_leftInverse` | proved | propext, Classical.choice, Quot.sound | only `T (S x) = x` assumed |
-| "In words: the DDT of S^{-1} is the transpose of the DDT of S" | `DdtInverse.ddtMatrix_symm` | proved | propext, Classical.choice, Quot.sound | `ddtMatrix S.symm = (ddtMatrix S).transpose` |
+| remark: one inverse equation suffices on `Vec ι` | `DdtInverse.ddt_eq_ddt_of_leftInverse` (= `CipherLean.ddt_eq_ddt_of_leftInverse`) | proved | propext, Classical.choice, Quot.sound | only `T (S x) = x` assumed |
+| "In words: the DDT of S^{-1} is the transpose of the DDT of S" | `DdtInverse.ddtMatrix_symm` (= `CipherLean.ddtMatrix_symm`) | proved | propext, Classical.choice, Quot.sound | `ddtMatrix S.symm = (ddtMatrix S).transpose` |
 | proof step 1 | `CipherLean.image_cond` (library) | proved | propext, Classical.choice, Quot.sound | cancellation in characteristic 2 |
 | toy instance (3-bit) | `DdtInverse.toy_ddt_transpose`, `toy_values`, `toyInv_toyS`, `toyS_toyInv` | proved by `decide` through `ddt_toFun` | propext, Classical.choice, Quot.sound | expected numbers `4 / 0` confirmed |
 | counterexample (`T` not the inverse) | `DdtInverse.toy_not_symmetric`, `toy_id_fails` | proved by `decide` | propext, Classical.choice, Quot.sound | `T = S` and `T = id` both fail at `(a, b) = (1, 2)` |

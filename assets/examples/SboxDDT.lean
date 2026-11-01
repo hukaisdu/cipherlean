@@ -3,11 +3,11 @@ import CipherLean
 /-!
 # Example 2: analysing an S-box table with the shared library
 
-The S-box is a table on words (`CipherLean.Sbox.ofTable`); `CipherLean.Sbox.toFun` moves it to `F_2^n`,
-where the library states the DDT facts. The general theorem (every DDT row sums to `2^n`) is the
-library's `CipherLean.ddt_row_sum`; the finite facts about a concrete table are decided on words through
-the bridge `CipherLean.ddt_toFun` / `CipherLean.diffUniformity_toFun_le_iff`, which is fast, instead of on
-`Vec (Fin n)`, which is slow in the kernel.
+The S-box is a table on words (`CipherLean.Sbox.ofTable`); `CipherLean.Sbox.toFun` moves it to
+`F_2^n`, where the library states the DDT facts. The general theorem (every DDT row sums to `2^n`)
+is the library's `CipherLean.ddt_row_sum`; the finite facts about a concrete table are decided on
+words through the bridge `CipherLean.ddt_toFun` / `CipherLean.diffUniformity_toFun_le_iff`, which
+is fast, instead of on `Vec (Fin n)`, which is slow in the kernel.
 
 Concrete instance: the cube map `x ↦ x³` of `GF(2³)`, the field represented modulo `x³ + x + 1`,
 written as a table. It is a permutation and APN (differential uniformity `2`); K. Nyberg,
@@ -22,8 +22,8 @@ open CipherLean CipherLean.Sbox
 /-- Every row of the DDT of an `n`-bit S-box sums to `2^n`: the library theorem specialised to a
 table S-box on words. -/
 theorem ddt_row_sum {n : ℕ} (S : BitVec n → BitVec n) (a : Vec (Fin n)) :
-    ∑ b, ddt (toFun S) a b = 2 ^ n := by
-  rw [CipherLean.ddt_row_sum, Fintype.card_fin]
+    ∑ b, ddt (toFun S) a b = 2 ^ n :=
+  ddt_toFun_row_sum S a
 
 /-- The cube map of `GF(2³)` as a table (`x ↦ x³`, polynomial `x³ + x + 1`): computed beforehand. -/
 def cubeTable : Vector (BitVec 3) 8 := #v[0, 1, 3, 4, 5, 6, 7, 2]

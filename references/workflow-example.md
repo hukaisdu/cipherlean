@@ -57,8 +57,8 @@ sign or a swapped coordinate). `constantMap x = 0` has `linearSum = 0` but
 
 | paper step | Lean lemma | tactic idea |
 |---|---|---|
-| split over the two halfspaces | `linearSum_eq_sub` | `Finset.sum_filter_add_sum_filter_not`, then `sgn_add`, `sgn_one` on the `x i₀ = 1` half |
-| bijection reindexes the sum | `halfSum_add_halfSum` | `Equiv.sum_comp (Equiv.ofBijective E hE)`, then the library's orthogonality `sum_chi` for the mask `Pi.single i₀ 1 ≠ 0` |
+| split over the two halfspaces | `linearSum_eq_sub` (= library `walsh_single_eq_sub`) | `Finset.sum_filter_add_sum_filter_not`, then `sgn_add`, `sgn_one` on the `x i₀ = 1` half |
+| bijection reindexes the sum | `halfSum_add_halfSum` (library) | `Equiv.sum_comp (Equiv.ofBijective E hE)`, then the orthogonality `sum_chi` for the mask `Pi.single i₀ 1 ≠ 0` |
 | solve the linear system | `linearSum_eq_two_mul_halfSum` | `linarith` from the two lemmas |
 | divisibility transfer | `pow_dvd_halfSum` | `rw [pow_succ'] at h` and `mul_dvd_mul_iff_left` |
 | per key | `all_keys` | apply the theorem to `E K` |
@@ -89,3 +89,11 @@ Departures from the paper, recorded in the README:
   general on that axis; the README says so.
 - **Implicit hypothesis made explicit.** `Function.Bijective E` appears as a named hypothesis
   and `constantMap_counterexample` shows it is necessary.
+
+## Step 7b — promotion
+
+`promote_candidates.py` on this file classified `single_dot`, `filter_ne_zero_eq` as A, the four
+theorems as B (they mention `halfSum`), `halfSum` and `linearSum` as E, the toys as C. Decision:
+`halfSum` is a general notion (an integral sum over a halfspace), so it moved to `Lib/Walsh.lean`
+with the four theorems restated on `walsh E e e`; `linearSum` stayed as the paper's name; the file
+now proves its theorems as one-line instances of the library's.

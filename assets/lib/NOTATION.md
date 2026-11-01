@@ -22,6 +22,11 @@ All statistics are unnormalized integers or counts; normalized forms are corolla
 | `δ_F(a, b) = #{x : F(x+a)+F(x) = b}` | `ddt F a b` | `ℕ` | DDT entry; `ddt_row_sum`, `ddt_zero_left`, `even_ddt`, `ddt_symm` |
 | `δ(F) = max_{a≠0,b} δ_F(a,b)` | `diffUniformity F` | `ℕ` | Nyberg (EUROCRYPT 1993); `IsAPN F : δ(F) = 2` |
 | `Σ_{a,b} δ_F(a,b)(-1)^{u·a+v·b} = W_F(u,v)^2` | `sum_ddt_mul_sgn F u v` | theorem | Chabaud–Vaudenay (EUROCRYPT 1994) |
+| `I_b(E; i₀) = Σ_{x : x_{i₀}=b} (-1)^{E(x)_{i₀}}` | `halfSum E i₀ b` | `ℤ` | integral sum over a halfspace (Hadipour, ePrint 2026/2471); `walsh_single_eq_two_mul_halfSum`: `W_E(e,e) = 2·I_0` for bijective `E`; `pow_dvd_halfSum` |
+| `w·x = w·k` for `w ∈ V^⊥`, `x ∈ k+V` | `dotProduct_eq_of_mem_ann`, `chi_eq_of_mem_ann K` | theorems | a mask in the annihilator is constant on cosets |
+| `|V| ≠ 0`, `|V^⊥| ≠ 0` in `K` | `card_ne_zero_of_isSubspace`, `card_ann_ne_zero` | theorems | `K` any `AddMonoidWithOne` of characteristic zero (for dividing) |
+| the DDT as a table | `ddtMatrix F` | `Matrix (Vec ι) (Vec κ) ℕ` | `ddtMatrix_symm`: the DDT of `F⁻¹` is the transpose; `ddt_invFun`, `ddt_eq_ddt_of_leftInverse`: the other spellings of `F⁻¹` |
+| `e_{i₀}·x = x_{i₀}` | `single_dot`, `filter_ne_zero_eq` | theorems | the selected-coordinate mask; complement of a halfspace |
 | S-box table | `Sbox.ofTable t`, `Sbox.toFun S` | `BitVec n → BitVec n`, `Vec (Fin n) → Vec (Fin n)` | `toFun S = toVec ∘ S ∘ ofVec` |
 | PRESENT S-box | `Sbox.present`, `Sbox.presentVec` | — | standard 4-bit test instance (CHES 2007) |
 | word ↔ vector | `toVec`, `ofVec`, `bvEquiv` | `BitVec n ≃ Vec (Fin n)` | coordinate `i` = bit `i` (LSB first) |

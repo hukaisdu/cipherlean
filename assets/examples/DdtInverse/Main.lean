@@ -5,9 +5,10 @@ import CipherLean
 
 Source: the user's statement (2026-11-01, no paper), quoted in `README.md`; names in `NOTATION.md`.
 Encodings come from the shared library: `F_2^n` is `CipherLean.Vec ι` (any finite index type), the
-DDT entry is `CipherLean.ddt`, and the lemma itself is `CipherLean.ddt_symm` with its engine
-`CipherLean.ddt_eq_ddt_of_inverse`. This file states the source's three spellings of `S⁻¹`, the matrix
-form, and the finite checks on a 3-bit table, decided on words through the bridge `ddt_toFun`.
+DDT entry is `CipherLean.ddt`, and the lemma in all its spellings is the library's
+(`ddt_symm`, `ddt_invFun`, `ddt_eq_ddt_of_leftInverse`, `ddtMatrix_symm`, promoted from this run).
+This file keeps the source's names as instances and the finite checks on a 3-bit table, decided on
+words through the bridge `ddt_toFun`.
 -/
 
 namespace DdtInverse
@@ -15,11 +16,6 @@ namespace DdtInverse
 open CipherLean
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- Source: "the DDT of S" as a table: rows indexed by the input difference `a`, columns by the
-output difference `b`. -/
-def ddtMatrix (S : Vec ι → Vec ι) : Matrix (Vec ι) (Vec ι) ℕ :=
-  Matrix.of fun a b => ddt S a b
 
 /-- Source: Lemma (DDT of the inverse S-box), "Let S be a permutation of F_2^n and S^{-1} its
 inverse. For all a, b: #{x : S(x ⊕ a) ⊕ S(x) = b} = #{y : S^{-1}(y ⊕ b) ⊕ S^{-1}(y) = a}."
@@ -30,23 +26,17 @@ theorem ddt_symm (S : Equiv.Perm (Vec ι)) (a b : Vec ι) : ddt S a b = ddt S.sy
 /-- The same lemma for a bijective function `S`, with `S^{-1} = Function.invFun S`. -/
 theorem ddt_invFun (S : Vec ι → Vec ι) (hS : Function.Bijective S) (a b : Vec ι) :
     ddt S a b = ddt (Function.invFun S) b a :=
-  ddt_eq_ddt_of_inverse S (Function.invFun S) (Function.leftInverse_invFun hS.1)
-    (Function.rightInverse_invFun hS.2) a b
+  CipherLean.ddt_invFun S hS a b
 
-/-- On a finite type one of the two inverse equations is redundant: `T ∘ S = id` alone forces `S` to
-be a permutation and `T` its two-sided inverse. -/
+/-- On a finite type one of the two inverse equations is redundant. -/
 theorem ddt_eq_ddt_of_leftInverse (S T : Vec ι → Vec ι) (hTS : ∀ x, T (S x) = x) (a b : Vec ι) :
     ddt S a b = ddt T b a :=
-  ddt_eq_ddt_of_inverse S T hTS
-    ((Function.LeftInverse.rightInverse_of_surjective hTS)
-      (Finite.injective_iff_surjective.mp (Function.LeftInverse.injective hTS))) a b
+  CipherLean.ddt_eq_ddt_of_leftInverse S T hTS a b
 
 /-- Source: "In words: the DDT of S^{-1} is the transpose of the DDT of S." -/
 theorem ddtMatrix_symm (S : Equiv.Perm (Vec ι)) :
-    ddtMatrix S.symm = (ddtMatrix S).transpose := by
-  ext a b
-  simp only [ddtMatrix, Matrix.of_apply, Matrix.transpose_apply]
-  exact (ddt_symm S b a).symm
+    ddtMatrix S.symm = (ddtMatrix S).transpose :=
+  CipherLean.ddtMatrix_symm S
 
 /-! ## Finite checks — a toy instance with the expected numbers, and a counterexample for the one
 hypothesis ("`T` is the inverse of `S`"); all decided on 3-bit words through `ddt_toFun` -/

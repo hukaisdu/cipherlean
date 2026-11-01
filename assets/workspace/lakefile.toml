@@ -7,6 +7,7 @@ defaultTargets = ["CipherLean"]
 pp.unicode.fun = true
 autoImplicit = false
 weak.linter.mathlibStandardSet = true
+weak.linter.style.header = false
 maxSynthPendingDepth = 3
 
 [[require]]

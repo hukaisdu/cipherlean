@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Kai Hu. All rights reserved.
+Released under the MIT license as described in the file LICENSE.
+Authors: Kai Hu
+-/
 import CipherLean.Lib.Sbox
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Tactic.SplitIfs
@@ -87,6 +92,31 @@ theorem ddt_eq_ddt_of_inverse (F G : Vec ι → Vec ι) (hGF : ∀ x, G (F x) = 
 theorem ddt_symm (F : Equiv.Perm (Vec ι)) (a b : Vec ι) : ddt F a b = ddt F.symm b a :=
   ddt_eq_ddt_of_inverse F F.symm F.symm_apply_apply F.apply_symm_apply a b
 
+/-- The same lemma for a bijective function, with `F⁻¹ = Function.invFun F`. -/
+theorem ddt_invFun (F : Vec ι → Vec ι) (hF : Function.Bijective F) (a b : Vec ι) :
+    ddt F a b = ddt (Function.invFun F) b a :=
+  ddt_eq_ddt_of_inverse F (Function.invFun F) (Function.leftInverse_invFun hF.1)
+    (Function.rightInverse_invFun hF.2) a b
+
+/-- On a finite type one inverse equation suffices: `G ∘ F = id` alone makes `F` a permutation and
+`G` its two-sided inverse. -/
+theorem ddt_eq_ddt_of_leftInverse (F G : Vec ι → Vec ι) (hGF : ∀ x, G (F x) = x) (a b : Vec ι) :
+    ddt F a b = ddt G b a :=
+  ddt_eq_ddt_of_inverse F G hGF
+    ((Function.LeftInverse.rightInverse_of_surjective hGF)
+      (Finite.injective_iff_surjective.mp (Function.LeftInverse.injective hGF))) a b
+
+/-- The DDT as a table: rows indexed by the input difference, columns by the output difference. -/
+def ddtMatrix (F : Vec ι → Vec κ) : Matrix (Vec ι) (Vec κ) ℕ :=
+  Matrix.of fun a b => ddt F a b
+
+/-- The DDT of a permutation's inverse is the transpose of its DDT, as matrices. -/
+theorem ddtMatrix_symm (F : Equiv.Perm (Vec ι)) :
+    ddtMatrix F.symm = (ddtMatrix F).transpose := by
+  ext a b
+  simp only [ddtMatrix, Matrix.of_apply, Matrix.transpose_apply]
+  exact (ddt_symm F b a).symm
+
 /-- Differential uniformity `δ(F) = max_{a ≠ 0, b} ddt F a b` (Nyberg, EUROCRYPT 1993). -/
 def diffUniformity (F : Vec ι → Vec κ) : ℕ :=
   (Finset.univ.filter fun a : Vec ι => a ≠ 0).sup fun a => Finset.univ.sup fun b => ddt F a b
@@ -134,6 +164,11 @@ theorem ddt_toFun (S : BitVec n → BitVec n) (a b : BitVec n) :
     exact ofVec_toVec x
   · intro v _
     exact toVec_ofVec v
+
+/-- Every DDT row of an `n`-bit table S-box sums to `2^n`. -/
+theorem ddt_toFun_row_sum (S : BitVec n → BitVec n) (a : Vec (Fin n)) :
+    ∑ b, ddt (toFun S) a b = 2 ^ n := by
+  rw [ddt_row_sum, Fintype.card_fin]
 
 /-- Differential uniformity of a table S-box, decided on words. -/
 theorem diffUniformity_toFun_le_iff (S : BitVec n → BitVec n) {d : ℕ} :

@@ -60,6 +60,8 @@ library lacks it.
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
 | trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` |
 | rebuild the shared library | `$SKILL/scripts/lake_build.sh CipherLean` (after adding a lemma to `CipherLean/Lib/`) |
+| promotion candidates (step 7b) | `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/Main.lean --write` |
+| library back into the skill | `$SKILL/scripts/sync_library.sh` (then commit / pull request, see `CONTRIBUTING.md`) |
 | independent review | a fresh agent with `references/review-brief.md` (step 8) |
 
 One Lean job at a time per workspace: the wrapper and the check script share a lock. Costs,
@@ -185,13 +187,24 @@ Run `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` (it ask
 `#min_imports`, adds the tactic modules, and only rewrites the file after the trimmed copy
 compiles): every later build, check and reader of the file gets the 3–7 s load instead of 27 s.
 Then fill the status table in `README.md` (paper label · Lean declaration · status · axioms ·
-note) and the "Departures from the paper" section. Promotion rule: a lemma that is general in the
-index type and speaks only about library objects (Walsh coefficients, DDT, subspaces, S-boxes)
-moves into `CipherLean/Lib/` now — with its docstring, a finite check if it is a definition, a row
-in `CipherLean/Lib/NOTATION.md`, and `lake_build.sh CipherLean` — so the next paper imports it
-instead of re-proving it. Paper-specific objects stay in `CipherLean/<Slug>/`. In the reply: what is proved, what is
+note) and the "Departures from the paper" section. Then step 7b. In the reply: what is proved, what is
 `sorry` and why, hypotheses the paper left implicit (these are findings about the paper),
 and the exact commands to rebuild. Say "proved" only after step 6 passes.
+
+### 7b. Promote to the shared library
+
+Run `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/Main.lean --write`. It classifies every
+declaration of the finished file: A (general lemma about library objects: move), B (general but
+about an object the paper defined), E (an object the paper defined: general notion or
+paper-specific?), F (general, Mathlib only), D (duplicate of a library statement: delete, import),
+C (toy or test instance: stays). Read the statements, apply the five questions of
+`references/promotion.md` (general in `ι`? a notion two papers would share? already there? part of
+an unpublished result? explainable without the paper?), and give the user a table with one
+recommendation per row. After their decision, move the accepted ones with the checklist in
+`references/promotion.md`: library variables and names, docstring with the source, finite check for
+a definition, `lake_build.sh CipherLean`, `check_lean.py`, rows in `CipherLean/Lib/NOTATION.md` and
+`README.md`, the paper file re-pointed at the library and re-checked, `scripts/sync_library.sh`,
+commit. Unpublished results stay in the paper directory however general they look.
 
 ### 8. Independent review (two agents)
 
@@ -222,6 +235,8 @@ Asymptotic complexity claims and probabilistic statements over random keys need 
   Mathlib lemma names, tactic toolbox, pitfalls. Read before step 2.
 - `references/workflow-example.md` — one full run on the linear ↔ integral halfspace
   identity (ePrint 2026/2471), including the departure it records.
+- `references/promotion.md` — step 7b: the candidate classes, the five questions, the moving
+  checklist, and the first harvests as examples.
 - `references/review-brief.md` — the reviewer agent's instructions and the stopping rule (step 8).
 - `references/workspace.md` — layout, versions, commands, VS Code, upgrading, errors.
 - `references/ecosystem.md` — other Lean tools (Tex2Lean, PaperFormalizer, autoform-bot,

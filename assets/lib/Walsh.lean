@@ -1,5 +1,11 @@
+/-
+Copyright (c) 2026 Kai Hu. All rights reserved.
+Released under the MIT license as described in the file LICENSE.
+Authors: Kai Hu
+-/
 import CipherLean.Lib.Sbox
 import Mathlib.Algebra.Ring.IsFormallyReal
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
@@ -110,6 +116,70 @@ theorem correlation_zero_zero (F : Vec ι → Vec κ) : correlation F 0 0 = 1 :=
   have : (2 : ℚ) ^ Fintype.card ι ≠ 0 := pow_ne_zero _ two_ne_zero
   push_cast
   exact div_self this
+
+/-! ## The halfspace identity: a linear sum is twice an integral sum
+
+H. Hadipour, *Connecting Cryptanalytic Distinguishers through Divisibility*, ePrint 2026/2471: for a
+permutation `E` and the mask `e = e_{i₀}` on both sides, `W_E(e, e) = 2 · I_0`, where `I_b` is the
+integral sum of output bit `i₀` over the halfspace `x i₀ = b`. Promoted from
+`Examples/Halfspace`. -/
+
+/-- `I_b(E; i₀) = Σ_{x : x i₀ = b} (-1)^{E(x) i₀}`, the unnormalized integral sum of output bit `i₀`
+over the halfspace `x i₀ = b`. -/
+def halfSum (E : Vec ι → Vec ι) (i₀ : ι) (b : ZMod 2) : ℤ :=
+  ∑ x ∈ Finset.univ.filter (fun x : Vec ι => x i₀ = b), sgn ℤ ((E x) i₀)
+
+/-- Step 1 (no hypothesis on `E`): `W_E(e_{i₀}, e_{i₀}) = I_0 − I_1`, by splitting the sum over the
+two halfspaces. -/
+theorem walsh_single_eq_sub (E : Vec ι → Vec ι) (i₀ : ι) :
+    walsh E (Pi.single i₀ 1) (Pi.single i₀ 1) = halfSum E i₀ 0 - halfSum E i₀ 1 := by
+  unfold walsh halfSum
+  simp only [single_dot]
+  rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun x : Vec ι => x i₀ = 0)]
+  have h0 : ∑ x ∈ Finset.univ.filter (fun x : Vec ι => x i₀ = 0), sgn ℤ (x i₀ + (E x) i₀) =
+      ∑ x ∈ Finset.univ.filter (fun x : Vec ι => x i₀ = 0), sgn ℤ ((E x) i₀) := by
+    refine Finset.sum_congr rfl fun x hx => ?_
+    rw [(Finset.mem_filter.mp hx).2, zero_add]
+  have h1 : ∑ x ∈ Finset.univ.filter (fun x : Vec ι => ¬ x i₀ = 0), sgn ℤ (x i₀ + (E x) i₀) =
+      - ∑ x ∈ Finset.univ.filter (fun x : Vec ι => x i₀ = 1), sgn ℤ ((E x) i₀) := by
+    rw [filter_ne_zero_eq, ← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun x hx => ?_
+    rw [(Finset.mem_filter.mp hx).2, sgn_add, sgn_one, neg_one_mul]
+  rw [h0, h1, sub_eq_add_neg]
+
+/-- Step 2 (uses that `E` is a permutation): the selected output bit is balanced over the whole
+space, so `I_0 + I_1 = 0`. -/
+theorem halfSum_add_halfSum (E : Vec ι → Vec ι) (hE : Function.Bijective E) (i₀ : ι) :
+    halfSum E i₀ 0 + halfSum E i₀ 1 = 0 := by
+  unfold halfSum
+  have hsplit := Finset.sum_filter_add_sum_filter_not Finset.univ (fun x : Vec ι => x i₀ = 0)
+    (fun x => sgn ℤ ((E x) i₀))
+  rw [filter_ne_zero_eq] at hsplit
+  rw [hsplit]
+  have hre := Equiv.sum_comp (Equiv.ofBijective E hE) (fun y : Vec ι => sgn ℤ (y i₀))
+  simp only [Equiv.ofBijective_apply] at hre
+  rw [hre]
+  have hchi : ∀ y : Vec ι, sgn ℤ (y i₀) = chi ℤ (Pi.single i₀ 1) y := fun y => by
+    rw [chi, single_dot]
+  simp only [hchi]
+  rw [sum_chi, if_neg]
+  intro h
+  have := congrFun h i₀
+  simp at this
+
+/-- The halfspace identity: `W_E(e_{i₀}, e_{i₀}) = 2 · I_0` for every permutation `E`. -/
+theorem walsh_single_eq_two_mul_halfSum (E : Vec ι → Vec ι) (hE : Function.Bijective E)
+    (i₀ : ι) : walsh E (Pi.single i₀ 1) (Pi.single i₀ 1) = 2 * halfSum E i₀ 0 := by
+  have h1 := walsh_single_eq_sub E i₀
+  have h2 := halfSum_add_halfSum E hE i₀
+  linarith
+
+/-- Divisibility transfer: `2^(t+1) ∣ W_E(e, e)` implies `2^t ∣ I_0`. -/
+theorem pow_dvd_halfSum (E : Vec ι → Vec ι) (hE : Function.Bijective E) (i₀ : ι) (t : ℕ)
+    (h : (2 : ℤ) ^ (t + 1) ∣ walsh E (Pi.single i₀ 1) (Pi.single i₀ 1)) :
+    (2 : ℤ) ^ t ∣ halfSum E i₀ 0 := by
+  rw [walsh_single_eq_two_mul_halfSum E hE, pow_succ'] at h
+  exact (mul_dvd_mul_iff_left (by norm_num : (2 : ℤ) ≠ 0)).mp h
 
 /-! ## Finite checks on the PRESENT S-box -/
 

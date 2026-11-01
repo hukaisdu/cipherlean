@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Kai Hu. All rights reserved.
+Released under the MIT license as described in the file LICENSE.
+Authors: Kai Hu
+-/
 import CipherLean.Lib.F2.Vec
 
 /-!

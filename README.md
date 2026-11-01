@@ -54,6 +54,17 @@ paper instead (`<repo>/formal/`, symlinked into the workspace).
   (needs `uv`); that server's documentation says it keeps Mathlib loaded between proof attempts.
   This option has not been tested from this skill.
 
+## Growing the library
+After a formalization, `scripts/promote_candidates.py CipherLean/<Slug>/Main.lean` lists the
+declarations that are general enough for the shared library (class A/B/E/F) and those that are
+not (toys, duplicates); the user decides, the agent moves them, `scripts/sync_library.sh` copies
+the library back into this repository. Criteria and checklist: `references/promotion.md`.
+
+## Contribute
+Pull requests that add general lemmas to the library, fix scripts, or add an example are
+welcome: see `CONTRIBUTING.md` (fork, develop in the workspace, `scripts/sync_library.sh`, PR with
+the `check_lean.py` verdicts). The *Update* section above is only about refreshing your local copy.
+
 ## Review by a second agent
 `references/review-brief.md` is the brief for an independent reviewer (a subagent or a second
 session) that checks every Lean statement against the paper and writes `REVIEW.md`; the
@@ -61,13 +72,15 @@ workflow's step 8 stops only when the reviewer accepts and the check script pass
 
 ## Layout
 ```
-SKILL.md                 the workflow Claude follows (steps 0–7)
+SKILL.md                 the workflow Claude follows (steps 0–8, with 7b = library promotion)
 references/              cheatsheet of encodings + Mathlib lemma names, worked example,
                          workspace notes, survey of related tools
 scripts/setup_env.sh     environment check / installer      scripts/check_lean.py  final check
 scripts/new_paper.sh     scaffold a paper                   scripts/lake_build.sh  serialized build
 scripts/search_mathlib.sh  local grep + Loogle + LeanSearch
 scripts/lean_eval.sh     snippet runner (7 s)              scripts/trim_imports.py  minimal imports
+scripts/promote_candidates.py  what belongs in the library (step 7b)   scripts/sync_library.sh  workspace -> assets/lib
+CONTRIBUTING.md          how to send a pull request
 references/review-brief.md  instructions for the independent reviewer (step 8)
 assets/workspace/        pinned lakefile, lean-toolchain, lake-manifest.json, Smoke.lean
 assets/examples/         Feistel, Halfspace, SboxDDT, DdtInverse/ (complete run)

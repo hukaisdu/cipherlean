@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Kai Hu. All rights reserved.
+Released under the MIT license as described in the file LICENSE.
+Authors: Kai Hu
+-/
 import CipherLean.Lib.F2.Vec
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
@@ -80,6 +85,33 @@ theorem card_filter_mem_coset (V : Finset (Vec ι)) (x : Vec ι) :
   have : (Finset.univ.filter fun k => x + k ∈ V) = coset V x := by
     ext k; simp [coset, add_comm]
   rw [this, card_coset]
+
+/-- A mask in the annihilator is constant on cosets: `w ∈ V^⊥`, `x ∈ k + V` give `w·x = w·k`. -/
+theorem dotProduct_eq_of_mem_ann {V : Finset (Vec ι)} {w x k : Vec ι} (hw : w ∈ ann V)
+    (hx : x ∈ coset V k) : w ⬝ᵥ x = w ⬝ᵥ k := by
+  have h1 : w ⬝ᵥ (x + k) = 0 := (mem_ann.mp hw) _ (mem_coset.mp hx)
+  rw [dotProduct_add] at h1
+  exact zmod2_add_eq_zero_iff.mp h1
+
+/-- The character of a mask in `V^⊥` is constant on each coset of `V`. -/
+theorem chi_eq_of_mem_ann (K : Type*) [CommRing K] {V : Finset (Vec ι)} {w x k : Vec ι}
+    (hw : w ∈ ann V) (hx : x ∈ coset V k) : chi K w x = chi K w k := by
+  unfold chi
+  rw [dotProduct_eq_of_mem_ann hw hx]
+
+section card
+variable {K : Type*} [AddMonoidWithOne K] [CharZero K]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- `|V| ≠ 0` as an element of a characteristic-zero ring (for dividing by `|V|`). -/
+theorem card_ne_zero_of_isSubspace {V : Finset (Vec ι)} (hV : IsSubspace V) : (V.card : K) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (card_pos_of_isSubspace hV).ne'
+
+/-- `|V^⊥| ≠ 0` as an element of a characteristic-zero ring. -/
+theorem card_ann_ne_zero (V : Finset (Vec ι)) : ((ann V).card : K) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (Finset.card_pos.mpr ⟨0, zero_mem_ann V⟩).ne'
+
+end card
 
 /-! ## Duality through Mathlib's bilinear forms -/
 

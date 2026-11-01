@@ -44,18 +44,18 @@ formalization of a coset-average theorem that is not shipped, so those idioms ar
 (its duality and character-sum lemmas are now the library's `CipherLean.sum_chi_ann`,
 `CipherLean.card_mul_card_ann`, `CipherLean.exists_ann_dot_ne`, `CipherLean.ann_ann`).
 
-1. **Split a sum into two halfspaces** (`Halfspace.linearSum_eq_sub`):
+1. **Split a sum into two halfspaces** (`CipherLean.walsh_single_eq_sub`; `Halfspace.linearSum_eq_sub` is its instance):
    `rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun x : Vec ι => x i₀ = 0)]`, rewrite the
    summand on each part with the filter condition (`(Finset.mem_filter.mp hx).2`, then `sgn_add`,
    `sgn_one`), and turn `¬ x i₀ = 0` into `x i₀ = 1` by an explicit set equality (`ext x; simp only
    [Finset.mem_filter, Finset.mem_univ, true_and]; exact zmod2_ne_zero_iff`): `rw [Finset.filter_congr …]`
    picks the wrong `filter` when the goal has two. For a `Bool × _` product state the split is
    `simp only [Fintype.sum_prod_type, Fintype.sum_bool, …]` then `ring`.
-2. **Reindex a sum along a bijection** (`Halfspace.halfSum_add_halfSum`):
+2. **Reindex a sum along a bijection** (`CipherLean.halfSum_add_halfSum`):
    `Equiv.sum_comp (Equiv.ofBijective E hE) g : ∑ x, g (E x) = ∑ y, g y`; alternative
    `Function.Bijective.finsetSum` (the snake_case `finset_sum` is deprecated).
 3. **Finish linear algebra on the sums**: `have h1 := …; have h2 := …; linarith`.
-4. **Divisibility transfer** (`Halfspace.pow_dvd_halfSum`): `rw [thm, pow_succ'] at h` then
+4. **Divisibility transfer** (`CipherLean.pow_dvd_halfSum`): `rw [thm, pow_succ'] at h` then
    `(mul_dvd_mul_iff_left (by norm_num : (2 : ℤ) ≠ 0)).mp h`. Also `Finset.dvd_sum`,
    `dvd_sub`, `Dvd.dvd.mul_left`, `Dvd.dvd.mul_right`, `Int.emod_emod_of_dvd`,
    `Int.even_or_odd`, `Int.emod_two_eq_zero_or_one`.

@@ -3,19 +3,20 @@
 Reusable definitions and lemmas that every paper formalization in this workspace imports instead
 of re-defining: the carrier `F_2^ι`, characters, subspaces with duality, Walsh coefficients,
 the DDT, table S-boxes. Carrier decision and symbol table: `NOTATION.md` (this directory).
-Created 2026-11-01 by harvesting `CipherLean/CosetSpectrum`, `CipherLean/Examples/*` and
-`CipherLean/DdtInverse`; the three used three different encodings of `F_2^n`, which is the
-duplication this library removes.
+Created 2026-11-01 by harvesting `CosetSpectrum`, `Examples/*` and `DdtInverse` (which had used
+three different encodings of `F_2^n`); extended the same day with the second harvest found by
+`scripts/promote_candidates.py` (halfspace identity, DDT matrix form and inverse spellings, masks
+constant on cosets, cardinality casts).
 
 ## Modules
 
 | module | contents | status |
 |---|---|---|
-| `CipherLean.Lib.F2.Vec` | `Vec ι`, `F_2` facts, `card_vec`, `sgn`, `chi`, `sum_chi` (orthogonality), bridge `toVec`/`ofVec`/`bvEquiv`, `toVec_xor`, `card_bitVec` | PASS |
-| `CipherLean.Lib.F2.Subspace` | `IsSubspace` (decidable), `coset`, `ann`, `card_coset`, `dotForm` (nondegenerate, reflexive), `toSub`, `card_mul_card_ann`, `exists_ann_dot_ne`, `ann_ann`, `sum_chi_ann`, `sum_chi_subspace` | PASS |
+| `CipherLean.Lib.F2.Vec` | `Vec ι`, `F_2` facts, `card_vec`, `sgn`, `chi`, `sum_chi` (orthogonality), bridge `toVec`/`ofVec`/`bvEquiv`, `toVec_xor`, `card_bitVec`, `single_dot`, `filter_ne_zero_eq` | PASS |
+| `CipherLean.Lib.F2.Subspace` | `IsSubspace` (decidable), `coset`, `ann`, `card_coset`, `dotForm` (nondegenerate, reflexive), `toSub`, `card_mul_card_ann`, `exists_ann_dot_ne`, `ann_ann`, `sum_chi_ann`, `sum_chi_subspace`, `dotProduct_eq_of_mem_ann`, `chi_eq_of_mem_ann`, `card_ne_zero_of_isSubspace`, `card_ann_ne_zero` | PASS |
 | `CipherLean.Lib.Sbox` | `ofTable`, `toFun`, `toFun_bijective`, `toPerm`, `bijective_of_injective`, PRESENT (`present`, `presentVec`, bijective by `decide`) | PASS |
-| `CipherLean.Lib.Walsh` | `walsh`, `linCount`, `correlation`, `walsh_eq_two_mul_linCount_sub`, `walsh_zero_zero`, `walsh_zero_right`, `walsh_zero_left_of_bijective`, `sum_walsh_sq` (Parseval), PRESENT values | PASS |
-| `CipherLean.Lib.DDT` | `ddt`, `ddt_row_sum`, `ddt_zero_left`, `even_ddt`, `ddt_eq_ddt_of_inverse`, `ddt_symm`, `diffUniformity`, `ddt_le_diffUniformity`, `diffUniformity_le_iff`, `IsAPN`, bridge `ddt_toFun`, `diffUniformity_toFun_le_iff`, PRESENT `δ = 4` | PASS |
+| `CipherLean.Lib.Walsh` | `walsh`, `linCount`, `correlation`, `walsh_eq_two_mul_linCount_sub`, `walsh_zero_zero`, `walsh_zero_right`, `walsh_zero_left_of_bijective`, `sum_walsh_sq` (Parseval), the halfspace identity `halfSum`, `walsh_single_eq_sub`, `halfSum_add_halfSum`, `walsh_single_eq_two_mul_halfSum`, `pow_dvd_halfSum`, PRESENT values | PASS |
+| `CipherLean.Lib.DDT` | `ddt`, `ddt_row_sum`, `ddt_zero_left`, `even_ddt`, `ddt_eq_ddt_of_inverse`, `ddt_symm`, `diffUniformity`, `ddt_le_diffUniformity`, `diffUniformity_le_iff`, `IsAPN`, `ddt_invFun`, `ddt_eq_ddt_of_leftInverse`, `ddtMatrix`, `ddtMatrix_symm`, bridge `ddt_toFun`, `ddt_toFun_row_sum`, `diffUniformity_toFun_le_iff`, PRESENT `δ = 4` | PASS |
 | `CipherLean.Lib.Links` | Chabaud–Vaudenay: `sum_ddt_mul_sgn` (`Σ_{a,b} δ_F(a,b)(-1)^{u·a+v·b} = W_F(u,v)²`), `walsh_sq_eq_of_ddt_eq` | PASS |
 | `CipherLean` | umbrella import | — |
 

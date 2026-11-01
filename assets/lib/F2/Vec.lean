@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Kai Hu. All rights reserved.
+Released under the MIT license as described in the file LICENSE.
+Authors: Kai Hu
+-/
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.FinEnum
 import Mathlib.Data.Matrix.Mul
@@ -65,6 +70,18 @@ variable {ι : Type*} [Fintype ι]
 /-- `|F_2^ι| = 2^{|ι|}`. -/
 theorem card_vec [DecidableEq ι] : Fintype.card (Vec ι) = 2 ^ Fintype.card ι := by
   rw [Fintype.card_fun, ZMod.card]
+
+/-- The mask selecting coordinate `i₀`, applied to `x`, is the coordinate `x i₀`. -/
+theorem single_dot [DecidableEq ι] (i₀ : ι) (x : Vec ι) : (Pi.single i₀ 1 : Vec ι) ⬝ᵥ x = x i₀ := by
+  rw [single_dotProduct, one_mul]
+
+/-- The complement of the halfspace `x i₀ = 0` is the halfspace `x i₀ = 1`. -/
+theorem filter_ne_zero_eq [DecidableEq ι] (i₀ : ι) :
+    Finset.univ.filter (fun x : Vec ι => ¬ x i₀ = 0) =
+      Finset.univ.filter (fun x : Vec ι => x i₀ = 1) := by
+  ext x
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+  exact zmod2_ne_zero_iff
 
 /-! ## Signs and characters -/
 

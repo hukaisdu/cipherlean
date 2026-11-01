@@ -68,7 +68,7 @@ statement, confirmed chain and graph, definitions tested on a toy, lemmas proved
 review done. Verifying an *existing* formalization is a different job (`references/verify-existing.md`).
 A theorem whose proof is a long case analysis with appendix tables or an induction over a general
 parameter is a multi-week project; the skill's job is then to say so with an estimate and to
-deliver the first lemma-sized piece (`references/postmortems.md`).
+deliver the first lemma-sized piece.
 
 ## Running outside Claude Code
 The scripts are plain bash and Python and the references are Markdown, so any agent harness that

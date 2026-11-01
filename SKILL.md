@@ -148,8 +148,7 @@ delivers a chain of roughly ten rows with one or two computational cases; a theo
 seven directions, two appendix tables and a length induction (a conjecture of a paper under review:
 52 000 lines in its existing formalization) is a multi-week project, and saying so is the
 deliverable. For anything beyond one session, propose a split into lemma-sized pieces, each with
-its own chain and done criteria, and start with the first piece the user picks
-(`references/postmortems.md`, entry 2).
+its own chain and done criteria, and start with the first piece the user picks.
 
 ### 2. Choose encodings and fix names
 

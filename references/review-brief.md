@@ -13,8 +13,12 @@ PaperFormalizer's referee stages do the same.
   (and any other `.lean`);
 - the workspace path and `$SKILL/scripts/check_lean.py`.
 
-You change nothing in that directory. You may build, run the check script, and compile scratch
-files (`$SKILL/scripts/lean_eval.sh`). Your only output is `REVIEW.md` next to `README.md`.
+- `REVIEW.md` if it exists (the earlier rounds, including the formalizer's written answers).
+
+You change nothing in that directory except `REVIEW.md`. You may build, run the check scripts,
+and compile scratch files (`$SKILL/scripts/lean_eval.sh`). Your only output is a new
+`## Round n — reviewer` section appended to `REVIEW.md` (created from
+`$SKILL/assets/REVIEW-template.md` in round 1); earlier sections are never edited.
 
 ## Procedure
 
@@ -41,22 +45,24 @@ files (`$SKILL/scripts/lean_eval.sh`). Your only output is `REVIEW.md` next to `
    for `sorry`, `native_decide`, `axiom`; confirm the finite checks test what README says (recompute
    the toy numbers from the definitions by hand or with `lean_eval.sh`; confirm each counterexample
    drops exactly one hypothesis and nothing else).
-4. **Verdict.** Write `REVIEW.md`:
-   ```
-   # Review of <Slug> (round n, date)
-   ## Statement fidelity      | paper statement | Lean declaration | OK / ISSUE | why |
-   ## Proof correspondence    | paper step | Lean lemma | note |
-   ## Checks                  check_lean verdict, axioms, greps, toy recomputation
-   ## Objections              numbered; BLOCKER (statement unfaithful, proof gap, non-standard axiom),
-                              MAJOR (departure or added hypothesis not recorded), MINOR (naming, docs)
-   VERDICT: ACCEPT | REVISE
-   ```
-   `ACCEPT` only when the check script passes, every fidelity row is OK or a recorded departure,
-   and the correspondence table is complete.
+4. **Verdict.** Append `## Round n — reviewer (<date>)` to `REVIEW.md` with the sections of the
+   template: in round n > 1 first a `Previous objections` table that judges every answer of the
+   formalizer (`resolved` / `still open` with the reason / `superseded`), then statement fidelity,
+   proof correspondence, checks, and `New objections`. Objections are numbered `R<n>.<k>`, each
+   with a severity (BLOCKER: statement unfaithful, proof gap, non-standard axiom, chain
+   inconsistent · MAJOR: departure or added hypothesis not recorded, missing finite check · MINOR:
+   naming, docs) and a location (file:line or chain row). End with `VERDICT: ACCEPT | REVISE`.
+   `ACCEPT` only when both check scripts pass, every fidelity row is OK or a recorded departure,
+   the correspondence is complete, and no BLOCKER or MAJOR is still open.
 
 ## The loop and its stopping condition
-The formalizer fixes every BLOCKER and MAJOR, updates README, and asks for another round; a new
-round reads the files afresh. Stop when a round ends in `ACCEPT` **and** `check_lean.py` passes.
-After three rounds without `ACCEPT`, both agents stop and the open objections go to the user.
-Run the reviewer with a fresh context (a subagent given this page and the inputs, or a second
-Claude Code session); never let the formalizer review its own work in the same context.
+Between rounds the formalizer appends `## Round n — formalizer (<date>)`: one row per objection,
+`fixed` (what changed, where), `rejected` (a reason the reviewer can check) or `needs the user`
+(the question goes to the user before the next round). No next round starts until every
+objection of the previous round has a written answer, and the agent running the loop posts the
+round's objections and answers in the chat, so the exchange is visible as it happens and
+`REVIEW.md` is its complete record afterwards. A new round reads the files afresh. Stop when a
+round ends in `ACCEPT` **and** `check_lean.py` and `chain_check.py` pass; write the `## Outcome`
+section. After three rounds without `ACCEPT`, both agents stop and the open objections go to the
+user. Run the reviewer with a fresh context (a subagent given this page and the inputs, or a
+second Claude Code session); never let the formalizer review its own work in the same context.

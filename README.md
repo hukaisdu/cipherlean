@@ -75,8 +75,11 @@ the `check_lean.py` verdicts). The *Update* section above is only about refreshi
 
 ## Review by a second agent
 `references/review-brief.md` is the brief for an independent reviewer (a subagent or a second
-session) that checks every Lean statement against the paper and writes `REVIEW.md`; the
-workflow's step 8 stops only when the reviewer accepts and the check script passes.
+session) that checks every Lean statement against the paper and the confirmed `CHAIN.md`. The
+exchange is written down in `REVIEW.md`, round by round: the reviewer's numbered objections, the
+formalizer's answer to each (`fixed` / `rejected` with a reason / `needs the user`), and the
+reviewer's judgement of those answers in the next round; each round is also summarized in the
+chat as it happens. Step 8 stops only when a round ends in ACCEPT and both check scripts pass.
 
 ## Layout
 ```

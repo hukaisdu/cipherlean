@@ -236,12 +236,17 @@ Lean checks the proof; nobody has yet checked that the *statement* is the paper'
 result the user will cite or publish, hand the directory to a reviewer that has not seen your
 reasoning: a fresh subagent (or a second Claude Code session) given `references/review-brief.md`,
 the paper source, the theorem label, the directory and the workspace path. It compares every
-Lean statement with the paper's text, checks the confirmed CHAIN.md row by row against the paper
-and reruns `chain_check.py` and the check script, and writes `REVIEW.md` ending in
-`VERDICT: ACCEPT` or `REVISE` with numbered objections.
-Fix every BLOCKER and MAJOR, update README, ask for a new round. The task is finished when a
-round ends in ACCEPT and the check passes; after three rounds without ACCEPT, stop and give the
-user the open objections. Skip this step only for throwaway statements, and say so.
+Lean statement with the paper's text, checks the confirmed CHAIN.md row by row against the paper,
+reruns `chain_check.py` and the check script, and appends a `Round n — reviewer` section to
+`REVIEW.md` (template `assets/REVIEW-template.md`) ending in `VERDICT: ACCEPT` or `REVISE`, with
+objections numbered `R<n>.<k>`. Answer every objection in writing in a `Round n — formalizer`
+section (`fixed` with what changed, `rejected` with a checkable reason, or `needs the user`), post
+the round's objections and answers in the chat, fix every BLOCKER and MAJOR, update README and
+CHAIN.md, and ask for a new round; the reviewer's next round starts by judging those answers.
+`REVIEW.md` is the complete, readable record of the exchange between the two agents and ships
+with the formalization. The task is finished when a round ends in ACCEPT and both checks pass;
+after three rounds without ACCEPT, stop and give the user the open objections. Skip this step
+only for throwaway statements, and say so.
 
 ## What to formalize first
 
@@ -265,7 +270,8 @@ Asymptotic complexity claims and probabilistic statements over random keys need 
   is a filled example with its `CHAIN.pdf`.
 - `references/promotion.md` — step 7b: the candidate classes, the five questions, the moving
   checklist, and the first harvests as examples.
-- `references/review-brief.md` — the reviewer agent's instructions and the stopping rule (step 8).
+- `references/review-brief.md` — the reviewer agent's instructions and the stopping rule (step 8);
+  `assets/REVIEW-template.md` — the round-by-round record of the two agents' exchange.
 - `references/workspace.md` — layout, versions, commands, VS Code, upgrading, errors.
 - `references/ecosystem.md` — other Lean tools (Tex2Lean, PaperFormalizer, autoform-bot,
   lean4-skills, lean-lsp-mcp, Lean REPL, VCVio) and what this skill borrows from each; when

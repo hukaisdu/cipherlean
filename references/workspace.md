@@ -1,19 +1,19 @@
-# The `~/lean-formal` workspace
+# The `~/cipherlean` workspace
 
 One Lake project for all formalizations, so Mathlib is built once (7 GB) and every paper
-gets a subdirectory instead of its own 7 GB. Override the location with `LEAN_FORMAL_WS`.
+gets a subdirectory instead of its own 7 GB. Override the location with `CIPHERLEAN_WS`.
 
 ```
-~/lean-formal/
+~/cipherlean/
 ├── lean-toolchain        leanprover/lean4:v4.33.0
-├── lakefile.toml         package LeanFormal, library Formal, autoImplicit = false
+├── lakefile.toml         package CipherLean, library CipherLean, autoImplicit = false
 ├── lake-manifest.json    Mathlib v4.33.0 = commit db584cd6d46c92f209a44c0f1c829460d327499d
-├── Formal.lean           empty root module (so an unfinished paper never blocks the others)
-├── Formal/
+├── CipherLean.lean           empty root module (so an unfinished paper never blocks the others)
+├── CipherLean/
 │   ├── Smoke.lean        import Mathlib; one trivial theorem (tests the install)
 │   ├── Examples/         compiled examples: Feistel, Halfspace, SboxDDT, DdtInverse/ (full run)
-│   ├── Crypto/           shared library (Vec, Subspace, Walsh, DDT, Links, Sbox) + README, NOTATION
-│   ├── Crypto.lean       umbrella module: `import Formal.Crypto`
+│   ├── Lib/              shared library (F2/Vec, F2/Subspace, Sbox, Walsh, DDT, Links) + README, NOTATION
+│   ├── CipherLean.lean       umbrella module: `import CipherLean`
 │   └── <Slug>/           one paper: Main.lean (+ more files), README.md, NOTATION.md
 └── .lake/                build products + packages (Mathlib and its dependencies, 7 GB)
 ```
@@ -28,11 +28,11 @@ build products. Paper files that must travel with the paper use the symlink sche
 | command | what it does |
 |---|---|
 | `setup_env.sh --check` | OK / MISSING per item, changes nothing (2 s) |
-| `setup_env.sh --check --smoke` | also builds `Formal/Smoke.lean` (10–40 s) |
+| `setup_env.sh --check --smoke` | also builds `CipherLean/Smoke.lean` (10–40 s) |
 | `setup_env.sh --install` | installs elan (official installer), the toolchain, the workspace, the prebuilt Mathlib (`lake exe cache get`), the examples; then smoke build + `check_lean.py` |
 | `setup_env.sh --install --examples` | also compiles the examples |
 | `setup_env.sh --install --build-from-source` | if the cache download keeps failing: compile Mathlib (hours) |
-| `--workspace DIR` / `LEAN_FORMAL_WS` | use another location |
+| `--workspace DIR` / `CIPHERLEAN_WS` | use another location |
 
 Downloads on a first install: toolchain ≈ 300 MB, shallow git clones of Mathlib and its eight
 dependencies ≈ 170 MB (measured: 92 s; Lake accepts them and never re-clones), prebuilt oleans
@@ -43,17 +43,17 @@ second workspace with the same pin on the same machine unpacks instead of downlo
 
 | what | command |
 |---|---|
-| compile one module (preferred) | `~/.claude/skills/cipherlean/scripts/lake_build.sh Formal.<Slug>.Main` (`lake build` under the workspace lock) |
-| quick pass on a file, no cache | `lake env lean Formal/<Slug>/Main.lean` |
+| compile one module (preferred) | `~/.claude/skills/cipherlean/scripts/lake_build.sh CipherLean.<Slug>.Main` (`lake build` under the workspace lock) |
+| quick pass on a file, no cache | `lake env lean CipherLean/<Slug>/Main.lean` |
 | axioms of one theorem | add `#print axioms <Slug>.main` to the file, or run the check script |
-| full check (build + axioms + statements) | `~/.claude/skills/cipherlean/scripts/check_lean.py Formal/<Slug>/Main.lean` |
+| full check (build + axioms + statements) | `~/.claude/skills/cipherlean/scripts/check_lean.py CipherLean/<Slug>/Main.lean` |
 | find a lemma | `~/.claude/skills/cipherlean/scripts/search_mathlib.sh "<query>"` |
 | new paper | `~/.claude/skills/cipherlean/scripts/new_paper.sh <Slug> [--paper-dir <dir>]` |
 
-Module name = path with `/` → `.` and no `.lean`: `Formal/Foo/Main.lean` is `Formal.Foo.Main`.
-A file imports a sibling with `import Formal.Foo.Defs`; build the sibling first (or build the
+Module name = path with `/` → `.` and no `.lean`: `CipherLean/Foo/Main.lean` is `CipherLean.Foo.Main`.
+A file imports a sibling with `import CipherLean.Foo.Defs`; build the sibling first (or build the
 importing module, which builds its dependencies). One Lean job at a time in this workspace:
-`lake_build.sh` and `check_lean.py` serialize themselves through `.lake/formal-build.lock`
+`lake_build.sh` and `check_lean.py` serialize themselves through `.lake/cipherlean-build.lock`
 (macOS has no `flock`; the lock is a Python `fcntl.flock`). A bare `lake build` bypasses it. Loading Mathlib takes ~30 s the first time per process; `decide` on 2^8–2^12
 cases takes seconds, 2^16 and beyond is usually hopeless (switch to a symbolic proof).
 
@@ -68,21 +68,21 @@ cases takes seconds, 2^16 and beyond is usually hopeless (switch to a symbolic p
 | four build-fix rounds of one proof | 4 × (27 s + proof time) | iterate with `lean_eval.sh` on the one lemma, build once |
 | another Lean job on the same machine | everything 2–3× slower (I/O contention) | `lake_build.sh` queues builds in *this* workspace; other projects are outside its control |
 
-`lean-lsp-mcp` removes the per-process load entirely for the proving loop (the server keeps
-Mathlib in memory and re-elaborates only the file; goal states and diagnostics come back in
-seconds). `setup_env.sh --mcp` registers it for Claude Code (needs `uv` and the `claude` CLI);
-it is optional because it changes the user's Claude configuration.
+`lean-lsp-mcp` is documented to remove the per-process load for the proving loop (its server keeps
+Mathlib in memory and re-elaborates only the file). `setup_env.sh --mcp` runs its `claude mcp add`
+registration (needs `uv` and the `claude` CLI); it is optional because it changes the user's Claude
+configuration, and it has not been tested from this skill.
 
 ## Where the files live: two options
 
-- **In the workspace** (`new_paper.sh <Slug>`): `Formal/<Slug>/` is a real directory. Fine for
+- **In the workspace** (`new_paper.sh <Slug>`): `CipherLean/<Slug>/` is a real directory. Fine for
   experiments and for papers kept elsewhere.
 - **With the paper** (`new_paper.sh <Slug> --paper-dir <paper repo>`): the real files are
-  `<paper repo>/formal/{Main.lean,README.md,NOTATION.md}` and `Formal/<Slug>` is a symlink to
-  that directory. Lake follows the symlink, so `lake build Formal.<Slug>.Main` works, and the
+  `<paper repo>/formal/{Main.lean,README.md,NOTATION.md}` and `CipherLean/<Slug>` is a symlink to
+  that directory. Lake follows the symlink, so `lake build CipherLean.<Slug>.Main` works, and the
   paper repository carries the Lean source without carrying Mathlib. The check script accepts
   either path. In VS Code, open the file through the workspace path
-  (`~/lean-formal/Formal/<Slug>/Main.lean`) so the Lean server knows which project it is in.
+  (`~/cipherlean/CipherLean/<Slug>/Main.lean`) so the Lean server knows which project it is in.
 
 Publishing a paper's formalization as a standalone project later: copy `lean-toolchain`,
 `lakefile.toml` (drop the other libraries) and `lake-manifest.json` next to the `formal/`
@@ -90,7 +90,7 @@ files, run `lake exe cache get` there; the files themselves need no change.
 
 ## Editing in VS Code
 
-`File → Open Folder…` on `~/lean-formal`, with the Lean 4 extension installed
+`File → Open Folder…` on `~/cipherlean`, with the Lean 4 extension installed
 (https://lean-lang.org/install/). The Infoview (Cmd+Shift+Enter) shows the goal after `⊢`
 at the cursor; a proof is done when "No goals" appears. Unicode: `\to`, `\forall`, `\sum`,
 `\mid` (∣), `\N`, `\Z`, `\ne`, `\and`, `\xor` is typed as `^^^` for `BitVec`.
@@ -103,7 +103,7 @@ workspace shares one pin; do not change it in the middle of a paper. To upgrade:
 2. `lake update mathlib` (rewrites the manifest; elan downloads the toolchain);
 3. `lake exe cache get` (downloads the prebuilt Mathlib, several GB, into `~/.cache/mathlib`
    and unpacks it; without this step Lake compiles Mathlib for hours);
-4. `lake build Formal.Smoke`, then rebuild each paper and fix renamed lemmas
+4. `lake build CipherLean.Smoke`, then rebuild each paper and fix renamed lemmas
    (`scripts/search_mathlib.sh` helps).
 Mathlib ≥ v4.35 files may use the module system (`module`, `public import Mathlib`,
 `public section`, as in Hadipour's tutorial); plain `import Mathlib` works on every version
@@ -113,7 +113,7 @@ and is what this workspace uses.
 
 - **lean-lsp-mcp** (goal states, diagnostics, multi-attempt, hover, Loogle/LeanSearch from
   inside Claude Code): `uv` required, then from the workspace root
-  `claude mcp add lean-lsp -s user -e LEAN_PROJECT_PATH=$HOME/lean-formal -- uvx lean-lsp-mcp`.
+  `claude mcp add lean-lsp -s user -e LEAN_PROJECT_PATH=$HOME/cipherlean -- uvx lean-lsp-mcp`.
   Not installed by default; the `lake build` + check-script loop needs nothing extra.
 - **Lean REPL** (`leanprover-community/repl`): JSON in / JSON out, tactic mode, useful for
   scripted proof search. Build it as its own project, run `lake env <path>/repl` from here.

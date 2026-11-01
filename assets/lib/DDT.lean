@@ -1,9 +1,9 @@
-import Formal.Crypto.Sbox
+import CipherLean.Lib.Sbox
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Tactic.SplitIfs
 
 /-!
-# `Formal.Crypto.DDT` — difference distribution table and differential uniformity
+# `CipherLean.Lib.DDT` — difference distribution table and differential uniformity
 
 `ddt F a b = #{x : F(x + a) + F(x) = b}` is the DDT entry of `F : F_2^ι → F_2^κ` at input
 difference `a` and output difference `b`, an unnormalized count (the differential probability is
@@ -11,7 +11,7 @@ difference `a` and output difference `b`, an unnormalized count (the differentia
 (K. Nyberg, *Differentially Uniform Mappings for Cryptography*, EUROCRYPT 1993).
 -/
 
-namespace Crypto
+namespace CipherLean
 
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
@@ -179,4 +179,4 @@ theorem present_ddt_zero : ddt presentVec 0 0 = 16 := by
 
 end toy
 
-end Crypto
+end CipherLean

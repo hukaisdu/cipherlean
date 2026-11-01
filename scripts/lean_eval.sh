@@ -11,7 +11,7 @@
 #   Examples:  printf '#check @Finset.sum_comm\n' | lean_eval.sh -
 #              lean_eval.sh --full scratch.lean
 set -uo pipefail
-WS="${LEAN_FORMAL_WS:-$HOME/lean-formal}"
+WS="${CIPHERLEAN_WS:-$HOME/cipherlean}"
 export PATH="$HOME/.elan/bin:$PATH"
 MODE=light; IMPORTS=""; SRC=""
 while [ $# -gt 0 ]; do

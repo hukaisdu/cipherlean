@@ -2,8 +2,8 @@
 
 Source of the statement: H. Hadipour, "Connecting Cryptanalytic Distinguishers through
 Divisibility", ePrint 2026/2471. The formalization is the one in his blog post "Lean for
-Cryptanalysts" (2026-10-29), restated on the shared library (`Formal.Crypto`: carrier `Vec ι`, Walsh
-coefficient `walsh`) as `Formal/Examples/Halfspace.lean` in the workspace (`assets/examples/Halfspace.lean`
+Cryptanalysts" (2026-10-29), restated on the shared library (`CipherLean`: carrier `Vec ι`, Walsh
+coefficient `walsh`) as `CipherLean/Examples/Halfspace.lean` in the workspace (`assets/examples/Halfspace.lean`
 in this skill). This page shows the *paper-side* work the skill asks for; the Lean file shows the
 proof side. Both compile with standard axioms only.
 
@@ -65,7 +65,7 @@ sign or a swapped coordinate). `constantMap x = 0` has `linearSum = 0` but
 
 ## Step 6 — check
 
-`scripts/check_lean.py Formal/Examples/Halfspace.lean` → every declaration PASS, axioms
+`scripts/check_lean.py CipherLean/Examples/Halfspace.lean` → every declaration PASS, axioms
 `propext, Classical.choice, Quot.sound`; the printed statements are read once more against
 the table above.
 

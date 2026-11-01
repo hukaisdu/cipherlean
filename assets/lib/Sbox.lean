@@ -1,7 +1,7 @@
-import Formal.Crypto.F2.Vec
+import CipherLean.Lib.F2.Vec
 
 /-!
-# `Formal.Crypto.Sbox` — S-boxes from lookup tables, and their transport to `F_2^n`
+# `CipherLean.Lib.Sbox` — S-boxes from lookup tables, and their transport to `F_2^n`
 
 A concrete S-box is a table on `BitVec n` (`ofTable`), so that `decide` can evaluate it;
 `toFun S` is the same map on `Vec (Fin n)` through the bridge `bvEquiv`, which is where the
@@ -9,7 +9,7 @@ library's statistics (`ddt`, `walsh`) are stated. The PRESENT S-box is included 
 test instance (A. Bogdanov et al., *PRESENT: An Ultra-Lightweight Block Cipher*, CHES 2007).
 -/
 
-namespace Crypto
+namespace CipherLean
 namespace Sbox
 
 variable {n : ℕ}
@@ -64,4 +64,4 @@ def presentVec : Vec (Fin 4) → Vec (Fin 4) := toFun present
 theorem presentVec_bijective : Function.Bijective presentVec := toFun_bijective present_bijective
 
 end Sbox
-end Crypto
+end CipherLean

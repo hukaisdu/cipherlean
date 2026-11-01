@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""check_lean.py — build one Lean file of the lean-formal workspace and check it.
+"""check_lean.py — build one Lean file of the cipherlean workspace and check it.
 
 What it does (the trust model of the cipherlean skill):
   1. `lake build <Module>` for the file (module name derived from its path; symlinked
-     `Formal/<Slug>` directories are resolved).
+     `CipherLean/<Slug>` directories are resolved).
   2. Loads the module in a scratch Lean file and prints, for EVERY non-internal
      declaration of the module, its kind, the axioms it depends on, and its elaborated
      statement (so a human can compare it with the paper).
@@ -71,10 +71,10 @@ def die(msg, code=2):
 
 
 def find_workspace(arg):
-    ws = arg or os.environ.get("LEAN_FORMAL_WS") or os.path.expanduser("~/lean-formal")
+    ws = arg or os.environ.get("CIPHERLEAN_WS") or os.path.expanduser("~/cipherlean")
     ws = pathlib.Path(ws).resolve()
     if not (ws / "lakefile.toml").exists() and not (ws / "lakefile.lean").exists():
-        die(f"no lakefile in workspace {ws}: run scripts/setup_env.sh --install (or set --ws / LEAN_FORMAL_WS)")
+        die(f"no lakefile in workspace {ws}: run scripts/setup_env.sh --install (or set --ws / CIPHERLEAN_WS)")
     return ws
 
 
@@ -87,16 +87,16 @@ def module_name(ws, file):
         return ".".join(rel.with_suffix("").parts)
     except ValueError:
         pass
-    formal = ws / "Formal"
+    formal = ws / "CipherLean"
     if formal.is_dir():
         for link in sorted(formal.iterdir()):
             if link.is_symlink():
                 try:
                     rel = f.relative_to(link.resolve())
-                    return ".".join(["Formal", link.name, *rel.with_suffix("").parts])
+                    return ".".join(["CipherLean", link.name, *rel.with_suffix("").parts])
                 except ValueError:
                     continue
-    die(f"{f} is not inside the workspace {ws} (directly or through a Formal/<Slug> symlink)")
+    die(f"{f} is not inside the workspace {ws} (directly or through a CipherLean/<Slug> symlink)")
 
 
 def lake():
@@ -109,7 +109,7 @@ def lake():
 def run(cmd, cwd, timeout):
     """Run `cmd` in the workspace under the shared build lock (one Lean job per workspace)."""
     import fcntl
-    lock_path = pathlib.Path(cwd) / ".lake" / "formal-build.lock"
+    lock_path = pathlib.Path(cwd) / ".lake" / "cipherlean-build.lock"
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with open(lock_path, "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)

@@ -3,28 +3,28 @@
 #
 #   setup_env.sh --check            report OK / MISSING per item, change nothing; exit 1 if anything is missing
 #   setup_env.sh --install          install / download / configure whatever is missing (idempotent,
-#                                   never overwrites an existing file), then build Formal/Smoke.lean
-#   options:  --workspace DIR       default $LEAN_FORMAL_WS, else ~/lean-formal
-#             --smoke               with --check: also build Formal/Smoke.lean (~10-40 s)
-#             --examples            with --install: also compile Formal/Examples (a few minutes)
+#                                   never overwrites an existing file), then build CipherLean/Smoke.lean
+#   options:  --workspace DIR       default $CIPHERLEAN_WS, else ~/cipherlean
+#             --smoke               with --check: also build CipherLean/Smoke.lean (~10-40 s)
+#             --examples            with --install: also compile CipherLean/Examples (a few minutes)
 #             --build-from-source   if the prebuilt Mathlib cannot be downloaded, compile it (hours)
 #             --full-clone          let Lake clone the full git history instead of the shallow pre-clone
-#             --update-library      copy assets/crypto over Formal/Crypto in the workspace and rebuild it
+#             --update-library      copy assets/lib over CipherLean/Lib in the workspace and rebuild it
 #             --mcp                 also register the lean-lsp-mcp server with Claude Code (needs uv and the
-#                                   claude CLI; keeps Mathlib loaded between proof attempts; optional)
+#                                   claude CLI; optional; not tested from this script)
 #
 # What --install may do, in this order: install elan into ~/.elan (official installer, ~5 MB);
 # install the Lean toolchain pinned in assets/workspace/lean-toolchain (~300 MB); create the
 # workspace from assets/workspace; shallow-clone Mathlib and its dependencies at the pinned commits
 # (git --depth 1, a few hundred MB instead of the full history); download the
 # prebuilt Mathlib with `lake exe cache get` (~2 GB download, ~6 GB on disk); copy the examples;
-# build Formal/Smoke.lean and run check_lean.py on it. Needs curl, git, python3, >= 10 GB free
-# disk and network access. macOS and Linux (Windows: use WSL).
+# build CipherLean/Smoke.lean and run check_lean.py on it. Needs curl, git, python3, >= 10 GB free
+# disk and network access. macOS (tested); Linux and WSL on Windows (untested).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL="$(cd "$HERE/.." && pwd)"
 MODE=check; SMOKE=0; EXAMPLES=0; FROM_SOURCE=0; FULL_CLONE=0; MCP=0; UPDATE_LIB=0
-WS="${LEAN_FORMAL_WS:-$HOME/lean-formal}"
+WS="${CIPHERLEAN_WS:-$HOME/cipherlean}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --check) MODE=check ;;
@@ -65,7 +65,7 @@ if command -v rg >/dev/null 2>&1; then ok "rg (ripgrep, optional)"; else note "r
 PARENT="$WS"; while [ ! -d "$PARENT" ]; do PARENT="$(dirname "$PARENT")"; done
 FREE_KB="$(df -Pk "$PARENT" 2>/dev/null | awk 'NR==2{print $4}')"
 if [ -n "${FREE_KB:-}" ]; then
-  if [ "$FREE_KB" -ge 10485760 ]; then ok "disk: $((FREE_KB/1048576)) GB free at $PARENT"; else miss "disk: only $((FREE_KB/1048576)) GB free at $PARENT, the workspace needs about 8 GB"; fi
+  if [ "$FREE_KB" -ge 10485760 ]; then ok "disk: $((FREE_KB/1048576)) GB free at $PARENT"; else miss "disk: only $((FREE_KB/1048576)) GB free at $PARENT, the installed workspace takes about 7 GB"; fi
 fi
 
 step "elan (Lean version manager)"
@@ -93,13 +93,13 @@ fi
 
 step "workspace $WS"
 NEED=0
-for f in lakefile.toml lean-toolchain lake-manifest.json Formal.lean Formal/Smoke.lean; do [ -f "$WS/$f" ] || NEED=1; done
+for f in lakefile.toml lean-toolchain lake-manifest.json CipherLean.lean CipherLean/Smoke.lean; do [ -f "$WS/$f" ] || NEED=1; done
 if [ "$NEED" = 0 ]; then
-  ok "lakefile, manifest, Formal/ present"
+  ok "lakefile, manifest, CipherLean/ present"
   [ "$(cat "$WS/lean-toolchain")" = "$TOOLCHAIN" ] || note "workspace pins $(cat "$WS/lean-toolchain"); the skill was tested with $TOOLCHAIN"
 elif [ "$MODE" = install ]; then
-  mkdir -p "$WS/Formal"
-  for f in lakefile.toml lean-toolchain lake-manifest.json Formal.lean .gitignore Formal/Smoke.lean; do
+  mkdir -p "$WS/CipherLean"
+  for f in lakefile.toml lean-toolchain lake-manifest.json CipherLean.lean .gitignore CipherLean/Smoke.lean; do
     [ -f "$WS/$f" ] || cp "$SKILL/assets/workspace/$f" "$WS/$f"
   done
   ok "created from assets/workspace (existing files kept)"
@@ -155,56 +155,56 @@ else
 fi
 
 step "examples"
-EX="$WS/Formal/Examples"
+EX="$WS/CipherLean/Examples"
 if [ -f "$EX/Halfspace.lean" ]; then
-  ok "Formal/Examples present"
+  ok "CipherLean/Examples present"
 elif [ "$MODE" = install ]; then
   mkdir -p "$EX" && cp -R "$SKILL/assets/examples/." "$EX/"
-  ok "copied assets/examples to Formal/Examples"
+  ok "copied assets/examples to CipherLean/Examples"
 else
-  miss "Formal/Examples missing; --install copies them"
+  miss "CipherLean/Examples missing; --install copies them"
 fi
 
 step "shared library"
-LIB="$WS/Formal/Crypto"
+LIB="$WS/CipherLean/Lib"
 if [ "$UPDATE_LIB" = 1 ] && [ -d "$WS" ] && command -v lake >/dev/null 2>&1; then
-  mkdir -p "$LIB" && cp -R "$SKILL/assets/crypto/." "$LIB/" && cp "$LIB/Crypto.lean" "$WS/Formal/Crypto.lean" && rm -f "$LIB/Crypto.lean"
-  if ( cd "$WS" && lake build Formal.Crypto ) >"$WS/.lake/setup-library.log" 2>&1; then
-    ok "Formal/Crypto updated from assets/crypto and rebuilt"
+  mkdir -p "$LIB" && cp -R "$SKILL/assets/lib/." "$LIB/"
+  if ( cd "$WS" && lake build CipherLean ) >"$WS/.lake/setup-library.log" 2>&1; then
+    ok "CipherLean/Lib updated from assets/lib and rebuilt"
   else
-    tail -20 "$WS/.lake/setup-library.log"; fail "Formal.Crypto failed to compile after the update (log: $WS/.lake/setup-library.log)"
+    tail -20 "$WS/.lake/setup-library.log"; fail "CipherLean failed to compile after the update (log: $WS/.lake/setup-library.log)"
   fi
-elif [ -f "$LIB/F2/Vec.lean" ] && [ -f "$WS/Formal/Crypto.lean" ]; then
-  ok "Formal/Crypto present"
+elif [ -f "$LIB/F2/Vec.lean" ] && [ -f "$WS/CipherLean.lean" ]; then
+  ok "CipherLean/Lib present"
 elif [ "$MODE" = install ]; then
-  mkdir -p "$LIB" && cp -R "$SKILL/assets/crypto/." "$LIB/" && cp "$LIB/Crypto.lean" "$WS/Formal/Crypto.lean" && rm -f "$LIB/Crypto.lean"
-  ok "copied assets/crypto to Formal/Crypto"
+  mkdir -p "$LIB" && cp -R "$SKILL/assets/lib/." "$LIB/"
+  ok "copied assets/lib to CipherLean/Lib"
 else
-  miss "Formal/Crypto missing; --install copies and compiles it"
+  miss "CipherLean/Lib missing; --install copies and compiles it"
 fi
 
 step "smoke test"
-if [ -f "$OLEAN" ] && [ -f "$WS/Formal/Smoke.lean" ] && command -v lake >/dev/null 2>&1 && { [ "$MODE" = install ] || [ "$SMOKE" = 1 ]; }; then
+if [ -f "$OLEAN" ] && [ -f "$WS/CipherLean/Smoke.lean" ] && command -v lake >/dev/null 2>&1 && { [ "$MODE" = install ] || [ "$SMOKE" = 1 ]; }; then
   LOG="$WS/.lake/setup-smoke.log"
-  if ( cd "$WS" && lake build Formal.Smoke ) >"$LOG" 2>&1; then
-    ok "lake build Formal.Smoke ($(grep -o 'Built Formal.Smoke ([^)]*)' "$LOG" | head -1 || echo cached))"
+  if ( cd "$WS" && lake build CipherLean.Smoke ) >"$LOG" 2>&1; then
+    ok "lake build CipherLean.Smoke ($(grep -o 'Built CipherLean.Smoke ([^)]*)' "$LOG" | head -1 || echo cached))"
   else
-    tail -20 "$LOG"; fail "Formal.Smoke does not build (log: $LOG)"
+    tail -20 "$LOG"; fail "CipherLean.Smoke does not build (log: $LOG)"
   fi
   if [ "$MODE" = install ]; then
     LOG2="$WS/.lake/setup-check.log"
-    if python3 "$HERE/check_lean.py" --ws "$WS" "$WS/Formal/Smoke.lean" >"$LOG2" 2>&1; then
-      ok "check_lean.py Formal/Smoke.lean: $(grep VERDICT "$LOG2")"
+    if python3 "$HERE/check_lean.py" --ws "$WS" "$WS/CipherLean/Smoke.lean" >"$LOG2" 2>&1; then
+      ok "check_lean.py CipherLean/Smoke.lean: $(grep VERDICT "$LOG2")"
     else
-      tail -20 "$LOG2"; fail "check_lean.py failed on Formal/Smoke.lean (log: $LOG2)"
+      tail -20 "$LOG2"; fail "check_lean.py failed on CipherLean/Smoke.lean (log: $LOG2)"
     fi
-    echo "  compiling the shared library Formal.Crypto (a few minutes)"
-    ( cd "$WS" && lake build Formal.Crypto ) >"$WS/.lake/setup-library.log" 2>&1 \
-      && ok "Formal.Crypto compiled ($(grep -c 'Built Formal.Crypto' "$WS/.lake/setup-library.log") modules)" \
-      || { tail -20 "$WS/.lake/setup-library.log"; fail "Formal.Crypto failed to compile (log: $WS/.lake/setup-library.log)"; }
+    echo "  compiling the shared library CipherLean (a few minutes)"
+    ( cd "$WS" && lake build CipherLean ) >"$WS/.lake/setup-library.log" 2>&1 \
+      && ok "CipherLean compiled ($(grep -c 'Built CipherLean' "$WS/.lake/setup-library.log") modules)" \
+      || { tail -20 "$WS/.lake/setup-library.log"; fail "CipherLean failed to compile (log: $WS/.lake/setup-library.log)"; }
     if [ "$EXAMPLES" = 1 ]; then
       echo "  compiling the examples (a few minutes)"
-      ( cd "$WS" && lake build Formal.Examples.Feistel Formal.Examples.Halfspace Formal.Examples.SboxDDT Formal.Examples.DdtInverse.Main ) >"$WS/.lake/setup-examples.log" 2>&1 \
+      ( cd "$WS" && lake build CipherLean.Examples.Feistel CipherLean.Examples.Halfspace CipherLean.Examples.SboxDDT CipherLean.Examples.DdtInverse.Main ) >"$WS/.lake/setup-examples.log" 2>&1 \
         && ok "examples compiled" || { tail -20 "$WS/.lake/setup-examples.log"; fail "an example failed to compile"; }
     fi
   fi
@@ -213,7 +213,7 @@ else
 fi
 
 if [ "$MCP" = 1 ]; then
-  step "lean-lsp-mcp (optional: keeps Mathlib loaded between proof attempts)"
+  step "lean-lsp-mcp (optional, not tested from this script)"
   if ! command -v uv >/dev/null 2>&1; then
     miss "uv not found (https://docs.astral.sh/uv/): curl -LsSf https://astral.sh/uv/install.sh | sh"
   elif ! command -v claude >/dev/null 2>&1; then

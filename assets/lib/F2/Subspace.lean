@@ -1,4 +1,4 @@
-import Formal.Crypto.F2.Vec
+import CipherLean.Lib.F2.Vec
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.RingTheory.PicardGroup
@@ -7,7 +7,7 @@ import Mathlib.Tactic.Ring
 import Mathlib.Tactic.SplitIfs
 
 /-!
-# `Formal.Crypto.F2.Subspace` — subspaces of `F_2^ι` as finite sets, cosets, annihilators, duality
+# `CipherLean.Lib.F2.Subspace` — subspaces of `F_2^ι` as finite sets, cosets, annihilators, duality
 
 A subspace is given by its finite set of vectors (`IsSubspace V`: contains `0`, closed under `+`),
 so that membership, cosets and annihilators are computable and `decide` can check toy instances.
@@ -17,7 +17,7 @@ The character sum over an annihilator (`sum_chi_ann`) is the lemma behind every 
 or fixed-key argument.
 -/
 
-namespace Crypto
+namespace CipherLean
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -227,4 +227,4 @@ theorem sum_chi_subspace {V : Finset (Vec ι)} (hV : IsSubspace V) (y : Vec ι) 
 
 end chi
 
-end Crypto
+end CipherLean

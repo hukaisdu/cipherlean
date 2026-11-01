@@ -1,4 +1,4 @@
-# NOTATION — `Formal.Crypto` (shared library, carrier fixed 2026-11-01)
+# NOTATION — `CipherLean` (shared library, carrier fixed 2026-11-01)
 
 Carrier decision: every statement is over `Vec ι := ι → ZMod 2` with `[Fintype ι] [DecidableEq ι]`
 (`ι = Fin n` for an `n`-bit word; a product index for a state split into words). Concrete tables

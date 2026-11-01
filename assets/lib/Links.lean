@@ -1,9 +1,9 @@
-import Formal.Crypto.DDT
-import Formal.Crypto.Walsh
+import CipherLean.Lib.DDT
+import CipherLean.Lib.Walsh
 import Mathlib.Tactic.Ring
 
 /-!
-# `Formal.Crypto.Links` — the DDT and the squared Walsh spectrum are Fourier duals
+# `CipherLean.Lib.Links` — the DDT and the squared Walsh spectrum are Fourier duals
 
 F. Chabaud and S. Vaudenay, *Links Between Differential and Linear Cryptanalysis*, EUROCRYPT 1994:
 for every `F : F_2^ι → F_2^κ` and masks `u`, `v`,
@@ -14,7 +14,7 @@ Proof as in the paper: expand the square as a double sum over `(x, y)`, substitu
 and group the inner sum by the output difference `b = F(x + a) + F(x)`.
 -/
 
-namespace Crypto
+namespace CipherLean
 
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
@@ -75,4 +75,4 @@ theorem walsh_sq_eq_of_ddt_eq {F G : Vec ι → Vec κ} (h : ∀ a b, ddt F a b 
   rw [← sum_ddt_mul_sgn, ← sum_ddt_mul_sgn]
   simp only [h]
 
-end Crypto
+end CipherLean

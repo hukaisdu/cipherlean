@@ -1,5 +1,5 @@
 import Mathlib
-import Formal.Crypto
+import CipherLean
 
 /-!
 # <Slug>: <paper short title>, <Theorem label>

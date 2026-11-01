@@ -6,7 +6,7 @@
 #              "Function.Bijective _ → Finset.sum _ _ = Finset.sum _ _"  (rate limit ≈ 3 req / 30 s)
 #   leansearch https://leansearch.net — natural language, e.g. "sum over a bijection equals sum over codomain"
 set -uo pipefail
-WS="${LEAN_FORMAL_WS:-$HOME/lean-formal}"
+WS="${CIPHERLEAN_WS:-$HOME/cipherlean}"
 Q="${1:?usage: search_mathlib.sh \"<query>\" [local|loogle|leansearch|all]}"
 MODE="${2:-all}"
 enc() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1]))' "$1"; }

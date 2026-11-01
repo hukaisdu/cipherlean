@@ -62,9 +62,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("file"); ap.add_argument("--apply", action="store_true"); ap.add_argument("--ws")
     a = ap.parse_args()
-    ws = pathlib.Path(a.ws or os.environ.get("LEAN_FORMAL_WS") or os.path.expanduser("~/lean-formal")).resolve()
+    ws = pathlib.Path(a.ws or os.environ.get("CIPHERLEAN_WS") or os.path.expanduser("~/cipherlean")).resolve()
     if not (ws / "lakefile.toml").exists():
-        die(f"no lakefile in {ws}: run scripts/setup_env.sh --install (or set --ws / LEAN_FORMAL_WS)")
+        die(f"no lakefile in {ws}: run scripts/setup_env.sh --install (or set --ws / CIPHERLEAN_WS)")
     f = pathlib.Path(a.file).resolve(); src = f.read_text(encoding="utf-8")
     lines = src.splitlines()
     idx = [i for i, l in enumerate(lines) if l.strip() == "import Mathlib"]

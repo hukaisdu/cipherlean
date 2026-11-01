@@ -1,10 +1,10 @@
-import Formal.Crypto.Sbox
+import CipherLean.Lib.Sbox
 import Mathlib.Algebra.Ring.IsFormallyReal
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
 /-!
-# `Formal.Crypto.Walsh` — Walsh coefficients, linear-approximation counts, Parseval
+# `CipherLean.Lib.Walsh` — Walsh coefficients, linear-approximation counts, Parseval
 
 For a vectorial function `F : F_2^ι → F_2^κ` and masks `u`, `v`, the Walsh coefficient is
 `W_F(u, v) = Σ_x (-1)^{u·x + v·F(x)}` (Carlet 2021, §2.2.1, written there as
@@ -14,7 +14,7 @@ them can hold for the wrong reason. `linCount F u v = #{x : u·x = v·F(x)}` is 
 linear cryptanalysis estimates, and `walsh_eq_two_mul_linCount_sub` is the conversion.
 -/
 
-namespace Crypto
+namespace CipherLean
 
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
 
@@ -129,4 +129,4 @@ theorem present_walsh_zero_zero : walsh presentVec 0 0 = 16 := by
 
 end toy
 
-end Crypto
+end CipherLean

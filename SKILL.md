@@ -5,20 +5,20 @@ description: |
   and every hypothesis (implicit ones too), encode and state it, test it on a toy instance
   and a counterexample, prove it lemma by lemma, check with lake build and an axiom report
   (no sorry, standard axioms), then have an independent agent review it against the paper.
-  Runs in a persistent workspace (~/lean-formal, Lean v4.33.0 + Mathlib v4.33.0) that
+  Runs in a persistent workspace (~/cipherlean, Lean v4.33.0 + Mathlib v4.33.0) that
   scripts/setup_env.sh checks and installs. Use whenever the user mentions Lean, Mathlib,
   a formal or machine-checked proof, "形式化", "用 Lean 证明/验证", "把定理写成 Lean", "formalize
   Theorem 3", or wants a checked proof of an identity between cryptanalytic statistics
-  (linear/integral/DL sums, DDT/LAT counts, divisibility, Walsh coefficients), a cipher-
-  component property (S-box, round function, Feistel/SPN invertibility), or a MILP/SAT
-  model constraint. Not for brute-force numerics or attack code (crypto-code), nor paper
-  reading without a formalization goal (paper-reading).
+  (linear/integral sums, DDT/LAT counts, divisibility, Walsh coefficients, subspace
+  character sums) or of a cipher-component property (S-box bijectivity, differential
+  uniformity, Feistel round invertibility). Not for brute-force numerics or attack code
+  (crypto-code), nor paper reading without a formalization goal (paper-reading).
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebFetch", "AskUserQuestion"]
 ---
 
 # Theorem → Lean 4 formalization
 
-Deliverable for one paper theorem: a directory `Formal/<Slug>/` in the workspace holding
+Deliverable for one paper theorem: a directory `CipherLean/<Slug>/` in the workspace holding
 (1) `README.md` — the statement as the paper states it, every hypothesis, the proof plan,
 and a status table; (2) `NOTATION.md` — paper symbol ↔ Lean name; (3) `.lean` files that
 `lake build` accepts with no `sorry` and standard axioms only; (4) one toy instance where
@@ -32,34 +32,34 @@ getting the statement right; the proof is the part Lean can vouch for.
 
 ## Workspace
 
-Persistent Lake project at `~/lean-formal` (override with `LEAN_FORMAL_WS`), created by
+Persistent Lake project at `~/cipherlean` (override with `CIPHERLEAN_WS`), created by
 `$SKILL/scripts/setup_env.sh --install`: Lean `v4.33.0`, Mathlib `v4.33.0` prebuilt (about
-6 GB under `.lake/`; do not delete it casually), one library `Formal`, one subdirectory per
+6 GB under `.lake/`; do not delete it casually), one library `CipherLean`, one subdirectory per
 paper, `autoImplicit = false` so a misspelled variable is an error instead of a silent new
 hypothesis. Commands, VS Code use,
 version bumps and troubleshooting: `references/workspace.md`. Run everything from the
 workspace root.
 
-Shared library `Formal/Crypto/` (installed and compiled by `setup_env.sh`): the carrier
+Shared library `CipherLean/Lib/` (installed and compiled by `setup_env.sh`): the carrier
 `Vec ι := ι → ZMod 2` with the `BitVec` bridge, characters, `Finset` subspaces with cosets,
 annihilators and duality, Walsh coefficients with Parseval, the DDT with differential uniformity,
 the Chabaud–Vaudenay link, and table S-boxes (PRESENT as the test instance). Every new paper file
-starts with `import Formal.Crypto`; `Formal/Crypto/NOTATION.md` is the symbol table for these
-objects and `Formal/Crypto/README.md` lists the lemmas. Define an object yourself only when the
+starts with `import CipherLean`; `CipherLean/Lib/NOTATION.md` is the symbol table for these
+objects and `CipherLean/Lib/README.md` lists the lemmas. Define an object yourself only when the
 library lacks it.
 
 `$SKILL` below is this skill's directory, `~/.claude/skills/cipherlean`.
 
-| task | command (from `~/lean-formal`) |
+| task | command (from `~/cipherlean`) |
 |---|---|
 | check / create the environment | `$SKILL/scripts/setup_env.sh --check` (2 s) / `--install` (first time) |
 | scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>]` |
-| compile one file | `$SKILL/scripts/lake_build.sh Formal.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
-| final check | `$SKILL/scripts/check_lean.py Formal/<Slug>/<File>.lean` |
+| compile one file | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
+| final check | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean` |
 | find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` |
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
-| trim imports when done | `$SKILL/scripts/trim_imports.py Formal/<Slug>/Main.lean --apply` |
-| rebuild the shared library | `$SKILL/scripts/lake_build.sh Formal.Crypto` (after adding a lemma to `Formal/Crypto/`) |
+| trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` |
+| rebuild the shared library | `$SKILL/scripts/lake_build.sh CipherLean` (after adding a lemma to `CipherLean/Lib/`) |
 | independent review | a fresh agent with `references/review-brief.md` (step 8) |
 
 One Lean job at a time per workspace: the wrapper and the check script share a lock. Costs,
@@ -70,12 +70,12 @@ checks; `check_lean.py` runs two Lean processes (build + listing): ≈ 1.5 min o
 untrimmed file, 7 s on a trimmed one. So: check lemma names and 3-line examples with
 `lean_eval.sh` (7 s), build a module only when a lemma is finished, and trim the imports once
 the proof is done (the shipped examples build in 3–6 s each after trimming). Compiled models to imitate for structure, docstrings
-and finite checks: `Formal/Examples/{Feistel,Halfspace,SboxDDT}.lean`, and one complete run
-with its README and NOTATION: `Formal/Examples/DdtInverse/` (a user-stated lemma, DDT
+and finite checks: `CipherLean/Examples/{Feistel,Halfspace,SboxDDT}.lean`, and one complete run
+with its README and NOTATION: `CipherLean/Examples/DdtInverse/` (a user-stated lemma, DDT
 transpose).
 
 With `--paper-dir`, the real files live in `<paper repo>/formal/` (versioned and synced with
-the paper) and `Formal/<Slug>` is a symlink to them; without it they live in the workspace.
+the paper) and `CipherLean/<Slug>` is a symlink to them; without it they live in the workspace.
 
 Before starting, read the task's `NOTATION.md` if one exists and keep the day's log as
 usual; the per-paper `NOTATION.md` created here is that table for the formalization task.
@@ -89,7 +89,7 @@ Run `$SKILL/scripts/setup_env.sh --check`. It reports OK or MISSING for: macOS/L
 prebuilt Mathlib, the examples. All OK: go on. Something MISSING: tell the user what
 `--install` will do (install elan, download the toolchain ≈ 300 MB, a shallow clone of Mathlib
 and its dependencies ≈ 170 MB, the prebuilt Mathlib ≈ 2 GB, 6 GB on disk, create
-`~/lean-formal`; 10–30 min on a normal connection) and run
+`~/cipherlean`; 10–30 min on a normal connection) and run
 `$SKILL/scripts/setup_env.sh --install` once they agree, or straight away if they asked for
 the setup. The script is idempotent, never overwrites an existing file, and ends with a smoke
 build plus `check_lean.py`; rerun it after a failure (a lost network connection is the usual
@@ -123,7 +123,7 @@ build to a check.
 
 Write `NOTATION.md`: one row per paper object — paper symbol, Lean name, Lean type,
 meaning, scope (per key / per round / global). Take the encoding from the shared library first
-(`Formal/Crypto/NOTATION.md`: `Vec ι` for `F_2^n`, `u ⬝ᵥ x`, `chi`, `walsh`, `linCount`, `ddt`,
+(`CipherLean/Lib/NOTATION.md`: `Vec ι` for `F_2^n`, `u ⬝ᵥ x`, `chi`, `walsh`, `linCount`, `ddt`,
 `diffUniformity`, `IsSubspace`/`coset`/`ann`, `Sbox.ofTable`/`toFun`); for objects it lacks, pick
 one from `references/lean-crypto-cheatsheet.md` (bits as `Bool`, words as `BitVec n`, masks and
 linear maps over `ZMod 2`, sums as integer sums over a `Fintype`, probabilities as counts).
@@ -133,7 +133,7 @@ mathematics. Derive the normalized form as a corollary if the user wants it.
 
 ### 3. Definitions and statement first, with `sorry`
 
-Create `Formal/<Slug>/Main.lean` from the template (`$SKILL/scripts/new_paper.sh` does this).
+Create `CipherLean/<Slug>/Main.lean` from the template (`$SKILL/scripts/new_paper.sh` does this).
 Write the definitions, then the main theorem with `sorry`, and compile together with the
 finite checks of step 4 (they only need the definitions, so one build serves both). Give every
 declaration a docstring with the paper's wording (`/-- Paper: Theorem 2, "..." -/`), the way
@@ -155,11 +155,11 @@ exist.
 
 ### 5. Prove, one lemma per proof step
 
-- Before proving anything general, search the library (`rg <word> ~/lean-formal/Formal/Crypto`)
+- Before proving anything general, search the library (`rg <word> ~/cipherlean/CipherLean/Lib`)
   and then Mathlib: `exact?`, `apply?`, `simp?`, and `$SKILL/scripts/search_mathlib.sh` (local
   grep, Loogle, LeanSearch), even when you think you know the file: Mathlib uses both `theorem`
   and `lemma`, and names drift between versions. Most algebra and big-operator facts exist
-  already; the character-sum, duality, DDT and Walsh facts are in `Formal/Crypto`.
+  already; the character-sum, duality, DDT and Walsh facts are in `CipherLean/Lib`.
 - Tactic toolbox and compiled idioms for sums over bits, bijection reindexing, BitVec
   identities, divisibility: `references/lean-crypto-cheatsheet.md`.
 - Test lemma names and small examples with `lean_eval.sh` (7 s), not with a module build; build
@@ -172,7 +172,7 @@ exist.
 
 ### 6. Check
 
-`$SKILL/scripts/check_lean.py Formal/<Slug>/Main.lean` builds the module, lists every declaration
+`$SKILL/scripts/check_lean.py CipherLean/<Slug>/Main.lean` builds the module, lists every declaration
 with its axioms and its elaborated statement, and fails on `sorryAx`, on custom axioms, and
 on the compiler-trusting axioms that `native_decide` / `bv_decide` introduce
 (`<decl>._native.*.ax_*`, `Lean.ofReduceBool`) unless `--allow-native` is passed for
@@ -181,15 +181,15 @@ is the human half of the check.
 
 ### 7. Trim and report
 
-Run `$SKILL/scripts/trim_imports.py Formal/<Slug>/Main.lean --apply` (it asks Mathlib's
+Run `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` (it asks Mathlib's
 `#min_imports`, adds the tactic modules, and only rewrites the file after the trimmed copy
 compiles): every later build, check and reader of the file gets the 3–7 s load instead of 27 s.
 Then fill the status table in `README.md` (paper label · Lean declaration · status · axioms ·
 note) and the "Departures from the paper" section. Promotion rule: a lemma that is general in the
 index type and speaks only about library objects (Walsh coefficients, DDT, subspaces, S-boxes)
-moves into `Formal/Crypto/` now — with its docstring, a finite check if it is a definition, a row
-in `Formal/Crypto/NOTATION.md`, and `lake_build.sh Formal.Crypto` — so the next paper imports it
-instead of re-proving it. Paper-specific objects stay in `Formal/<Slug>/`. In the reply: what is proved, what is
+moves into `CipherLean/Lib/` now — with its docstring, a finite check if it is a definition, a row
+in `CipherLean/Lib/NOTATION.md`, and `lake_build.sh CipherLean` — so the next paper imports it
+instead of re-proving it. Paper-specific objects stay in `CipherLean/<Slug>/`. In the reply: what is proved, what is
 `sorry` and why, hypotheses the paper left implicit (these are findings about the paper),
 and the exact commands to rebuild. Say "proved" only after step 6 passes.
 
@@ -211,7 +211,7 @@ Good first targets, in the order the blog recommends: normalization and conversi
 identities between statistics; local properties of components (S-box bijectivity and
 differential uniformity, round invertibility, key-schedule facts); divisibility or counting
 statements; the claim that a search-model constraint set is satisfied exactly by the valid
-transitions. State as hypotheses, not as theorems, anything that is a modelling
+transitions (no shipped example for this one yet). State as hypotheses, not as theorems, anything that is a modelling
 assumption (Markov-cipher independence, random round keys, heuristic trail probabilities).
 Asymptotic complexity claims and probabilistic statements over random keys need Mathlib's
 `PMF` / measure theory; do them only when the user asks for exactly that.
@@ -233,6 +233,6 @@ Asymptotic complexity claims and probabilistic statements over random keys need 
   `scripts/lake_build.sh` (serialized build), `scripts/check_lean.py` (final check).
 - `assets/examples/` — compiled examples (Feistel round, halfspace identity, S-box DDT) and
   the complete run `DdtInverse/` (Main.lean, README.md, NOTATION.md); `setup_env.sh` installs
-  them as `Formal/Examples/`.
-- `assets/crypto/` — the shared library `Formal.Crypto` (README.md, NOTATION.md, six modules);
-  `setup_env.sh --install` copies it to `Formal/Crypto/` and compiles it.
+  them as `CipherLean/Examples/`.
+- `assets/lib/` — the shared library `CipherLean` (README.md, NOTATION.md, six modules);
+  `setup_env.sh --install` copies it to `CipherLean/Lib/` and compiles it.

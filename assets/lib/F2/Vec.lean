@@ -6,7 +6,7 @@ import Mathlib.Tactic.Ring
 import Mathlib.Tactic.SplitIfs
 
 /-!
-# `Formal.Crypto.F2.Vec` — the carrier `F_2^ι`, signs, characters, and the `BitVec` bridge
+# `CipherLean.Lib.F2.Vec` — the carrier `F_2^ι`, signs, characters, and the `BitVec` bridge
 
 Library convention (fixed 2026-11-01): every cryptanalysis statement is made over
 `Vec ι := ι → ZMod 2` for a finite index type `ι` (`Fin n` for an `n`-bit word, a product index
@@ -20,7 +20,7 @@ Definitions follow C. Carlet, *Boolean Functions for Cryptography and Coding The
 University Press 2021, §2.2 (characters, Walsh transform), restated for vectorial functions.
 -/
 
-namespace Crypto
+namespace CipherLean
 
 /-- `F_2^ι`: vectors over `F_2` indexed by the finite type `ι`. Addition is bitwise xor. -/
 abbrev Vec (ι : Type*) := ι → ZMod 2
@@ -203,4 +203,4 @@ theorem card_bitVec : Fintype.card (BitVec n) = 2 ^ n := by
 
 end bridge
 
-end Crypto
+end CipherLean

@@ -1,7 +1,7 @@
-name = "LeanFormal"
+name = "CipherLean"
 version = "0.1.0"
 keywords = ["lean", "cryptography", "formalization"]
-defaultTargets = ["Formal"]
+defaultTargets = ["CipherLean"]
 
 [leanOptions]
 pp.unicode.fun = true
@@ -15,4 +15,4 @@ scope = "leanprover-community"
 rev = "v4.33.0"
 
 [[lean_lib]]
-name = "Formal"
+name = "CipherLean"

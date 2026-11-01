@@ -1,4 +1,4 @@
-import Formal.Crypto
+import CipherLean
 
 /-!
 # Example 1: the halfspace identity — a linear sum is twice an integral sum
@@ -17,7 +17,7 @@ All sums are integer sums without normalization.
 
 namespace Halfspace
 
-open Crypto
+open CipherLean
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 

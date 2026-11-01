@@ -1,18 +1,18 @@
-import Formal.Crypto
+import CipherLean
 
 /-!
 # DdtInverse: "Lemma (DDT of the inverse S-box)": the DDT of `S⁻¹` is the transpose of that of `S`
 
 Source: the user's statement (2026-11-01, no paper), quoted in `README.md`; names in `NOTATION.md`.
-Encodings come from the shared library: `F_2^n` is `Crypto.Vec ι` (any finite index type), the
-DDT entry is `Crypto.ddt`, and the lemma itself is `Crypto.ddt_symm` with its engine
-`Crypto.ddt_eq_ddt_of_inverse`. This file states the source's three spellings of `S⁻¹`, the matrix
+Encodings come from the shared library: `F_2^n` is `CipherLean.Vec ι` (any finite index type), the
+DDT entry is `CipherLean.ddt`, and the lemma itself is `CipherLean.ddt_symm` with its engine
+`CipherLean.ddt_eq_ddt_of_inverse`. This file states the source's three spellings of `S⁻¹`, the matrix
 form, and the finite checks on a 3-bit table, decided on words through the bridge `ddt_toFun`.
 -/
 
 namespace DdtInverse
 
-open Crypto
+open CipherLean
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -25,7 +25,7 @@ def ddtMatrix (S : Vec ι → Vec ι) : Matrix (Vec ι) (Vec ι) ℕ :=
 inverse. For all a, b: #{x : S(x ⊕ a) ⊕ S(x) = b} = #{y : S^{-1}(y ⊕ b) ⊕ S^{-1}(y) = a}."
 Here `S : Equiv.Perm (Vec ι)` and `S^{-1} = S.symm`; the proof is the library's. -/
 theorem ddt_symm (S : Equiv.Perm (Vec ι)) (a b : Vec ι) : ddt S a b = ddt S.symm b a :=
-  Crypto.ddt_symm S a b
+  CipherLean.ddt_symm S a b
 
 /-- The same lemma for a bijective function `S`, with `S^{-1} = Function.invFun S`. -/
 theorem ddt_invFun (S : Vec ι → Vec ι) (hS : Function.Bijective S) (a b : Vec ι) :

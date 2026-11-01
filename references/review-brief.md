@@ -56,7 +56,10 @@ and compile scratch files (`$SKILL/scripts/lean_eval.sh`). Your only output is a
    inconsistent · MAJOR: departure or added hypothesis not recorded, missing finite check · MINOR:
    naming, docs) and a location (file:line or chain row). End with `VERDICT: ACCEPT | REVISE`.
    `ACCEPT` only when both check scripts pass, every fidelity row is OK or a recorded departure,
-   the correspondence is complete, and no BLOCKER or MAJOR is still open.
+   the correspondence is complete, and no BLOCKER or MAJOR is still open. No verdict at all while
+   the build or the axiom audit is pending: wait for the evidence and cite the log lines (file,
+   line, exit code) that support each check; a report that was contradicted the next morning on
+   seven counts had concluded PASS with "build pending".
 
 ## The loop and its stopping condition
 Between rounds the formalizer appends `## Round n — formalizer (<date>)`: one row per objection,

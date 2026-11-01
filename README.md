@@ -92,6 +92,8 @@ scripts/search_mathlib.sh  local grep + Loogle + LeanSearch
 scripts/lean_eval.sh     snippet runner (7 s)              scripts/trim_imports.py  minimal imports
 scripts/chain_graph.py   proof chain -> TikZ graph (step 1b)   scripts/chain_check.py  chain vs. Lean dependencies
 scripts/promote_candidates.py  what belongs in the library (step 7b)   scripts/sync_library.sh  workspace -> assets/lib
+scripts/build_profile.py where a build's time went; computational sites   scripts/sandbox_project.sh  verify an external project
+references/verify-existing.md  verifying someone else's Lean project (lessons of a six-hour run)
 CONTRIBUTING.md          how to send a pull request
 references/review-brief.md  instructions for the independent reviewer (step 8)
 assets/workspace/        pinned lakefile, lean-toolchain, lake-manifest.json, Smoke.lean

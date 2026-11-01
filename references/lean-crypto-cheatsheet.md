@@ -164,6 +164,15 @@ formalization of a coset-average theorem that is not shipped, so those idioms ar
     row of a 4-bit S-box on `Vec (Fin 4)` in 45 s; an 8-bit S-box's full DDT (2^16 × 256) needs the
     native route or an offline certificate.
 
+27. **Large closed data under `native_decide`: `opaque`, not `def`** (verify-existing.md §3). The
+    compiled decision procedure recomputes a transparent `def` every time the term refers to it; a
+    30-million-element `HashSet` referenced three times took 200 s as a `def` and 25 s as an `opaque`
+    (`let`-binding, `@[noinline]`, passing it as an argument: 156 s, 212 s, 198 s). Write
+    `opaque bigTable : Finset … := …` (or a precomputed literal) and prove facts about it through
+    `rfl`-free bridge lemmas; one missed `def` in a loop of 32³ iterations cost 1 h 49 min. A closure
+    computed by breadth-first search inside the proof grows exponentially with the depth (K = 8:
+    272 s, K = 9: minutes); compute it offline and let Lean check closedness.
+
 ## 3. Tactics, in the order to try them
 
 `simp only [...]` (controlled) → `rw [...]` (literal pattern) → `ring` / `linarith` / `omega`
@@ -209,6 +218,11 @@ a lemma yourself.
   end, not inside a `calc` chain.
 - When the proof is done, `scripts/trim_imports.py --apply`: the Halfspace example loads with
   9 modules instead of all of Mathlib.
+- Long builds: count the computational sites first (`scripts/build_profile.py --sites`), build the
+  heaviest module alone under a written time budget, sample the process (CPU time rising, RSS
+  flat, no swap = progress, not a hang), and never run probes or a second `lake build` beside it.
+  Afterwards `scripts/build_profile.py <log>` shows where the time went (one module was 94 % of a
+  6 800 s build). Killing a progressing build at 85 min threw away 58 min of CPU and saved nothing.
 
 ## 6. Names that do not exist in Mathlib v4.33.0 (do not search again)
 

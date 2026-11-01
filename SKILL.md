@@ -57,6 +57,8 @@ library lacks it.
 | scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>]` (Main.lean, README, NOTATION, CHAIN) |
 | proof-chain graph (step 1b) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid |
 | chain vs. Lean (step 7) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/Main.lean` |
+| where the build time went | `$SKILL/scripts/build_profile.py <lake build log> [--sites <dir>]` |
+| verify someone else's project | `$SKILL/scripts/sandbox_project.sh <project>` then `references/verify-existing.md` |
 | compile one file | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
 | final check | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean` |
 | find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` |
@@ -218,7 +220,12 @@ or `1`, a parameter in a range) are not computations: `rcases`, `fin_cases`, `in
    axiom, and the report says "proved relative to the compiler axiom" for everything that depends
    on it. `bv_decide` (SAT with an LRAT certificate) has the same trust and the same obligations.
 
-Record in CHAIN.md which rows are computational cases and how each is discharged.
+Record in CHAIN.md which rows are computational cases and how each is discharged. Two rules from a
+build that lost a night (`references/verify-existing.md`): a checker refers to large closed data
+only through `opaque` definitions or precomputed literals, because compiled code recomputes a
+transparent `def` at every reference (measured 200 s vs 25 s for three references; `let`,
+`@[noinline]` and parameters do not help); and the first certificate module is built alone, timed,
+and profiled (`scripts/build_profile.py`) before the second one is written.
 
 ### 6. Check
 
@@ -241,7 +248,10 @@ compiles): every later build, check and reader of the file gets the 3–7 s load
 Then fill the status table in `README.md` (paper label · Lean declaration · status · axioms ·
 note) and the "Departures from the paper" section. Then step 7b. In the reply: what is proved, what is
 `sorry` and why, hypotheses the paper left implicit (these are findings about the paper),
-and the exact commands to rebuild. Say "proved" only after step 6 passes.
+and the exact commands to rebuild. Say "proved" only after step 6 passes. "Done" means: the checks pass on the declared pin, the
+files and the evidence (`check_lean` output, `CHAIN.md`, `REVIEW.md`) are committed, and every
+caveat (an added hypothesis, a compiler axiom, a departure) stands at the top of the report, not
+in a footnote.
 
 ### 7b. Promote to the shared library
 
@@ -276,6 +286,17 @@ with the formalization. The task is finished when a round ends in ACCEPT and bot
 after three rounds without ACCEPT, stop and give the user the open objections. Skip this step
 only for throwaway statements, and say so.
 
+## Verifying an existing formalization
+
+When the Lean project already exists (a colleague's, another model's) and the question is whether
+it proves the paper, follow `references/verify-existing.md` instead of steps 1–5: settle the pin
+and the sandbox before the first build (`scripts/sandbox_project.sh`), count the computational
+proofs and build the heaviest module alone under a written time budget
+(`scripts/build_profile.py --sites`, then the log), run `check_lean.py` on every top-level file,
+write the chain table from the README and run `chain_check.py`, and only then the review round
+(step 8) with the build evidence in hand. The page records what a six-hour run of this kind
+taught, with the measured numbers.
+
 ## What to formalize first
 
 Good first targets, in the order the blog recommends: normalization and conversion
@@ -298,6 +319,9 @@ Asymptotic complexity claims and probabilistic statements over random keys need 
   is a filled example with its `CHAIN.pdf`.
 - `references/promotion.md` — step 7b: the candidate classes, the five questions, the moving
   checklist, and the first harvests as examples.
+- `references/verify-existing.md` — verifying an existing Lean project: environment first, measure
+  before waiting, how `native_decide` evaluates (`opaque`, offline closures), what "done" means;
+  `scripts/build_profile.py` and `scripts/sandbox_project.sh` go with it.
 - `references/review-brief.md` — the reviewer agent's instructions and the stopping rule (step 8);
   `assets/REVIEW-template.md` — the round-by-round record of the two agents' exchange.
 - `references/workspace.md` — layout, versions, commands, VS Code, upgrading, errors.

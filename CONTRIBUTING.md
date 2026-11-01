@@ -24,7 +24,9 @@ version. Pull requests that do exactly that are the contributions this repositor
    `~/cipherlean/CipherLean/Lib` over `assets/lib` and shows the diff), commit on a branch, push,
    open a pull request against `main`.
 4. Keep the Lean/Mathlib pin (`assets/workspace/lean-toolchain`, `lake-manifest.json`); version
-   bumps are separate PRs that rebuild everything (`references/workspace.md`).
+   bumps are separate PRs that rebuild everything (`references/workspace.md`). Pin releases, never
+   release candidates: a project pinned to an `-rc` cannot be verified on a machine that has only
+   the release, and the two were 417 commits apart in the case that taught this.
 
 Skill-side contributions (scripts, references, examples) follow the same route; an example must
 compile in the workspace and be listed in `setup_env.sh`'s example build.

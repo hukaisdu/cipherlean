@@ -66,7 +66,7 @@ library lacks it.
 | the same steps on a server | `$SKILL/scripts/remote.sh build\|check\|chain\|trim\|lib\|eval …` with `CIPHERLEAN_REMOTE=user@host` (the skill and workspace installed there; sources stay here; `chain` takes every piece file) |
 | find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` |
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
-| trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` |
+| trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/<File>.lean --apply` (also on hand-chosen imports; `--why` names the constant behind each suggested module) |
 | rebuild the shared library | `$SKILL/scripts/lake_build.sh CipherLean` (after adding a lemma to `CipherLean/Lib/`) |
 | promotion candidates (step 7b) | `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean [<File2>.lean …] --write` (all the pieces in one run, or the directory: its built, non-template files) |
 | re-point the .md files after a move (7b) | `$SKILL/scripts/repoint_names.py CipherLean/<Slug>/ <name>[=<new>] … [--lib] [--apply]` (`<Slug>.name` → `CipherLean.name` in CHAIN, NOTATION, README, PROMOTE, REVIEW) |
@@ -292,9 +292,16 @@ against the paper one final time; this is the human half of the check.
 
 ### 7. Trim and report
 
-Run `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` (it asks Mathlib's
+Run `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/<File>.lean --apply` (it asks Mathlib's
 `#min_imports`, adds the tactic modules, and only rewrites the file after the trimmed copy
-compiles): every later build, check and reader of the file gets the 3–7 s load instead of 27 s.
+compiles): every later build, check and reader of the file gets the 3–7 s load instead of 27 s. On a
+file whose imports were chosen by hand it does the same and says when they are already minimal.
+`#min_imports` names the modules that declare the constants the proof terms use, so a module can be
+suggested only because it was imported: a late instance (`IsAzumaya.id : IsAzumaya R R`, which extends
+`Module.Finite R R`) wins the typeclass search while its module is in scope, and the proof term then
+mentions it. That is how `WHConj3/Assembly.lean` came out of its first trim with `Mathlib.RingTheory.Henselian`
+and `Mathlib.Algebra.Azumaya.Basic`. The script therefore tries the file without each suggested Mathlib
+module and drops the ones it compiles without; `--why` shows what each module supplies when one survives.
 Then fill the status table in `README.md` (paper label · Lean declaration · status · axioms ·
 note) and the "Departures from the paper" section. Then step 7b. In the reply: what is proved, what is
 `sorry` and why, hypotheses the paper left implicit (these are findings about the paper),

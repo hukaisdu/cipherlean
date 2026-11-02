@@ -29,9 +29,10 @@ whole theorem stands. Lean checks proofs, not definitions (Hadipour, "Lean for C
 
 Persistent Lake project at `~/cipherlean` (override with `CIPHERLEAN_WS`), created by `setup_env.sh --install`: Lean `v4.33.0`,
 Mathlib `v4.33.0` prebuilt (≈ 6 GB under `.lake/`), `autoImplicit = false`, one subdirectory per paper, and the shared library
-`CipherLean/Lib/` (vectors over `F_2`, characters, subspaces and duality, affine hulls, Walsh, DDT, linear structures,
-S-boxes: `CipherLean/Lib/NOTATION.md` and `README.md`). Every paper file starts with `import CipherLean`; define an object
-yourself only when the library lacks it. Run everything from the workspace root (the scripts put `~/.elan/bin` on PATH).
+`CipherLean/Lib/` (vectors over `F_2`, characters, subspaces and duality, affine hulls, Walsh, DDT, linear structures, table
+S-boxes; its `README.md` and `NOTATION.md`), a symlink to the skill's `assets/lib` so that a promoted lemma is committed in
+the skill. Every paper file starts with `import CipherLean`; define an object yourself only when the library lacks it. Run
+everything from the workspace root (the scripts put `~/.elan/bin` on PATH).
 
 | task | `$SKILL/scripts/cipherlean <subcommand>` from `~/cipherlean` (`$SKILL` = `~/.claude/skills/cipherlean`; the script paths `scripts/<name>` work too; this table is the only copy in the skill) |
 |---|---|
@@ -47,7 +48,7 @@ yourself only when the library lacks it. Run everything from the workspace root 
 | trim imports (step 7) | `cipherlean trim CipherLean/<Slug>/<File>.lean --apply` (`--why` names what each surviving module supplies) |
 | cited names exist? (step 7) | `cipherlean notation CipherLean/<Slug>/NOTATION.md <every piece file> --also README.md CHAIN.md` |
 | promotion candidates (step 7) | `cipherlean promote CipherLean/<Slug>/<File>.lean […] --write` (all pieces in one run; appends to `PROMOTE.md`) |
-| re-point after a move (step 7) | `cipherlean repoint CipherLean/<Slug>/ <name>[=<new>] … [--lib] [--apply]`; then `cipherlean sync-lib` copies the library into the skill |
+| re-point after a move (step 7) | `cipherlean repoint CipherLean/<Slug>/ <name>[=<new>] … [--lib] [--apply]`; the library is the skill's `assets/lib` through the symlink, so commit there |
 | the same steps on a server | `CIPHERLEAN_REMOTE=user@host cipherlean remote sync\|build\|check\|chain\|trim\|lib\|eval …` (sources stay here) |
 | someone else's project | `cipherlean sandbox <project>`; `cipherlean profile <lake build log>` or `--sites <dir>`; then `references/verify-existing.md` |
 | independent review (step 8) | a fresh agent given `references/review-brief.md` |
@@ -147,7 +148,7 @@ but about a paper object · E an object the paper defined · F general, Mathlib 
 toy); apply the five questions of `references/promotion.md`, give the user one recommendation per row, and after their
 decision move the accepted ones with that page's checklist (library names and variables, docstring with the source, a finite
 check per definition, the library rebuilt and checked, NOTATION and README rows, the paper file and its `.md`
-files re-pointed, `sync_library.sh`, commit). Unpublished results stay with the paper however general they look.
+files re-pointed, the skill repository committed). Unpublished results stay with the paper however general they look.
 
 ### 8. Independent review (two agents)
 Lean checked the proof; nobody has checked that the *statement* is the paper's. For any result the user will cite, hand the

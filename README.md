@@ -36,13 +36,12 @@ duality, Walsh coefficients, the DDT, table S-boxes) with its lemmas machine-che
 ```
 bash ~/.claude/skills/cipherlean/scripts/setup_env.sh --update-library
 ```
-which copies the current `assets/lib/` over `CipherLean/Lib/` in the workspace and rebuilds it
-(the installer alone never overwrites files that already exist). `setup_env.sh` keeps a copy of
-the library it installed last in `~/cipherlean/.lake/cipherlean-lib-installed/`; a file of
-`CipherLean/Lib/` that matches neither that copy nor the new `assets/lib/` counts as changed (a
-lemma promoted in step 7, say), and the update then lists it and stops without copying anything.
-Send the change upstream first (*Contribute* below), or move the file out of `CipherLean/Lib/`,
-then rerun.
+which rebuilds the library. The workspace's `CipherLean/Lib/` and the umbrella `CipherLean.lean` are
+symlinks to this repository's `assets/lib/` and `assets/workspace/CipherLean.lean`, so the pull is the
+update and a lemma promoted in the workspace is a change of this repository (commit it, or send it as a
+pull request). A workspace installed before 2026-11-03 holds copies: `--update-library` replaces a copy
+that is identical to the repository's by the symlink, and refuses while they differ — put the difference
+into `assets/lib/` first.
 
 ## Use
 In Claude Code, inside a paper's directory: "formalize Theorem 2 of this paper in Lean",
@@ -103,13 +102,13 @@ be written, where logs go) costs the agent a round of clarification.
 After a formalization, `promote_candidates.py` (all the pieces of a split theorem in one run) lists the
 declarations that are general enough for the shared library (class A/B/E/F) and those that are not
 (toys, duplicates); the user decides, the agent moves them, `repoint_names.py` re-points the
-directory's Markdown files at the library names, and `sync_library.sh` copies the library back into
-this repository. Criteria and checklist: `references/promotion.md`.
+directory's Markdown files at the library names, and the move is committed here, since the workspace
+library is this repository's `assets/lib/` through a symlink. Criteria and checklist: `references/promotion.md`.
 
 ## Contribute
 Pull requests that add general lemmas to the library, fix scripts, or add an example are
-welcome: see `CONTRIBUTING.md` (fork, develop in the workspace, sync the library back, PR with the
-`check_lean.py` verdicts). The *Update* section above is only about refreshing your local copy.
+welcome: see `CONTRIBUTING.md` (fork, develop in the workspace, which edits `assets/lib/` through the
+symlink, PR with the `check_lean.py` verdicts). The *Update* section above is only about refreshing your local copy.
 
 ## Review by a second agent
 `references/review-brief.md` is the brief for an independent reviewer (a subagent or a second
@@ -128,11 +127,11 @@ references/       cheatsheet (encodings, idioms, pitfalls), workspace notes, pro
 scripts/          the environment installer, the paper scaffold, the chain graph and the chain check, the
                   status board, the snippet runner, the lemma search, the serialized build, the one Lean listing
                   (inspect_lean) that the final axiom check, the chain check, the notation check and the promotion
-                  classifier read, the import trimmer, the re-pointer, the library sync, the remote runner, the
-                  build profiler, the sandbox for external projects
+                  classifier read, the import trimmer, the re-pointer, the remote runner, the build profiler,
+                  the sandbox for external projects
 assets/           templates (README, CHAIN, NOTATION, REVIEW, Lean file), examples (Feistel, Halfspace,
-                  SboxDDT, the complete run DdtInverse/), the shared library lib/ (installed as
-                  CipherLean/Lib/), the pinned workspace files (lakefile, lean-toolchain, lake-manifest.json)
+                  SboxDDT, the complete run DdtInverse/), the shared library lib/ (the workspace's
+                  CipherLean/Lib/ is a symlink to it), the pinned workspace files (lakefile, lean-toolchain, lake-manifest.json)
 CONTRIBUTING.md   how to send a pull request
 ```
 

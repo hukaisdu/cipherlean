@@ -48,6 +48,8 @@ def module_name(ws, file):
     f = pathlib.Path(file).resolve()
     if f.suffix != ".lean":
         die(f"not a .lean file: {file}")
+    if f == (ws / "CipherLean.lean").resolve():        # the umbrella, a symlink into the skill
+        return "CipherLean"
     try:
         rel = f.relative_to(ws)
         return ".".join(rel.with_suffix("").parts)

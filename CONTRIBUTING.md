@@ -18,11 +18,11 @@ version. Pull requests that do exactly that are the contributions this repositor
 ## Workflow
 1. Fork and clone the repository to `~/.claude/skills/cipherlean`, run
    `scripts/setup_env.sh --install` once (workspace `~/cipherlean`).
-2. Develop in the workspace: edit `~/cipherlean/CipherLean/Lib/…`, build with
-   `scripts/lake_build.sh CipherLean`, check with `scripts/check_lean.py`.
-3. Copy the library back into the repository with `scripts/sync_library.sh` (it copies
-   `~/cipherlean/CipherLean/Lib` over `assets/lib` and shows the diff), commit on a branch, push,
-   open a pull request against `main`.
+2. Develop in the workspace: edit `~/cipherlean/CipherLean/Lib/…` — a symlink to this repository's
+   `assets/lib/`, as the umbrella `~/cipherlean/CipherLean.lean` is to `assets/workspace/CipherLean.lean` —
+   build with `scripts/lake_build.sh CipherLean`, check with `scripts/check_lean.py`.
+3. `git status` in the repository shows the edited library files; commit on a branch, push, open a
+   pull request against `main`.
 4. Keep the Lean/Mathlib pin (`assets/workspace/lean-toolchain`, `lake-manifest.json`); version
    bumps are separate PRs that rebuild everything (`references/workspace.md`). Pin releases, never
    release candidates: a project pinned to an `-rc` cannot be verified on a machine that has only

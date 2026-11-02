@@ -8,12 +8,11 @@ gets a subdirectory instead of its own 7 GB. Override the location with `CIPHERL
 ├── lean-toolchain        leanprover/lean4:v4.33.0
 ├── lakefile.toml         package CipherLean, library CipherLean, autoImplicit = false
 ├── lake-manifest.json    Mathlib v4.33.0 = commit db584cd6d46c92f209a44c0f1c829460d327499d
-├── CipherLean.lean           empty root module (so an unfinished paper never blocks the others)
+├── CipherLean.lean       -> the skill's assets/workspace/CipherLean.lean: the umbrella `import CipherLean` (the library only, so an unfinished paper never blocks the others)
 ├── CipherLean/
 │   ├── Smoke.lean        import Mathlib; one trivial theorem (tests the install)
 │   ├── Examples/         compiled examples: Feistel, Halfspace, SboxDDT, DdtInverse/ (full run)
-│   ├── Lib/              shared library (F2/Vec, F2/Subspace, F2/Affine, Chi, Sbox, Walsh, DDT, LinStruct, Links) + README, NOTATION
-│   ├── CipherLean.lean       umbrella module: `import CipherLean`
+│   ├── Lib/              -> the skill's assets/lib: the shared library (F2/Vec, F2/Subspace, F2/Affine, Chi, Sbox, Walsh, DDT, LinStruct, Links) + README, NOTATION
 │   └── <Slug>/           one paper: Main.lean (+ piece files), README.md, CHAIN.md (+ .pdf), NOTATION.md, REVIEW.md, PROMOTE.md
 └── .lake/                build products + packages (Mathlib and its dependencies, 7 GB)
 ```

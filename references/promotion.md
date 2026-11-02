@@ -63,8 +63,9 @@ detected. Read the statements, not only the table.
    rewritten); after it, `--apply` rewrites `<Slug>.name` → `CipherLean.new` and the bare renamed names.
    Then `chain_check.py` and `notation_check.py … --also README.md CHAIN.md` must be clean: piece C of
    WHConj3 had about forty such places, one of them a rename, and the stale ones surfaced only in review.
-8. Copy the library into the skill (`scripts/sync_library.sh`), commit, and open a pull request
-   or push (CONTRIBUTING.md).
+8. The library files you edited are the skill's `assets/lib` (the workspace's `CipherLean/Lib` is a symlink to
+   it; a new module is also added to the umbrella `CipherLean.lean`, a symlink to `assets/workspace/CipherLean.lean`):
+   commit and push, or open a pull request (CONTRIBUTING.md).
 
 ## The first two harvests (2026-11-01), as examples
 

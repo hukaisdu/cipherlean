@@ -9,7 +9,8 @@
 #             --examples            with --install: also compile CipherLean/Examples (a few minutes)
 #             --build-from-source   if the prebuilt Mathlib cannot be downloaded, compile it (hours)
 #             --full-clone          let Lake clone the full git history instead of the shallow pre-clone
-#             --update-library      copy assets/lib over CipherLean/Lib and rebuild it; stops if you changed a file there
+#             --update-library      after a git pull of the skill: rebuild the library (CipherLean/Lib is a symlink into
+#                                   the skill; an older copy is replaced by the symlink when identical, refused when not)
 #             --mcp                 also register the lean-lsp-mcp server with Claude Code (needs uv and the
 #                                   claude CLI; optional; not tested from this script)
 #
@@ -17,8 +18,8 @@
 # install the Lean toolchain pinned in assets/workspace/lean-toolchain (~300 MB); create the
 # workspace from assets/workspace; shallow-clone Mathlib and its dependencies at the pinned commits
 # (git --depth 1, a few hundred MB instead of the full history); download the
-# prebuilt Mathlib with `lake exe cache get` (~2 GB download, ~6 GB on disk); copy the examples;
-# build CipherLean/Smoke.lean and run check_lean.py on it. Needs curl, git, python3, >= 10 GB free
+# prebuilt Mathlib with `lake exe cache get` (~2 GB download, ~6 GB on disk); copy the examples; link
+# CipherLean/Lib and CipherLean.lean to the skill's assets; build CipherLean/Smoke.lean and run check_lean.py on it. Needs curl, git, python3, >= 10 GB free
 # disk and network access. macOS (tested); Linux (Ubuntu 24.04, tested 2026-11-02); WSL on Windows (untested).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -95,13 +96,13 @@ fi
 
 step "workspace $WS"
 NEED=0
-for f in lakefile.toml lean-toolchain lake-manifest.json CipherLean.lean CipherLean/Smoke.lean; do [ -f "$WS/$f" ] || NEED=1; done
+for f in lakefile.toml lean-toolchain lake-manifest.json CipherLean/Smoke.lean; do [ -f "$WS/$f" ] || NEED=1; done
 if [ "$NEED" = 0 ]; then
   ok "lakefile, manifest, CipherLean/ present"
   [ "$(cat "$WS/lean-toolchain")" = "$TOOLCHAIN" ] || note "workspace pins $(cat "$WS/lean-toolchain"); the skill was tested with $TOOLCHAIN"
 elif [ "$MODE" = install ]; then
   mkdir -p "$WS/CipherLean"
-  for f in lakefile.toml lean-toolchain lake-manifest.json CipherLean.lean .gitignore CipherLean/Smoke.lean; do
+  for f in lakefile.toml lean-toolchain lake-manifest.json .gitignore CipherLean/Smoke.lean; do
     [ -f "$WS/$f" ] || cp "$SKILL/assets/workspace/$f" "$WS/$f"
   done
   ok "created from assets/workspace (existing files kept)"
@@ -168,43 +169,45 @@ else
 fi
 
 step "shared library"
-LIB="$WS/CipherLean/Lib"
-# INST keeps a copy of the assets/lib last copied into LIB. A file of LIB that equals neither
-# assets/lib nor that copy was changed in the workspace (a lemma promoted in step 7, say), so
-# --update-library lists it and stops instead of overwriting it. A workspace set up before this
-# check has no INST; there every file that differs from assets/lib counts as changed.
-INST="$WS/.lake/cipherlean-lib-installed"
-copy_lib() {
-  mkdir -p "$LIB" && cp -R "$SKILL/assets/lib/." "$LIB/" \
-    && rm -rf "$INST" && mkdir -p "$INST" && cp -R "$SKILL/assets/lib/." "$INST/"
+# One copy of the library: CipherLean/Lib and the umbrella CipherLean.lean are symlinks to the skill's
+# assets/lib and assets/workspace/CipherLean.lean, so a `git pull` of the skill updates them, a lemma promoted
+# in the workspace is committed in the skill repository, and nothing is synced back. A workspace set up before
+# 2026-11-03 holds copies: --update-library replaces a copy that is identical to the skill's by the symlink and
+# refuses while they differ (put the difference into the skill first, CONTRIBUTING.md).
+LIB="$WS/CipherLean/Lib"; UMB="$WS/CipherLean.lean"
+switch_link() {   # switch_link <path> <target> <label>: symlink -> ok; identical copy -> replaced; different -> fail
+  local path="$1" target="$2" label="$3"
+  if [ -L "$path" ]; then ok "$label -> $(readlink "$path")"; return 0; fi
+  if [ -e "$path" ]; then
+    if diff -rq "$path" "$target" >/dev/null 2>&1; then
+      rm -rf "$path" && ln -s "$target" "$path" && ok "$label: identical copy replaced by a symlink to $target"
+    else
+      diff -rq "$path" "$target" 2>&1 | sed 's|^|  |'
+      fail "$label is a copy that differs from the skill's $target: put the changes into the skill (CONTRIBUTING.md), commit, then rerun"
+    fi
+  else
+    ln -s "$target" "$path" && ok "$label -> $target"
+  fi
 }
 if [ "$UPDATE_LIB" = 1 ] && [ -d "$WS" ] && command -v lake >/dev/null 2>&1; then
-  CHANGED=()
-  while IFS= read -r f; do
-    [ -f "$LIB/$f" ] || continue
-    cmp -s "$LIB/$f" "$SKILL/assets/lib/$f" && continue
-    [ -f "$INST/$f" ] && cmp -s "$LIB/$f" "$INST/$f" && continue
-    CHANGED+=("$f")
-  done < <(cd "$SKILL/assets/lib" && find . -type f ! -name '.*' | sed 's|^\./||' | sort)
-  if [ ${#CHANGED[@]} -gt 0 ]; then
-    for f in "${CHANGED[@]}"; do printf '  changed  CipherLean/Lib/%s\n' "$f"; done
-    [ -d "$INST" ] || note "$INST does not exist (workspace set up before this check), so every file that differs from assets/lib is listed"
-    note "compare: diff -u $SKILL/assets/lib/<file> $LIB/<file>"
-    fail "nothing copied, so the changes listed above are kept. Send them upstream first (CONTRIBUTING.md), or move these files out of CipherLean/Lib, then rerun"
-  fi
-  copy_lib || fail "could not copy assets/lib to $LIB"
+  switch_link "$LIB" "$SKILL/assets/lib" "CipherLean/Lib"
+  switch_link "$UMB" "$SKILL/assets/workspace/CipherLean.lean" "CipherLean.lean"
   if ( cd "$WS" && lake build CipherLean ) >"$WS/.lake/setup-library.log" 2>&1; then
-    ok "CipherLean/Lib updated from assets/lib and rebuilt"
+    ok "CipherLean rebuilt ($(grep -c 'Built CipherLean' "$WS/.lake/setup-library.log") modules compiled, the rest cached)"
   else
     tail -20 "$WS/.lake/setup-library.log"; fail "CipherLean failed to compile after the update (log: $WS/.lake/setup-library.log)"
   fi
-elif [ -f "$LIB/F2/Vec.lean" ] && [ -f "$WS/CipherLean.lean" ]; then
-  ok "CipherLean/Lib present"
+elif [ -L "$LIB" ] && [ -f "$LIB/F2/Vec.lean" ] && [ -f "$UMB" ]; then
+  ok "CipherLean/Lib -> $(readlink "$LIB")"
+  [ -L "$UMB" ] || note "CipherLean.lean is still a copy: --update-library replaces it by a symlink when identical"
+elif [ -f "$LIB/F2/Vec.lean" ] && [ -f "$UMB" ]; then
+  ok "CipherLean/Lib present as a copy (the layout before 2026-11-03)"
+  note "--update-library replaces identical copies of CipherLean/Lib and CipherLean.lean by symlinks into the skill"
 elif [ "$MODE" = install ]; then
-  copy_lib || fail "could not copy assets/lib to $LIB"
-  ok "copied assets/lib to CipherLean/Lib"
+  switch_link "$LIB" "$SKILL/assets/lib" "CipherLean/Lib"
+  switch_link "$UMB" "$SKILL/assets/workspace/CipherLean.lean" "CipherLean.lean"
 else
-  miss "CipherLean/Lib missing; --install copies and compiles it"
+  miss "CipherLean/Lib missing; --install links it to the skill's assets/lib and compiles it"
 fi
 
 step "smoke test"

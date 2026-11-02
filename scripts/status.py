@@ -119,20 +119,20 @@ def main():
         listing = ws / ".lake" / "inspect" / f"status_{a.slug.replace('/', '_')}.json"
         listing.parent.mkdir(parents=True, exist_ok=True)
         # one `lake env lean` run over all the pieces (inspect_lean.py); check_lean and chain_check then read it
-        p = subprocess.run([sys.executable, str(skill / "inspect_lean.py"), *[str(f) for f in files], "--out", str(listing)],
+        p = subprocess.run([sys.executable, str(skill / "inspect_lean.py"), *[str(f) for f in files], "--ws", str(ws), "--out", str(listing)],
                            cwd=ws, capture_output=True, text=True)
         if p.returncode != 0:
             print(f"- listing failed (build the files first): {(p.stderr or p.stdout).strip()[-600:]}")
         else:
             print(f"- listing: {p.stdout.strip()}")
         for f in files:
-            out = subprocess.run([sys.executable, str(skill / "check_lean.py"), str(f.relative_to(ws)), "--no-build", "--listing", str(listing)],
+            out = subprocess.run([sys.executable, str(skill / "check_lean.py"), str(f.relative_to(ws)), "--ws", str(ws), "--no-build", "--listing", str(listing)],
                                  cwd=ws, capture_output=True, text=True).stdout
             v = re.findall(r"^VERDICT: .*", out, re.M); n = re.findall(r"^declarations: (.*)", out, re.M)
             print(f"- check_lean {f.name}: {v[-1] if v else 'no verdict (build it first)'}" + (f"; {n[-1]}" if n else ""))
         if chain.exists() and files:
             # one run over all the pieces: chain_check treats every file given as the paper module
-            out = subprocess.run([sys.executable, str(skill / "chain_check.py"), str(chain), *[str(f) for f in files], "--listing", str(listing)],
+            out = subprocess.run([sys.executable, str(skill / "chain_check.py"), str(chain), *[str(f) for f in files], "--ws", str(ws), "--listing", str(listing)],
                                  cwd=ws, capture_output=True, text=True).stdout
             v = re.findall(r"^VERDICT: .*", out, re.M); print(f"- chain_check {', '.join(f.name for f in files)}: {v[-1] if v else 'no verdict'}")
 

@@ -68,7 +68,7 @@ library lacks it.
 | trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` |
 | rebuild the shared library | `$SKILL/scripts/lake_build.sh CipherLean` (after adding a lemma to `CipherLean/Lib/`) |
 | promotion candidates (step 7b) | `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/Main.lean --write` |
-| NOTATION names exist? (step 7) | `$SKILL/scripts/notation_check.py CipherLean/<Slug>/NOTATION.md CipherLean/<Slug>/<File>.lean [...]` |
+| NOTATION names exist? (step 7) | `$SKILL/scripts/notation_check.py CipherLean/<Slug>/NOTATION.md CipherLean/<Slug>/<File>.lean [...] --also README.md CHAIN.md` (every piece file and the aggregator) |
 | library back into the skill | `$SKILL/scripts/sync_library.sh` (then commit / pull request, see `CONTRIBUTING.md`) |
 | independent review | a fresh agent with `references/review-brief.md` (step 8) |
 
@@ -297,8 +297,9 @@ note) and the "Departures from the paper" section. Then step 7b. In the reply: w
 and the exact commands to rebuild. Say "proved" only after step 6 passes, and only for the paper's
 statement in full (both directions of an "exactly", every case of a case split). Every script the
 README cites (a Python table check, a counterexample search) lives in the paper directory, and every
-Lean name README or NOTATION cites exists (`$SKILL/scripts/notation_check.py NOTATION.md <files>`, or `#check`): the first independent review
-found both kinds of slip in one file. "Done" means: the checks pass on the declared pin, the
+Lean name README, NOTATION or CHAIN cites exists (`$SKILL/scripts/notation_check.py NOTATION.md <every piece
+file and the aggregator> --also README.md CHAIN.md`, or `#check`): the first independent review found both
+kinds of slip in one file, the third a stale name in README's Departures after a promotion rename. "Done" means: the checks pass on the declared pin, the
 files and the evidence (`check_lean` output, `CHAIN.md`, `REVIEW.md`) are committed, and every
 caveat (an added hypothesis, a compiler axiom, a departure) stands at the top of the report, not
 in a footnote.

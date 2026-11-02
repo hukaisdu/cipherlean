@@ -101,6 +101,13 @@ theorem filter_ne_zero_eq [DecidableEq ι] (i₀ : ι) :
   simp only [Finset.mem_filter, Finset.mem_univ, true_and]
   exact zmod2_ne_zero_iff
 
+/-- The dot product on `F_2^ι × F_2^κ` (a vector indexed by `ι ⊕ κ`, two words) splits along the
+two words: `⟨λ, (A ‖ B)⟩ = ⟨λ_L, A⟩ + ⟨λ_R, B⟩` (companion of `sum_elim_eq_iff`; promoted from
+`WHConj3`, 2026-11-02). -/
+theorem dot_sum_elim {κ : Type*} [Fintype κ] (lam : Vec (ι ⊕ κ)) (A : Vec ι) (B : Vec κ) :
+    lam ⬝ᵥ Sum.elim A B = (lam ∘ Sum.inl) ⬝ᵥ A + (lam ∘ Sum.inr) ⬝ᵥ B := by
+  simp [dotProduct, Fintype.sum_sum_type]
+
 /-! ## Signs and characters -/
 
 section sgn

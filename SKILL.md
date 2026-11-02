@@ -62,7 +62,7 @@ library lacks it.
 | compile one file | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
 | final check | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean` |
 | the status board | `$SKILL/scripts/status.py <Slug>` (files, sorry counts, CHAIN rows by status, README table, REVIEW round and open objections; `--check` reruns the verdicts) |
-| the same steps on a server | `$SKILL/scripts/remote.sh build\|check\|chain\|trim\|eval …` with `CIPHERLEAN_REMOTE=user@host` (the skill and workspace installed there; sources stay here; `chain` takes every piece file) |
+| the same steps on a server | `$SKILL/scripts/remote.sh build\|check\|chain\|trim\|lib\|eval …` with `CIPHERLEAN_REMOTE=user@host` (the skill and workspace installed there; sources stay here; `chain` takes every piece file) |
 | find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` |
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
 | trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` |

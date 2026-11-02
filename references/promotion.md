@@ -46,8 +46,12 @@ detected. Read the statements, not only the table.
 2. Keep the proof; adjust names (`Crypto.*`-style prefixes disappear inside `namespace CipherLean`).
 3. Add a finite check if it is a definition; keep the paper's toy where it is.
 4. `$SKILL/scripts/lake_build.sh CipherLean`, then `check_lean.py` on the module, then
-   `trim_imports.py` only if a new import was added.
-5. Add a row to `CipherLean/Lib/NOTATION.md` and the module table of `CipherLean/Lib/README.md`.
+   `trim_imports.py` only if a new import was added. With a remote workspace (`CIPHERLEAN_REMOTE`),
+   `remote.sh lib <touched library files>` syncs `CipherLean/Lib/` and `CipherLean.lean` there, rebuilds
+   the library and checks each file (`remote.sh sync/build/check/chain` cover only `CipherLean/<Slug>/`).
+5. Add a row to `CipherLean/Lib/NOTATION.md` and the module table of `CipherLean/Lib/README.md`. Then
+   `notation_check.py CipherLean/Lib/NOTATION.md <the touched library files>` (it reads a library NOTATION
+   as well as a paper's).
 6. In the paper file, replace the moved declaration by the library's name (keep a one-line instance
    under the paper's name if README or NOTATION refer to it), rebuild and re-check the paper file.
 7. Copy the library into the skill (`scripts/sync_library.sh`), commit, and open a pull request

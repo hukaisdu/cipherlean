@@ -4,6 +4,7 @@ Released under the MIT license as described in the file LICENSE.
 Authors: Kai Hu
 -/
 import CipherLean.Lib.Sbox
+import CipherLean.Lib.F2.Affine
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Data.Fin.VecNotation
@@ -276,6 +277,45 @@ theorem outputDiffs_inv_eq_inputDiffs {F : Vec ι → Vec ι} (hbij : Function.B
     have h1 : F x + α = F (x + d) := by
       rw [← hx, add_comm (F (x + d)) (F x), ← add_assoc, add_self, zero_add]
     rw [h1, hF (x + d), hF x, e.symm_apply_apply, e.symm_apply_apply, add_comm x d, add_add_self]
+
+/-! ## The masks constant on the attainable differences: `K_H(α)`
+
+`KH F α = constMasks (inputDiffs F α)` is the ChiChi paper's `K_H(α) = {λ ∈ F^N : ⟨λ, d⟩ is
+constant for d ∈ S_α}` (§2.1 "The four spaces") read on the forward map: `S_α` is
+`inputDiffs F α`. The paper's `S_α = {H(y + α) + H(y) : y}` with `H = F⁻¹` gives the same submodule
+(`KH_eq_constMasks_outputDiffs`). Membership is decidable, for finite checks. Promoted from
+`WHConj3` (Lemma 24, piece B) on 2026-11-02. -/
+
+/-- `K_H(α)`: the masks `λ` with `⟨λ, d⟩` constant over the input differences `d` of `F` that
+attain `α` (the ChiChi paper, §2.1), a `ZMod 2`-submodule of `Vec ι`. -/
+def KH (F : Vec ι → Vec ι) (α : Vec ι) : Submodule (ZMod 2) (Vec ι) :=
+  constMasks (inputDiffs F α)
+
+theorem mem_KH {F : Vec ι → Vec ι} {α lam : Vec ι} :
+    lam ∈ KH F α ↔ ∀ d ∈ inputDiffs F α, ∀ d' ∈ inputDiffs F α, lam ⬝ᵥ d = lam ⬝ᵥ d' := Iff.rfl
+
+instance (F : Vec ι → Vec ι) (α lam : Vec ι) : Decidable (lam ∈ KH F α) :=
+  decidable_of_iff _ mem_KH.symm
+
+/-- The paper's `K_H(α)` (masks constant on `S_α = {H(y + α) + H(y) : y}`) is `KH F α` when
+`H = F⁻¹` (through `outputDiffs_inv_eq_inputDiffs`). -/
+theorem KH_eq_constMasks_outputDiffs {F : Vec ι → Vec ι} (hbij : Function.Bijective F)
+    (α : Vec ι) : constMasks (outputDiffs (Equiv.ofBijective F hbij).symm α) = KH F α := by
+  rw [KH, outputDiffs_inv_eq_inputDiffs]
+
+/-- Finite check: for `F(x) = (x_0 x_1, 0)` on `F_2^2` the input differences attaining `(1, 0)` are
+the three nonzero vectors, so only the zero mask is constant on them; for the identity map
+`S_α = {α}` and every mask is constant. -/
+theorem inputDiffs_quadratic_example :
+    inputDiffs (fun x : Vec (Fin 2) => ![x 0 * x 1, 0]) ![1, 0] = {![1, 0], ![0, 1], ![1, 1]} := by
+  decide
+
+theorem KH_quadratic_example :
+    ∀ lam : Vec (Fin 2), lam ∈ KH (fun x : Vec (Fin 2) => ![x 0 * x 1, 0]) ![1, 0] → lam = 0 := by
+  decide +kernel
+
+theorem KH_id_example : ∀ lam : Vec (Fin 2), lam ∈ KH (fun x : Vec (Fin 2) => x) ![1, 0] := by
+  decide +kernel
 
 /-- Finite check: for the identity map every direction attains exactly itself. -/
 theorem inputDiffs_id_example : inputDiffs (fun x : Vec (Fin 2) => x) ![1, 0] = {![1, 0]} := by

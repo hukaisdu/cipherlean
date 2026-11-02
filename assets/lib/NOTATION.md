@@ -33,11 +33,17 @@ All statistics are unnormalized integers or counts; normalized forms are corolla
 | `χ_r` (Keccak χ on a cycle of length `r`) | `chiMap r` | `Vec (Fin r) → Vec (Fin r)` | `z i + (z (i+1) + 1) * z (i+2)`, `Fin r` arithmetic; `deriv_chiMap_apply` is `Δ_d χ_r(x)` coordinatewise; `chiMap_three_bijective`, `chiMap_four_not_bijective` (`chi` is the character, not this map) |
 | `u + v = w ↔ u = w + v` over `F_2` | `add_eq_iff_eq_add` | theorem | moving a term across `=` |
 | `Sum.elim A B = f ↔ A = f ∘ inl ∧ B = f ∘ inr` | `sum_elim_eq_iff` | theorem | gluing / splitting a vector indexed by `ι ⊕ κ` (two words) |
+| `⟨λ, (A ‖ B)⟩ = ⟨λ_L, A⟩ + ⟨λ_R, B⟩` | `dot_sum_elim lam A B` | theorem | the dot product on `Vec (ι ⊕ κ)` splits along the two words (`lam ∘ Sum.inl`, `lam ∘ Sum.inr`) |
+| "⟨λ, d⟩ is constant for d ∈ S" | `constMasks S` | `Submodule (ZMod 2) (Vec ι)` | masks `λ` with `λ ⬝ᵥ d = λ ⬝ᵥ d′` for all `d, d′ ∈ S` (`mem_constMasks`, decidable); `⊤` when `S` has at most one element (ChiChi paper §2.1) |
+| `λ^⊥` (one mask) | `perp λ` | `Submodule (ZMod 2) (Vec ι)` | `{w : λ ⬝ᵥ w = 0}` (`mem_perp`, decidable); `V ≤ perp λ` says "λ annihilates V" |
+| `dir(Aff T)` | `dirAff T` | `Submodule (ZMod 2) (Vec ι)` | `span {t + t′ : t, t′ ∈ T}` (= `span {t + t⁰ : t ∈ T}` for any `t⁰ ∈ T`), `⊥` for `T = ∅`; `dirAff_le_perp_iff`: `dirAff T ≤ perp λ ↔ ∀ t, t′ ∈ T, λ ⬝ᵥ (t + t′) = 0` (ChiChi paper §2.1, App. C.1) |
+| `K_H(α) = {λ : ⟨λ, d⟩ constant for d ∈ S_α}` | `KH F α := constMasks (inputDiffs F α)` | `Submodule (ZMod 2) (Vec ι)` | forward reading (`d` an input difference of `F`, `α` its output difference; `mem_KH`, decidable); the paper's `S_α` through `H = F⁻¹`: `KH_eq_constMasks_outputDiffs hbij α` (ChiChi paper §2.1) |
 | S-box table | `Sbox.ofTable t`, `Sbox.toFun S` | `BitVec n → BitVec n`, `Vec (Fin n) → Vec (Fin n)` | `toFun S = toVec ∘ S ∘ ofVec` |
 | PRESENT S-box | `Sbox.present`, `Sbox.presentVec` | — | standard 4-bit test instance (CHES 2007) |
 | word ↔ vector | `toVec`, `ofVec`, `bvEquiv` | `BitVec n ≃ Vec (Fin n)` | coordinate `i` = bit `i` (LSB first) |
 
 Not interchangeable: `chi K w x` (the character) vs `chiMap r` (the χ map of Keccak); `walsh` (integer) vs `correlation` (rational); `ddt` (count) vs `ddt / 2^n`
-(probability, not defined here); `Vec (Fin n)` vs `BitVec n` (bridge required, `+` vs `^^^`).
+(probability, not defined here); `Vec (Fin n)` vs `BitVec n` (bridge required, `+` vs `^^^`). `constMasks S`, `perp λ`, `dirAff T`, `KH F α` are `Submodule`s (for `≤`, `⊥`, `⊤` statements), while
+`ann V` and `IsSubspace V` are `Finset`s (for counting): not interchangeable without a conversion.
 
 Open: `lat` (LAT entry `W/2`) is not defined; add it with `two_mul_lat` when a paper needs it.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """inspect_lean.py — one Lean listing for every check of the skill.
 
-One `lake env lean` run loads the given paper module(s) next to the shared library and emits, per declaration
+One `lake env lean` run loads the given paper module(s) next to the built modules of the shared library and emits, per declaration
 of those modules and of `CipherLean/Lib`: its name, module, side (PAPER = a module given, LIB = the library),
 kind, axioms (PAPER side only; `collectAxioms`), elaborated statement, the constants its proof term uses and the
 constants its statement (type) uses — both within the paper modules and the library, with Lean's auxiliary
@@ -90,16 +90,20 @@ def run(cmd, cwd, timeout):
     return p.returncode, (p.stdout or "") + (p.stderr or "")
 
 
-def lib_modules(ws):
+def lib_modules(ws, built_only=False):
+    """The library modules; with built_only those whose .olean exists (a fresh workspace checks Smoke.lean before the
+    library is compiled, and the listing must not import what is not built yet)."""
     lib_dir = ws / "CipherLean" / "Lib"
     if not lib_dir.is_dir():
         return []
-    return sorted(".".join(["CipherLean", "Lib", *f.relative_to(lib_dir).with_suffix("").parts]) for f in lib_dir.rglob("*.lean"))
+    mods = sorted(".".join(["CipherLean", "Lib", *f.relative_to(lib_dir).with_suffix("").parts]) for f in lib_dir.rglob("*.lean"))
+    if built_only:
+        mods = [m for m in mods if (ws / ".lake" / "build" / "lib" / "lean" / pathlib.Path(*m.split("."))).with_suffix(".olean").exists()]
+    return mods
 
 
 LEAN = r'''
 import Lean
-import CipherLean
 {imports}
 
 open Lean Elab Command Meta
@@ -201,11 +205,11 @@ def listAll (withDups : Bool) : CommandElabM Unit := do
 def listing(ws, files, dups=False, timeout=1800):
     """The listing of the given .lean files (built already) as a dict; dies when Lean fails."""
     mods = [module_name(ws, f) for f in files]
-    libmods = lib_modules(ws)
+    libmods = [m for m in lib_modules(ws, built_only=True) if m not in mods]     # imported one by one, no umbrella
     scratch_dir = ws / ".lake" / "inspect"
     scratch_dir.mkdir(parents=True, exist_ok=True)
     scratch = scratch_dir / ("_".join(m.replace(".", "_") for m in mods)[:150] + ("_dups" if dups else "") + ".lean")
-    scratch.write_text(LEAN.format(imports="\n".join(f"import {m}" for m in mods), papers=", ".join("`" + m for m in mods),
+    scratch.write_text(LEAN.format(imports="\n".join(f"import {m}" for m in mods + libmods), papers=", ".join("`" + m for m in mods),
                                    libmods=", ".join("`" + m for m in libmods), dups="true" if dups else "false"), encoding="utf-8")
     t0 = time.time()
     code, out = run([lake(), "env", "lean", str(scratch)], cwd=str(ws), timeout=timeout)

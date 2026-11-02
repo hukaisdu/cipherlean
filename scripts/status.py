@@ -79,7 +79,10 @@ def main():
     if a.check:
         skill = pathlib.Path(__file__).resolve().parent
         print("\n## Live checks")
-        files = [f for f in leans if "<Slug>" not in f.read_text(encoding="utf-8", errors="replace")]
+        def is_template(f):
+            s = f.read_text(encoding="utf-8", errors="replace")
+            return "<Slug>" in s or "theorem main : True" in s     # the untouched Main.lean of new_paper.sh
+        files = [f for f in leans if not is_template(f)]
         for f in files:
             out = subprocess.run([sys.executable, str(skill / "check_lean.py"), str(f.relative_to(ws)), "--no-build"], cwd=ws, capture_output=True, text=True).stdout
             v = re.findall(r"^VERDICT: .*", out, re.M); print(f"- check_lean {f.name}: {v[-1] if v else 'no verdict (build it first)'}")

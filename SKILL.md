@@ -55,7 +55,7 @@ library lacks it.
 |---|---|
 | check / create the environment | `$SKILL/scripts/setup_env.sh --check` (2 s) / `--install` (first time) |
 | scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>]` (Main.lean, README, NOTATION, CHAIN) |
-| proof-chain graph (step 1b) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid |
+| proof-chain graph (step 1b) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid; `--focus <id> [--depth N]` or `--rows a,b,c` → `CHAIN-<id>.pdf`, one piece's sub-chain |
 | chain vs. Lean (step 6) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/<File>.lean [<File2>.lean …]` (a theorem split into pieces: all its files in one run; edges `direct` / `statement` / `transitive`; a `lean` cell that is not one name is listed as a note) |
 | where the build time went | `$SKILL/scripts/build_profile.py <lake build log> [--sites <dir>]` |
 | verify someone else's project | `$SKILL/scripts/sandbox_project.sh <project>` then `references/verify-existing.md` |
@@ -142,7 +142,10 @@ the graph prints the part before the `;` under each node and the file's H1 line 
 line names the paper), implicit hypotheses noticed, and `status: pending`. Then
 `$SKILL/scripts/chain_graph.py CHAIN.md`: it draws the dependency graph in TikZ (`CHAIN.tex`,
 compiled to `CHAIN.pdf`; target on top, definitions and cited results at the bottom, dashed arrows
-for a route the paper takes but Lean may not) and keeps a mermaid copy inside CHAIN.md. Give the
+for a route the paper takes but Lean may not) and keeps a mermaid copy inside CHAIN.md. For a theorem
+split into pieces, `--focus <id>` (with `--depth N` to stop N edges away) or `--rows a,b,c` draws one
+piece's sub-chain as `CHAIN-<id>.pdf` next to the whole graph, which stays the one in CHAIN.md: a
+54-node chain is not readable as one picture when the reader confirms one piece. Give the
 reader the table, the graph and the "Questions for the reader" section, and stop: nothing is
 encoded before they confirm or correct the chain. This is the one deliberate gate of the workflow;
 it catches a misread theorem, a lemma applied outside its hypotheses, or a cited result quoted

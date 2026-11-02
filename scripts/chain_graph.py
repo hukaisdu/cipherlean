@@ -14,7 +14,14 @@ clause of the `where` column, cut at the first ";" — so write that column as "
 The H1 line of CHAIN.md ("# CHAIN — <Slug>: ...") is printed above the graph as its title, so
 it should name the paper the sections refer to.
 
-usage: chain_graph.py CHAIN.md [--no-pdf] [--tex-only]
+A sub-chain, for confirming one piece of a theorem split into pieces (a 54-node chain is not readable
+as one picture): `--focus <id>` draws the rows reachable from `<id>` through `uses` (`?`-edges included,
+dashed as always; `--depth N` stops N edges away, so `--focus thm:5 --depth 1` is the target with its direct
+premises), `--rows a,b,c` exactly those rows and the edges among them. The sub-chain is written
+to `CHAIN-<id>.tex` / `.pdf` next to CHAIN.md (`--out <stem>` to choose the name) and CHAIN.md's mermaid
+block is left alone: it stays the whole chain. `--per-row N` widens a layer (default 6 nodes per line).
+
+usage: chain_graph.py CHAIN.md [--no-pdf] [--tex-only] [--focus <id> [--depth N] | --rows a,b,c] [--out <stem>] [--per-row N]
 """
 import argparse, pathlib, re, shutil, subprocess, sys
 
@@ -159,7 +166,35 @@ def tex_escape(s):
     return "".join(ch if ord(ch) < 128 else "?" for ch in s)
 
 
-def tikz(nodes, edges, depth, title=""):
+def sub_chain(nodes, edges, focus=None, rows=None, depth=None):
+    """The rows of a sub-chain: everything reachable from `focus` through `uses` (at most `depth` edges
+    away when given), or exactly `rows`; with the edges among them."""
+    if focus is not None:
+        if focus not in nodes:
+            sys.exit(f"chain_graph: --focus {focus}: no such id in the table")
+        keep, stack = set(), [(focus, 0)]
+        while stack:
+            n, d = stack.pop()
+            if n in keep:
+                continue
+            keep.add(n)
+            if depth is None or d < depth:
+                stack.extend((b, d + 1) for (a, b, _) in edges if a == n)
+    else:
+        keep = set()
+        for r in rows:
+            if r in nodes:
+                keep.add(r)
+            else:
+                print(f"chain_graph: --rows: unknown id {r}, skipped", file=sys.stderr)
+        if not keep:
+            sys.exit("chain_graph: --rows named no row of the table")
+    sub_nodes = {n: nodes[n] for n in nodes if n in keep}      # table order kept
+    sub_edges = [(a, b, o) for (a, b, o) in edges if a in keep and b in keep]
+    return sub_nodes, sub_edges
+
+
+def tikz(nodes, edges, depth, title="", per_row=6):
     by_layer = {}
     for n in nodes:
         by_layer.setdefault(depth[n], []).append(n)
@@ -170,7 +205,6 @@ def tikz(nodes, edges, depth, title=""):
     y = 0.0
     for L in sorted(by_layer):
         ns = sorted(by_layer[L], key=lambda n: (order[nodes[n]["kind"]], n))
-        per_row = 6
         rows = [ns[i:i + per_row] for i in range(0, len(ns), per_row)]
         for ri, row in enumerate(rows):
             width = (len(row) - 1) * 3.0
@@ -225,18 +259,39 @@ def main():
     ap.add_argument("chain")
     ap.add_argument("--no-pdf", action="store_true")
     ap.add_argument("--tex-only", action="store_true", help="do not touch CHAIN.md's mermaid block")
+    ap.add_argument("--focus", metavar="ID", help="draw the sub-chain reachable from this id (CHAIN-<id>.tex/pdf)")
+    ap.add_argument("--depth", type=int, metavar="N", help="with --focus: stop N edges away from the id")
+    ap.add_argument("--rows", metavar="a,b,c", help="draw exactly these rows and the edges among them")
+    ap.add_argument("--out", metavar="STEM", help="file stem of a sub-chain (default CHAIN-<id> or CHAIN-rows)")
+    ap.add_argument("--per-row", type=int, default=6, metavar="N", help="nodes per line within a layer (default 6)")
     a = ap.parse_args()
+    if a.focus and a.rows:
+        sys.exit("chain_graph: give --focus or --rows, not both")
     path = pathlib.Path(a.chain).resolve()
     text = path.read_text(encoding="utf-8")
     rows = parse_chain(text)
     nodes, edges = nodes_edges(rows)
     if not nodes:
         sys.exit("chain_graph: the table has no rows yet")
+    title = chain_title(text)
+    stem = "CHAIN"
+    if a.focus or a.rows:
+        nodes, edges = sub_chain(nodes, edges, focus=a.focus, rows=[r.strip("` ") for r in (a.rows or "").split(",") if r.strip("` ")],
+                                 depth=a.depth)
+        if a.focus:
+            stem = "CHAIN-" + re.sub(r"[^A-Za-z0-9]+", "-", a.focus).strip("-")
+            title = f"{title} — sub-chain from {a.focus}" + (f" (depth {a.depth})" if a.depth is not None else "")
+        else:
+            stem, title = "CHAIN-rows", f"{title} — rows {', '.join(nodes)}"
+        if a.out:
+            stem = a.out
     depth = layers(nodes, edges)
-    tex = path.with_name("CHAIN.tex")
-    tex.write_text(tikz(nodes, edges, depth, chain_title(text)), encoding="utf-8")
+    tex = path.with_name(stem + ".tex")
+    tex.write_text(tikz(nodes, edges, depth, title, per_row=a.per_row), encoding="utf-8")
     print(f"{len(nodes)} nodes, {len(edges)} edges, {max(depth.values()) + 1} layers -> {tex}")
-    if not a.tex_only:
+    if a.focus or a.rows:
+        print(f"sub-chain: CHAIN.md's mermaid block untouched (it stays the whole chain)")
+    elif not a.tex_only:
         mm = mermaid(nodes, edges)
         if "<!-- chain-graph:begin -->" in text:
             text = re.sub(r"<!-- chain-graph:begin -->.*?<!-- chain-graph:end -->",

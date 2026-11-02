@@ -152,7 +152,7 @@ formalization of a coset-average theorem that is not shipped, so those idioms ar
     `Vec` and move the computation to `BitVec` with `CipherLean.ddt_toFun` / `diffUniformity_toFun_le_iff`
     (`CipherLean.present_diffUniformity`: < 10 s).
 
-26. **A computational case with a semantic bridge** (step 5b), when `decide +kernel` cannot finish:
+26. **A computational case with a semantic bridge** (step 6, computational cases), when `decide +kernel` cannot finish:
     ```lean
     /-- The finite computation, as a Boolean program (or a checker of an offline certificate). -/
     def checker : Bool := (Finset.univ.filter fun x : BitVec 8 => …).card ≤ 4   -- decidable, closed
@@ -210,10 +210,11 @@ formalization of a coset-average theorem that is not shipped, so those idioms ar
     limit, not the kernel's; `decide +kernel` passes in seconds, standard axioms.
 35. **A piece file imports the previous piece, not `Mathlib`** (`WHConj3.TwoActive`): the earlier piece was
     trimmed, so `Submodule`, `Submodule.span`, `Fin.sum_univ_three` may be missing although the project
-    "imports Mathlib"; either keep `import Mathlib` until the new file's own trim, or add the modules
-    (`Mathlib.LinearAlgebra.Span.Basic`, `Mathlib.Algebra.BigOperators.Fin`). `trim_imports.py` only acts on a
-    bare `import Mathlib`.
-36. **Bisect a stuck kernel `decide` by components** (`WHConj3` piece C, step 4): the message "Reduction got
+    "imports Mathlib", and the error cascades into "declaration uses `sorry`" on half the file; keep `import
+    Mathlib` until the new file's own trim (`trim_imports.py` minimizes a hand-chosen list the same way). Import
+    explicitly every library module the piece uses (`import CipherLean.Lib.F2.Subspace` for `dotForm`): the
+    previous piece re-exports only what it imported itself (`Assembly.lean`, piece C).
+36. **Bisect a stuck kernel `decide` by components** (`WHConj3` piece C, step 5): the message "Reduction got
     stuck at the `Decidable` instance …" of a failed `decide +kernel` is produced by the elaborator's `whnf`, so
     the printed term (there: the `Finset.univ` iteration) is not where the kernel failed. One scratch file with
     one `example … := by decide +kernel` per helper (`Nat.cast` into `ZMod 2`, `ZMod.val`, `List.getD`, `![…]`,
@@ -269,6 +270,10 @@ a lemma yourself.
   through it is "stuck". Write `((k % 2 : ℕ) : ZMod 2)` and `#eval` one point of every table helper
   (`encode (decode k) = k`) before any kernel check.
 - After `Finset.sum_const` the scalar is an ℕ-smul: `nsmul_eq_mul`, not `smul_eq_mul`.
+- `chain_check.py` reads proof terms: a lemma `KH F α = …` closed by a defeq `exact constMasks_eq_… _` never
+  mentions `KH` in its proof, so the chain edge to `def:KH` shows as `statement` (the type mentions it) rather
+  than `direct`; `rw [KH]` first if the row's `uses` names the definition and a direct edge is wanted
+  (`WHConj3.KH_eq_orthogonal_dirAff`). Both verdicts are CONSISTENT; MISSING is only an edge neither realises.
 
 ## 5. Speed
 
@@ -279,7 +284,12 @@ a lemma yourself.
 - `simp only [...]` with a named list beats bare `simp` in big files; `field_simp` once at the
   end, not inside a `calc` chain.
 - When the proof is done, `scripts/trim_imports.py --apply`: the Halfspace example loads with
-  9 modules instead of all of Mathlib.
+  9 modules instead of all of Mathlib. `#min_imports` names the modules that declare the constants of the proof
+  terms, so a module can be suggested only because it was imported (a late instance such as `IsAzumaya.id`
+  wins the typeclass search for `Module.Finite R R` while its module is in scope: `WHConj3/Assembly.lean` came
+  out of its first trim with `Mathlib.RingTheory.Henselian` and `Mathlib.Algebra.Azumaya.Basic`); the script
+  therefore tries the file without each suggested module and drops what it compiles without; `--why` shows
+  what a surviving module supplies.
 - Keep finite checks that use `native_decide` in their own file (`Checks.lean` next to `Main.lean`):
   every build of a file re-elaborates its `native_decide` blocks, so a 1 000-line file with fifteen of
   them makes every `check_lean.py` run cost minutes; one run burned 25 full checks in two hours

@@ -12,9 +12,9 @@ gets a subdirectory instead of its own 7 GB. Override the location with `CIPHERL
 ├── CipherLean/
 │   ├── Smoke.lean        import Mathlib; one trivial theorem (tests the install)
 │   ├── Examples/         compiled examples: Feistel, Halfspace, SboxDDT, DdtInverse/ (full run)
-│   ├── Lib/              shared library (F2/Vec, F2/Subspace, Sbox, Walsh, DDT, Links) + README, NOTATION
+│   ├── Lib/              shared library (F2/Vec, F2/Subspace, F2/Affine, Chi, Sbox, Walsh, DDT, LinStruct, Links) + README, NOTATION
 │   ├── CipherLean.lean       umbrella module: `import CipherLean`
-│   └── <Slug>/           one paper: Main.lean (+ more files), README.md, NOTATION.md
+│   └── <Slug>/           one paper: Main.lean (+ piece files), README.md, CHAIN.md (+ .pdf), NOTATION.md, REVIEW.md, PROMOTE.md
 └── .lake/                build products + packages (Mathlib and its dependencies, 7 GB)
 ```
 
@@ -23,39 +23,25 @@ copied verbatim, so every installation uses the same Mathlib commit). Keep the w
 outside folders that Dropbox, iCloud or Syncthing synchronize: `.lake/` holds about 6 GB of
 build products. Paper files that must travel with the paper use the symlink scheme below.
 
-## Setup and checks
+## Setup
 
-| command | what it does |
-|---|---|
-| `setup_env.sh --check` | OK / MISSING per item, changes nothing (2 s) |
-| `setup_env.sh --check --smoke` | also builds `CipherLean/Smoke.lean` (10–40 s) |
-| `setup_env.sh --install` | installs elan (official installer), the toolchain, the workspace, the prebuilt Mathlib (`lake exe cache get`), the examples; then smoke build + `check_lean.py` |
-| `setup_env.sh --install --examples` | also compiles the examples |
-| `setup_env.sh --install --build-from-source` | if the cache download keeps failing: compile Mathlib (hours) |
-| `--workspace DIR` / `CIPHERLEAN_WS` | use another location |
-
-Downloads on a first install: toolchain ≈ 300 MB, shallow git clones of Mathlib and its eight
+The installer's options (`--check`, `--check --smoke`, `--install`, `--examples`, `--build-from-source`,
+`--update-library`, `--workspace DIR`, `--mcp`) are listed by `setup_env.sh --help`; the commands of the
+workflow are in the table of `SKILL.md`. Downloads on a first install: toolchain ≈ 300 MB, shallow git clones of Mathlib and its eight
 dependencies ≈ 170 MB (measured: 92 s; Lake accepts them and never re-clones), prebuilt oleans
 ≈ 2 GB (unpacked ≈ 6 GB). `lake exe cache get` keeps its download in `~/.cache/mathlib`, so a
 second workspace with the same pin on the same machine unpacks instead of downloading.
 
-## Commands (run from the workspace root)
-
-| what | command |
-|---|---|
-| compile one module (preferred) | `~/.claude/skills/cipherlean/scripts/lake_build.sh CipherLean.<Slug>.Main` (`lake build` under the workspace lock) |
-| quick pass on a file, no cache | `lake env lean CipherLean/<Slug>/Main.lean` |
-| axioms of one theorem | add `#print axioms <Slug>.main` to the file, or run the check script |
-| full check (build + axioms + statements) | `~/.claude/skills/cipherlean/scripts/check_lean.py CipherLean/<Slug>/Main.lean` |
-| find a lemma | `~/.claude/skills/cipherlean/scripts/search_mathlib.sh "<query>"` |
-| new paper | `~/.claude/skills/cipherlean/scripts/new_paper.sh <Slug> [--paper-dir <dir>]` |
+## Modules, the lock, bare Lake
 
 Module name = path with `/` → `.` and no `.lean`: `CipherLean/Foo/Main.lean` is `CipherLean.Foo.Main`.
 A file imports a sibling with `import CipherLean.Foo.Defs`; build the sibling first (or build the
 importing module, which builds its dependencies). One Lean job at a time in this workspace:
 `lake_build.sh` and `check_lean.py` serialize themselves through `.lake/cipherlean-build.lock`
-(macOS has no `flock`; the lock is a Python `fcntl.flock`). A bare `lake build` bypasses it. Loading Mathlib takes ~30 s the first time per process; `decide` on 2^8–2^12
-cases takes seconds, 2^16 and beyond is usually hopeless (switch to a symbolic proof).
+(macOS has no `flock`; the lock is a Python `fcntl.flock`). A bare `lake build` or `lake env lean <file>`
+(a quick pass with no cache) bypasses it; `#print axioms <decl>` at the end of a file shows one theorem's
+axioms without the check script. `decide` on 2^8–2^12 cases takes seconds, 2^16 and beyond is usually
+hopeless (switch to a symbolic proof).
 
 ## What costs time, and the fast paths (measured 2026-11-01, Apple M-series laptop)
 
@@ -75,9 +61,9 @@ configuration, and it has not been tested from this skill.
 
 ## Where the files live: two options
 
-- **In the workspace** (`new_paper.sh <Slug>`): `CipherLean/<Slug>/` is a real directory. Fine for
+- **In the workspace** (`new_paper.sh` without options): `CipherLean/<Slug>/` is a real directory. Fine for
   experiments and for papers kept elsewhere.
-- **With the paper** (`new_paper.sh <Slug> --paper-dir <paper repo>`): the real files are
+- **With the paper** (`new_paper.sh` with `--paper-dir <paper repo>`): the real files are
   `<paper repo>/formal/{Main.lean,README.md,NOTATION.md}` and `CipherLean/<Slug>` is a symlink to
   that directory. Lake follows the symlink, so `lake build CipherLean.<Slug>.Main` works, and the
   paper repository carries the Lean source without carrying Mathlib. The check script accepts
@@ -126,7 +112,7 @@ and is what this workspace uses.
 | `unknown identifier 'Foo.bar'` | wrong lemma name or missing import; search, or `import Mathlib` |
 | `unknown constant` on a variable | `autoImplicit = false`: declare `{n : ℕ}` or `(x : α)` |
 | `failed to synthesize Decidable …` | `decide` needs a decidable proposition: use `Fintype` quantifiers, `DecidableEq`, or `classical` + a symbolic proof |
-| `maximum recursion depth has been reached` / very slow `decide` | instance too large; use `decide +kernel`, shrink the toy, or prove symbolically |
+| `maximum recursion depth has been reached` / very slow `decide` | the elaborator's limit, not the kernel's: `decide +kernel` (cheatsheet idiom 34), shrink the toy, or prove symbolically |
 | `linarith failed to find a contradiction` (goal shown negated) | a hypothesis is missing from the context: `have h := lemma …` first |
 | `motive is not type correct` in `rw` | rewrite inside dependent types; use `simp only [...]` or `conv` |
 | `declaration uses 'sorry'` | expected while drafting; the check script fails on it |

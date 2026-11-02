@@ -40,7 +40,7 @@ which copies the current `assets/lib/` over `CipherLean/Lib/` in the workspace a
 (the installer alone never overwrites files that already exist). `setup_env.sh` keeps a copy of
 the library it installed last in `~/cipherlean/.lake/cipherlean-lib-installed/`; a file of
 `CipherLean/Lib/` that matches neither that copy nor the new `assets/lib/` counts as changed (a
-lemma promoted in step 7b, say), and the update then lists it and stops without copying anything.
+lemma promoted in step 7, say), and the update then lists it and stops without copying anything.
 Send the change upstream first (*Contribute* below), or move the file out of `CipherLean/Lib/`,
 then rerun.
 
@@ -48,29 +48,29 @@ then rerun.
 In Claude Code, inside a paper's directory: "formalize Theorem 2 of this paper in Lean",
 "用 Lean 证明这个 lemma", "check whether the DDT row-sum identity holds for every S-box".
 Claude runs the environment check, pins the statement in `README.md`, writes the proof chain
-`CHAIN.md` with its TikZ dependency graph `CHAIN.pdf` and stops for you to confirm it (the one
-gate of the workflow), then encodes the chain in `CipherLean/<Slug>/Main.lean` with `NOTATION.md`,
-proves it, checks that Lean's dependency graph matches the confirmed chain (`chain_check.py`), and
-reports the status table. Results live in the
-workspace; `new_paper.sh <Slug> --paper-dir <your paper repo>` keeps the Lean files with the
-paper instead (`<repo>/formal/`, symlinked into the workspace).
+`CHAIN.md` with its TikZ dependency graph `CHAIN.pdf` and the roadmap (the end you choose, the pieces
+with their sizes) and stops for you to confirm it (the one gate of the workflow), then encodes the chain
+in `CipherLean/<Slug>/Main.lean` with `NOTATION.md`, proves it, checks that Lean's dependency graph
+matches the confirmed chain, and reports the status table and the position of the whole theorem (pieces
+done, size-weighted progress, the next piece) at every stop. Results live in the workspace;
+`new_paper.sh` with `--paper-dir` keeps the Lean files with the paper instead (`<repo>/formal/`,
+symlinked into the workspace). Every command is in the table of `SKILL.md`.
 
 ## Faster iterations (optional)
-- `scripts/lean_eval.sh` runs a snippet in ~7 s (light import preset); `scripts/trim_imports.py`
-  shrinks a finished file's imports so later builds and checks load in seconds.
-- `scripts/setup_env.sh --mcp` runs the `claude mcp add` registration of the `lean-lsp-mcp` server
-  (needs `uv`); that server's documentation says it keeps Mathlib loaded between proof attempts.
-  This option has not been tested from this skill.
+- The snippet runner (`lean_eval.sh`) answers a `#check` in about 7 s with a light import preset;
+  the import trimmer (`trim_imports.py`) shrinks a finished file's imports so later builds and checks
+  load in seconds.
+- `setup_env.sh --mcp` registers the `lean-lsp-mcp` server with Claude Code (needs `uv`); that
+  server's documentation says it keeps Mathlib loaded between proof attempts. Not tested from this skill.
 
 ## On a server
 
 The same skill and workspace install on a Linux machine (tested 2026-11-02 on Ubuntu 24.04, x86_64:
 `git clone` of this repository to `~/.claude/skills/cipherlean`, then `setup_env.sh --install --examples`,
 3 minutes with a fast connection to the Mathlib cache; `ENVIRONMENT OK`). Keep the sources on your own
-machine and run the slow steps there with `scripts/remote.sh` (`CIPHERLEAN_REMOTE=user@host`):
-`remote.sh build <Slug> <Module>`, `check`, `chain`, `trim` (copies the trimmed file back) and `eval`
-(a snippet on stdin). The script rsyncs `CipherLean/<Slug>/` first and prefixes every remote command with
-`PATH=$HOME/.elan/bin:$PATH`, which non-login ssh shells lack.
+machine and run the slow steps there with `remote.sh` (sync, build, check, chain, trim, lib, eval; the
+host in `CIPHERLEAN_REMOTE`): it rsyncs `CipherLean/<Slug>/` first and puts `~/.elan/bin` on the remote
+PATH, which non-login ssh shells lack.
 
 ## What one session can deliver
 A theorem whose proof chain has about ten rows and one or two computational cases: pinned
@@ -83,34 +83,33 @@ deliver the first lemma-sized piece.
 ## Running outside Claude Code
 The scripts are plain bash and Python and the references are Markdown, so any agent harness that
 can read a `SKILL.md` can use the skill: clone it anywhere, set `SKILL` to the clone's path where the
-instructions write `$SKILL`, and run `scripts/setup_env.sh --install` once. The reviewer of step 8
-can be a second chat given `references/review-brief.md`; `REVIEW.md` is the record either way. Two
-cautions from a run in another harness: do not let the harness re-inject the task as a recurring
-"goal" (it produced fifty one-minute turns), and the workflow's judgement steps (1b, 5, 7b) need a
-frontier-class model; a small model is fine for the checks. One agent per workspace: the build lock
-serializes two agents, it does not make them fast.
+instructions write `$SKILL`, and run the installer once. The reviewer of step 8 can be a second chat
+given `references/review-brief.md`; `REVIEW.md` is the record either way. Two cautions from a run in
+another harness: do not let the harness re-inject the task as a recurring "goal" (it produced fifty
+one-minute turns), and the workflow's judgement steps (3, 6, the promotion of 7) need a frontier-class
+model; a small model is fine for the checks. One agent per workspace: the build lock serializes two
+agents, it does not make them fast.
 
 ### Task books for another agent
 
 When you hand a formalization step to another agent as a written task (a "task book"), date it against
 the repository state (the commit of this skill and of the paper directory), say which log file the
 agent may write and that the installed workspace is to be checked with `setup_env.sh --check` before
-anything is reinstalled, and ask for the status board (`scripts/status.py <Slug>`) at the end of every
-step. A task book that contradicts the standing rules of the user's own configuration (which files may
+anything is reinstalled, and ask for the status board and the Position block (`status.py`) at the end of
+every step. A task book that contradicts the standing rules of the user's own configuration (which files may
 be written, where logs go) costs the agent a round of clarification.
 
 ## Growing the library
-After a formalization, `scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean …` (all the
-pieces of a split theorem in one run) lists the declarations that are general enough for the shared
-library (class A/B/E/F) and those that are not (toys, duplicates); the user decides, the agent moves
-them, `scripts/repoint_names.py` re-points the directory's Markdown files at the library names, and
-`scripts/sync_library.sh` copies the library back into this repository. Criteria and checklist:
-`references/promotion.md`.
+After a formalization, `promote_candidates.py` (all the pieces of a split theorem in one run) lists the
+declarations that are general enough for the shared library (class A/B/E/F) and those that are not
+(toys, duplicates); the user decides, the agent moves them, `repoint_names.py` re-points the
+directory's Markdown files at the library names, and `sync_library.sh` copies the library back into
+this repository. Criteria and checklist: `references/promotion.md`.
 
 ## Contribute
 Pull requests that add general lemmas to the library, fix scripts, or add an example are
-welcome: see `CONTRIBUTING.md` (fork, develop in the workspace, `scripts/sync_library.sh`, PR with
-the `check_lean.py` verdicts). The *Update* section above is only about refreshing your local copy.
+welcome: see `CONTRIBUTING.md` (fork, develop in the workspace, sync the library back, PR with the
+`check_lean.py` verdicts). The *Update* section above is only about refreshing your local copy.
 
 ## Review by a second agent
 `references/review-brief.md` is the brief for an independent reviewer (a subagent or a second
@@ -122,25 +121,18 @@ chat as it happens. Step 8 stops only when a round ends in ACCEPT and both check
 
 ## Layout
 ```
-SKILL.md                 the workflow Claude follows (steps 0–8; 1b = proof chain confirmed by the reader, 7b = library promotion)
-references/              cheatsheet of encodings + Mathlib lemma names, worked example,
-                         workspace notes, survey of related tools
-scripts/setup_env.sh     environment check / installer      scripts/check_lean.py  final check
-scripts/new_paper.sh     scaffold a paper                   scripts/lake_build.sh  serialized build
-scripts/search_mathlib.sh  local grep + Loogle + LeanSearch
-scripts/lean_eval.sh     snippet runner (7 s)              scripts/trim_imports.py  minimal imports
-scripts/chain_graph.py   proof chain -> TikZ graph (step 1b)   scripts/chain_check.py  chain vs. Lean dependencies
-scripts/promote_candidates.py  what belongs in the library (step 7b)   scripts/sync_library.sh  workspace -> assets/lib
-scripts/repoint_names.py  re-point the .md files after a promotion   scripts/notation_check.py  do the cited Lean names exist?
-scripts/status.py        the status board of one paper directory (--check reruns the verdicts)
-scripts/build_profile.py where a build's time went; computational sites   scripts/sandbox_project.sh  verify an external project
-references/verify-existing.md  verifying someone else's Lean project (lessons of a six-hour run)
-CONTRIBUTING.md          how to send a pull request
-references/review-brief.md  instructions for the independent reviewer (step 8)
-assets/workspace/        pinned lakefile, lean-toolchain, lake-manifest.json, Smoke.lean
-assets/examples/         Feistel, Halfspace, SboxDDT, DdtInverse/ (complete run, with CHAIN.md + CHAIN.pdf)
-assets/CHAIN-template.md the proof-chain table filled in step 1b
-assets/lib/           shared library CipherLean (installed as CipherLean/Lib/, compiled by the installer)
+SKILL.md          the workflow Claude follows (steps 1–8: environment, statement, chain + roadmap gate, skeleton,
+                  finite checks, proofs, check + report + promotion, review) and the one table of every command
+references/       cheatsheet (encodings, idioms, pitfalls), workspace notes, promotion criteria, review brief,
+                  verifying an existing project, postmortems, related tools
+scripts/          the environment installer, the paper scaffold, the chain graph and the chain check, the
+                  status board, the snippet runner, the lemma search, the serialized build, the final axiom
+                  check, the import trimmer, the notation check, the promotion classifier and the re-pointer,
+                  the library sync, the remote runner, the build profiler, the sandbox for external projects
+assets/           templates (README, CHAIN, NOTATION, REVIEW, Lean file), examples (Feistel, Halfspace,
+                  SboxDDT, the complete run DdtInverse/), the shared library lib/ (installed as
+                  CipherLean/Lib/), the pinned workspace files (lakefile, lean-toolchain, lake-manifest.json)
+CONTRIBUTING.md   how to send a pull request
 ```
 
 ## License
@@ -150,8 +142,8 @@ file headers; the Lean code here is original.
 ## Trust model
 Every result is reported with its axioms. The default is the standard three (`propext`,
 `Classical.choice`, `Quot.sound`) with `decide +kernel` for finite computations. When a case the
-paper settles by computation is too large for the kernel, `native_decide` is allowed under step 5b
-of the workflow: a kernel-checked bridge lemma ties the Boolean program to the mathematical
+paper settles by computation is too large for the kernel, `native_decide` is allowed under the
+computational-cases rule of step 6: a kernel-checked bridge lemma ties the Boolean program to the mathematical
 statement, the declaration is reported as NATIVE, and the result is stated as proved relative to
 the compiler axiom. Nothing general is ever closed with `native_decide`.
 

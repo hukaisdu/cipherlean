@@ -68,9 +68,9 @@ Milestone R: <an intermediate end, e.g. the theorem under one named hypothesis>,
 
 ## Dependency graph
 
-`$SKILL/scripts/chain_graph.py CHAIN.md` writes `CHAIN.tex` (TikZ) and compiles `CHAIN.pdf` (border =
-kind of row, fill = status, legend with the counts and the roadmap's progress; `--gaps` draws only what
-remains as `CHAIN-gaps.pdf`); the mermaid version below is kept in sync by the same script.
+`chain_graph.py` writes `CHAIN.tex` (TikZ) and compiles `CHAIN.pdf` (border = kind of row, fill = status,
+legend with the counts and the roadmap's progress; `--gaps` draws only what remains as `CHAIN-gaps.pdf`); the
+mermaid version below is kept in sync by the same script.
 
 <!-- chain-graph:begin -->
 <!-- chain-graph:end -->

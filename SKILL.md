@@ -18,403 +18,163 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebFetch", "As
 
 # Theorem → Lean 4 formalization
 
-Deliverable for one paper theorem: a directory `CipherLean/<Slug>/` in the workspace holding
-(1) `README.md` — the statement as the paper states it, every hypothesis and a status table;
-(1b) `CHAIN.md` with `CHAIN.pdf` — the proof chain and its dependency graph, confirmed by the
-reader before any Lean is written; (2) `NOTATION.md` — paper symbol ↔ Lean name; (3) `.lean` files that
-`lake build` accepts with no `sorry` and standard axioms only; (4) one toy instance where
-the theorem holds and one counterexample per hypothesis that the paper needs. The final
-message reports exactly what was proved, which hypotheses were added, and where the Lean
-statement departs from the paper.
+Deliverable for one paper theorem, a directory `CipherLean/<Slug>/` in the workspace: `README.md` (the statement as the paper
+states it, every hypothesis, the status table, the position at every stop), `CHAIN.md` + `CHAIN.pdf` (the proof chain, its
+graph and the roadmap, confirmed by the reader before any Lean), `NOTATION.md` (paper symbol ↔ Lean name), `.lean` files that
+`lake build` accepts with no `sorry` and standard axioms, a toy instance and one counterexample per hypothesis. The final
+message says what was proved, which hypotheses were added, where the Lean statement departs from the paper, and where the
+whole theorem stands. Lean checks proofs, not definitions (Hadipour, "Lean for Cryptanalysts", 2026): most of this is the statement.
 
-Lean checks proofs, not definitions (Hadipour, "Lean for Cryptanalysts", 2026). A
-compiling proof of the wrong statement is worth nothing, so most of this skill is about
-getting the statement right; the proof is the part Lean can vouch for.
+## Workspace and commands
 
-## Workspace
+Persistent Lake project at `~/cipherlean` (override with `CIPHERLEAN_WS`), created by `setup_env.sh --install`: Lean `v4.33.0`,
+Mathlib `v4.33.0` prebuilt (≈ 6 GB under `.lake/`), `autoImplicit = false`, one subdirectory per paper, and the shared library
+`CipherLean/Lib/` (vectors over `F_2`, characters, subspaces and duality, affine hulls, Walsh, DDT, linear structures,
+S-boxes: `CipherLean/Lib/NOTATION.md` and `README.md`). Every paper file starts with `import CipherLean`; define an object
+yourself only when the library lacks it. Run everything from the workspace root (the scripts put `~/.elan/bin` on PATH).
 
-Persistent Lake project at `~/cipherlean` (override with `CIPHERLEAN_WS`), created by
-`$SKILL/scripts/setup_env.sh --install`: Lean `v4.33.0`, Mathlib `v4.33.0` prebuilt (about
-6 GB under `.lake/`; do not delete it casually), one library `CipherLean`, one subdirectory per
-paper, `autoImplicit = false` so a misspelled variable is an error instead of a silent new
-hypothesis. Commands, VS Code use,
-version bumps and troubleshooting: `references/workspace.md`. Run everything from the
-workspace root. The scripts put `~/.elan/bin` on PATH themselves (a non-login ssh shell lacks it);
-only your own bare `lake` / `lean` commands need `export PATH="$HOME/.elan/bin:$PATH"`.
-
-Shared library `CipherLean/Lib/` (installed and compiled by `setup_env.sh`): the carrier
-`Vec ι := ι → ZMod 2` with the `BitVec` bridge, characters, `Finset` subspaces with cosets,
-annihilators and duality, Walsh coefficients with Parseval, the DDT with differential uniformity,
-the Chabaud–Vaudenay link, and table S-boxes (PRESENT as the test instance). Every new paper file
-starts with `import CipherLean`; `CipherLean/Lib/NOTATION.md` is the symbol table for these
-objects and `CipherLean/Lib/README.md` lists the lemmas. Define an object yourself only when the
-library lacks it.
-
-`$SKILL` below is this skill's directory, `~/.claude/skills/cipherlean`.
-
-| task | command (from `~/cipherlean`) |
+| task | command (from `~/cipherlean`; `$SKILL` = `~/.claude/skills/cipherlean`; this table is the only copy in the skill) |
 |---|---|
-| check / create the environment | `$SKILL/scripts/setup_env.sh --check` (2 s) / `--install` (first time) |
-| scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>]` (Main.lean, README, NOTATION, CHAIN) |
-| proof-chain graph (step 1b) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid; `--focus <id> [--depth N]` or `--rows a,b,c` → `CHAIN-<id>.pdf`, one piece's sub-chain |
-| chain vs. Lean (step 6) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/<File>.lean [<File2>.lean …]` (a theorem split into pieces: all its files in one run; edges `direct` / `statement` / `transitive`; a `lean` cell that is not one name is listed as a note) |
-| where the build time went | `$SKILL/scripts/build_profile.py <lake build log> [--sites <dir>]` |
-| verify someone else's project | `$SKILL/scripts/sandbox_project.sh <project>` then `references/verify-existing.md` |
-| compile one file | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
-| final check | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean` (counts source and Lean-generated auxiliary declarations apart; an aggregator with no declaration of its own passes with "0 declarations") |
-| the status board | `$SKILL/scripts/status.py <Slug>` (files with source declaration and sorry counts, CHAIN rows by status, README table, REVIEW round and open objections, every PROMOTE table; `--check` reruns the verdicts with check_lean's own counts) |
-| the same steps on a server | `$SKILL/scripts/remote.sh build\|check\|chain\|trim\|lib\|eval …` with `CIPHERLEAN_REMOTE=user@host` (the skill and workspace installed there; sources stay here; `chain` takes every piece file) |
-| find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` |
+| environment (step 1) | `$SKILL/scripts/setup_env.sh --check` (2 s); `--install [--examples]` once; `--update-library` after a `git pull` of the skill |
+| scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>] [--file <Piece>]` (README, CHAIN, NOTATION, Main.lean; `--file` adds a piece file) |
+| graph and roadmap (step 3) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid; `--gaps` what remains; `--focus <id> [--depth N]` or `--rows a,b,c` one piece's sub-chain |
+| position and status board | `$SKILL/scripts/status.py <Slug>` (`--position` the Position block alone; `--check` reruns the verdicts) |
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
-| trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/<File>.lean --apply` (also on hand-chosen imports; `--why` names the constant behind each suggested module) |
-| rebuild the shared library | `$SKILL/scripts/lake_build.sh CipherLean` (after adding a lemma to `CipherLean/Lib/`) |
-| promotion candidates (step 7b) | `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean [<File2>.lean …] --write` (all the pieces in one run, or the directory: its built, non-template files) |
-| re-point the .md files after a move (7b) | `$SKILL/scripts/repoint_names.py CipherLean/<Slug>/ <name>[=<new>] … [--lib] [--apply]` (`<Slug>.name` → `CipherLean.name` in CHAIN, NOTATION, README, PROMOTE, REVIEW) |
-| NOTATION names exist? (step 7) | `$SKILL/scripts/notation_check.py CipherLean/<Slug>/NOTATION.md CipherLean/<Slug>/<File>.lean [...] --also README.md CHAIN.md` (every piece file and the aggregator) |
-| library back into the skill | `$SKILL/scripts/sync_library.sh` (then commit / pull request, see `CONTRIBUTING.md`) |
-| independent review | a fresh agent with `references/review-brief.md` (step 8) |
+| find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` (local grep, Loogle, LeanSearch) |
+| build one module | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (`lake build` under the workspace lock; `CipherLean` rebuilds the library) |
+| chain vs. Lean (step 7) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/<File>.lean […]` (every piece file in one run) |
+| final check (step 7) | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean [--no-build] [--allow-native]` |
+| trim imports (step 7) | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/<File>.lean --apply` (`--why` names what each surviving module supplies) |
+| cited names exist? (step 7) | `$SKILL/scripts/notation_check.py CipherLean/<Slug>/NOTATION.md <every piece file> --also README.md CHAIN.md` |
+| promotion candidates (step 7) | `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean […] --write` (all pieces in one run; appends to `PROMOTE.md`) |
+| re-point after a move (step 7) | `$SKILL/scripts/repoint_names.py CipherLean/<Slug>/ <name>[=<new>] … [--lib] [--apply]`; then `$SKILL/scripts/sync_library.sh` copies the library into the skill |
+| the same steps on a server | `CIPHERLEAN_REMOTE=user@host $SKILL/scripts/remote.sh sync\|build\|check\|chain\|trim\|lib\|eval …` (sources stay here) |
+| someone else's project | `$SKILL/scripts/sandbox_project.sh <project>`; `$SKILL/scripts/build_profile.py <lake build log>` or `--sites <dir>`; then `references/verify-existing.md` |
+| independent review (step 8) | a fresh agent given `references/review-brief.md` |
 
-One Lean job at a time per workspace: the wrapper and the check script share a lock. Costs,
-measured on a laptop: a Lean process that starts with `import Mathlib` spends ≈ 27 s mapping
-8300 oleans before doing anything; the light preset of `lean_eval.sh` loads in ≈ 7 s and a
-file trimmed by `trim_imports.py` in 3–7 s; a cached `lake build` costs ≈ 6 s of trace
-checks; `check_lean.py` runs two Lean processes (build + listing): ≈ 1.5 min on an
-untrimmed file, 7 s on a trimmed one. So: check lemma names and 3-line examples with
-`lean_eval.sh` (7 s), build a module only when a lemma is finished, and trim the imports once
-the proof is done (the shipped examples build in 3–6 s each after trimming). Compiled models to imitate for structure, docstrings
-and finite checks: `CipherLean/Examples/{Feistel,Halfspace,SboxDDT}.lean`, and one complete run
-with its README and NOTATION: `CipherLean/Examples/DdtInverse/` (a user-stated lemma, DDT
-transpose).
+With `--paper-dir` the real files live in `<paper repo>/formal/`, symlinked as `CipherLean/<Slug>`. Models to imitate:
+`CipherLean/Examples/{Feistel,Halfspace,SboxDDT}.lean` and the complete run `CipherLean/Examples/DdtInverse/`.
 
-With `--paper-dir`, the real files live in `<paper repo>/formal/` (versioned and synced with
-the paper) and `CipherLean/<Slug>` is a symlink to them; without it they live in the workspace.
-
-The reader is not watching the tool calls: at the end of every step, and whenever a job that takes
-minutes starts, print the status board (`$SKILL/scripts/status.py <Slug>`) in the chat and say which
-machine the job runs on and what the next gate is. At every stop — the chain gate of step 1b, the end of
-every piece, every budget stop — print the Position block (`status.py <Slug> --position`: the end the user
-chose, pieces done of planned, rows proved of total, the size-weighted progress, the remaining pieces in
-order with their estimates, the next piece) with the colored graph (`chain_graph.py CHAIN.md`, and `--gaps`
-for what remains), name the next piece and ask which one to do. "Done" for a piece is never reported
-without the whole theorem's position. The sizing of step 1b writes the first roadmap (the Roadmap table of
-CHAIN.md: end, milestones, one row per piece with route and size with its evidence); every stop updates
-it (status cell, actual sizes against the estimates) and pastes the Position block under a dated heading
-in README's Roadmap section. Before starting, read the task's `NOTATION.md` if one exists and keep the day's log as
-usual (append it with a quoted heredoc, `<<'EOF'`: in an unquoted one the shell executes backticked words
-such as `` `simp only` `` and the entry loses text); the per-paper `NOTATION.md` created here is that table
-for the formalization task.
+The reader is not watching the tool calls. At the end of every step, and whenever a job that takes minutes starts, print the
+status board and say which machine the job runs on and what the next gate is. At every stop — the gate of step 3, the end of
+every piece, every budget stop — print the Position block (`status.py <Slug> --position`: the end the user chose, pieces done
+of planned, rows proved of total, the size-weighted progress, the remaining pieces with their estimates, the next piece) and
+the colored graph (`chain_graph.py`, plus `--gaps`); update the Roadmap table (status, actual against estimate), paste the
+block under a dated heading in README's Roadmap section, name the next piece and ask which one to do. "Done" for a piece is
+never reported without the whole theorem's position. Keep the day's log (quoted heredoc) and read the task's `NOTATION.md`.
 
 ## Workflow
+### 1. Check the environment (every task, seconds)
+Run `setup_env.sh --check`. All OK: go on. Something MISSING: say what `--install` does (elan, the toolchain ≈ 300 MB, shallow
+clones ≈ 170 MB, the prebuilt Mathlib ≈ 2 GB, 6 GB on disk, 10–30 min) and run it once the user agrees, or at once if they
+asked for the setup; it is idempotent, never overwrites a file, and is simply rerun after a failure.
 
-### 0. Check the environment (every task, a few seconds)
+### 2. Pin the statement
+- Get the source: the LaTeX (arXiv e-print, the user's `paper/`) over the PDF; never work from memory of the paper. When the
+  user's message is the source, quote it verbatim under "Source", write "no paper", skip the literature hunt. Read a cited
+  result from its own source, not from the citing sentence.
+- Copy the statement verbatim into `README.md` with label and page; list (a) every object with its type, (b) every hypothesis,
+  marked *explicit* or *implicit* (the ones proofs use silently: "E is a permutation", "the mask is nonzero", "n ≥ 1"), (c) the
+  conclusion, (d) the proof as numbered steps — each becomes one row of the chain and one Lean lemma.
+- Keep the paper's constants and generality; a needed specialization goes under "Departures from the paper" with its reason,
+  an ambiguity with the reading taken. For a whole section, list every numbered statement first, then state them all.
 
-Run `$SKILL/scripts/setup_env.sh --check`. It reports OK or MISSING for: macOS/Linux, `curl`
-`git` `python3`, 10 GB of free disk, elan, the pinned Lean toolchain, the workspace files, the
-prebuilt Mathlib, the examples. All OK: go on. Something MISSING: tell the user what
-`--install` will do (install elan, download the toolchain ≈ 300 MB, a shallow clone of Mathlib
-and its dependencies ≈ 170 MB, the prebuilt Mathlib ≈ 2 GB, 6 GB on disk, create
-`~/cipherlean`; 10–30 min on a normal connection) and run
-`$SKILL/scripts/setup_env.sh --install` once they agree, or straight away if they asked for
-the setup. The script is idempotent, never overwrites an existing file, and ends with a smoke
-build plus `check_lean.py`; rerun it after a failure (a lost network connection is the usual
-cause). `--install --examples` also compiles the examples; `--check --smoke` adds the smoke
-build to a check.
+### 3. The proof chain, its graph and the roadmap — the reader's gate
+Write `CHAIN.md` from the template: one row per thing the proof relies on (the target, every lemma and proof step, every
+definition, every cited result checked in its own source, every hypothesis or modelling assumption) with `uses` (`id?` for
+a premise the paper's text relies on but the Lean lemma will not: drawn dashed, accepted by `chain_check.py`), `where`
+(section and statement first, then `;` and notes), implicit hypotheses and `status: pending`. Then size the job in the
+Roadmap table: the end the user chooses (self-contained: every row proved here; relative: named lemmas accepted from a
+companion project), the milestones, and one row per piece with its rows, route (`prove here` · `port from <project>` ·
+`assume by citation` · `hypothesis`), size in sessions with the evidence (an existing formalization's line count, the
+computational cases, what a comparable piece took) and status. One session delivers about ten rows with one or two
+computational cases; seven directions, two appendix tables and a length induction (52 000 lines in an existing
+formalization) is a multi-week project, and saying so is the deliverable. Run `chain_graph.py`, give the reader the table,
+the graph, the questions and the Position block, and stop: nothing is encoded before they confirm the chain and pick the
+first piece. This is the one gate of the workflow, where a misread theorem is cheapest to fix.
 
-### 1. Pin the statement (the extraction step)
+### 4. Skeleton: NOTATION.md and the statement with `sorry`
+Write `NOTATION.md` (paper symbol, Lean name, type, meaning, scope): encodings from the library first, then the cheatsheet §1;
+counts rather than probabilities (division is total in Lean, `x / 0 = 0`; the normalized form is a corollary). Create the
+file (`new_paper.sh`, `--file` per piece), write the definitions, then every row of the confirmed chain as a declaration with
+`sorry` in dependency order, each with a docstring quoting the paper (`/-- Paper: Theorem 2, "..." -/`), and compile together
+with the finite checks of step 5. Fill the `lean` column of CHAIN.md as you go (one declaration name or `—`; notes go in
+`implicit`) and set `status: stated`. A piece file imports the previous piece and, explicitly, the library modules it uses
+(cheatsheet idiom 35); when the last piece is done, `Main.lean` becomes the aggregator (imports of all pieces, the target
+restated) so no `sorry` stub survives. A wrong statement is cheap here, not after a 200-line proof.
 
-- Get the source. Prefer the LaTeX source (arXiv e-print, the user's `paper/` folder) over
-  the PDF: macros and labels make the statement exact. Locate PDFs the paper-reading way
-  (Zotero `library.bib`, cwd, ePrint). Never work from memory of the paper. When the user's
-  own message is the source, quote it verbatim under "Source", write "no paper", and skip
-  the literature hunt.
-- Copy the statement verbatim into `README.md`, with its label and page. Then list, in
-  words, (a) every object it mentions (sets, functions, parameters, masks, keys) with its
-  type; (b) every hypothesis, marking each as *explicit in the paper* or *implicit* — the
-  ones proofs use silently: "E is a permutation", "the mask is nonzero", "n ≥ 1", "the
-  S-box is bijective", "round keys are independent"; (c) the conclusion; (d) the paper's
-  proof as numbered steps. Each step will become one Lean lemma.
-- Read any cited result from its own source, not from the paper's summary of it; what the
-  proof needs can differ from the sentence that cites it.
-- Keep the paper's constants and generality. Do not quietly prove a weaker or more
-  convenient statement; if a specialization is needed (fixing a mask by a change of basis,
-  fixing a block size), write it down under "Departures from the paper" with the reason.
-  When the paper is ambiguous, record the reading you took.
-- When the user names a section instead of a theorem, list every numbered statement with
-  its label first, then formalize the statements (with `sorry`) before proving any — so
-  the user sees the full map early.
+### 5. Test the statement before proving it
+On a toy instance (2–4 bits, a concrete S-box) prove by `decide` or `decide +kernel` that the conclusion holds where the
+hypotheses hold and fails for a concrete object that drops one hypothesis (a constant map instead of a permutation, a zero
+mask). This is the only check that catches a definition encoding the wrong object; keep the checks as theorems in the file,
+they document why each hypothesis is there. Compute the toy's numbers outside Lean first (a ten-line Python script, kept in
+the paper directory) and pick an instance where the wrong side really differs; a hypothesis implied by the others on finite
+types is proved, not refuted. Kernel costs, `maxRecDepth`, a stuck `decide`: cheatsheet idioms 25, 34, 36, 37.
 
-### 1b. The proof chain and its graph, confirmed by the reader before any Lean
+### 6. Prove, one lemma per proof step
+- Search before proving: the library (`rg <word> CipherLean/Lib`), then Mathlib with `exact?`, `apply?`, `simp?` and
+  `search_mathlib.sh` — names drift between versions. Tactics and compiled idioms: cheatsheet §2–§3.
+- Test lemma names and small examples with `lean_eval.sh` (7 s); build a module once a lemma is finished, and batch finished
+  lemmas into one build. Keep the declaration headers fixed; if a statement must change, go back to step 2.
+- Budget: after a serious attempt (several strategies, Mathlib searched; about half an hour or five builds for one lemma)
+  leave it as `sorry` with the exact remaining goal and what was tried, and move on. Never weaken a statement to hide a gap,
+  never close a general goal with `native_decide`. When the remaining work is a known-large piece (appendix tables, an
+  induction over a general parameter, a certificate that takes hours): update the Roadmap, print the position, ask.
+#### Cases the paper settles by computation
+Formalize along the paper's case split, each computational case a closed decidable statement over a finite domain; symbolic
+splits (`m` odd or even, a parameter in a range) are `rcases` / `fin_cases` / `interval_cases` / `omega`, no axiom. For the
+computations, in order: (1) `decide +kernel` up to about 2^14–2^16 evaluations, no axiom; (2) make the kernel able — `BitVec`
+instead of `Vec (Fin n)`, `Nat` arithmetic, a search turned into the check of an offline certificate shipped as data; (3)
+`native_decide` only when the kernel cannot finish, with a kernel-checked bridge `checker_true : checker = true → P` (idiom
+26), the declaration reported as NATIVE (`check_lean.py --allow-native`) and everything depending on it stated as "proved
+relative to the compiler axiom"; `bv_decide` carries the same obligations. Record in CHAIN.md how each computational row is
+discharged; large closed data only through `opaque` (idiom 27); the first certificate module is built alone and profiled.
 
-Write `CipherLean/<Slug>/CHAIN.md` from the template (`new_paper.sh` creates it): one row per thing
-the proof relies on — the target theorem, every lemma and proof step, every definition, every cited
-result (checked in its own source, with the conditions the citing sentence omits), every hypothesis
-or modelling assumption — with its paper label, statement, `uses` (the rows it relies on directly),
-its location (`where`: section and statement first, e.g. `§7.3 Lemma 24 (lem:…)`, then `;` and notes;
-the graph prints the part before the `;` under each node and the file's H1 line as its title, so that
-line names the paper), implicit hypotheses noticed, and `status: pending`. Then
-`$SKILL/scripts/chain_graph.py CHAIN.md`: it draws the dependency graph in TikZ (`CHAIN.tex`,
-compiled to `CHAIN.pdf`; target on top, definitions and cited results at the bottom, dashed arrows
-for a route the paper takes but Lean may not) and keeps a mermaid copy inside CHAIN.md. For a theorem
-split into pieces, `--focus <id>` (with `--depth N` to stop N edges away) or `--rows a,b,c` draws one
-piece's sub-chain as `CHAIN-<id>.pdf` next to the whole graph, which stays the one in CHAIN.md: a
-54-node chain is not readable as one picture when the reader confirms one piece. Give the
-reader the table, the graph and the "Questions for the reader" section, and stop: nothing is
-encoded before they confirm or correct the chain. This is the one deliberate gate of the workflow;
-it catches a misread theorem, a lemma applied outside its hypotheses, or a cited result quoted
-without its conditions, at the moment it is cheapest to fix.
-
-The chain also sizes the job, and the size goes to the reader with the chain as the Roadmap table of
-CHAIN.md (template section "Roadmap"): the end the user chooses (self-contained: every row proved here; or
-relative: named lemmas accepted from a companion project), the milestones on the way, and one row per
-piece with its rows, its route (`prove here` · `port from <project>` · `assume by citation` ·
-`hypothesis`), its size in sessions with the evidence (the existing project's line count, the number of
-computational cases, what a comparable piece took) and its status. Count the rows that are case
-analyses, appendix tables, "verified by computer" steps, and inductions over a general parameter; look
-for an existing formalization of the same result and quote its size. One session delivers a chain of
-roughly ten rows with one or two computational cases; a theorem whose proof is seven directions, two
-appendix tables and a length induction (a conjecture of a paper under review: 52 000 lines in its
-existing formalization) is a multi-week project, and saying so is the deliverable. For anything beyond
-one session, the pieces are lemma-sized, each with its own done criteria, and the first piece the user
-picks starts; `status.py <Slug> --position` then reads the position from this table at every stop.
-
-A `?` after an id in `uses` (`step:feasible-all?`) marks a premise the paper's text relies on but the Lean
-lemma of that row will not use: the paper's route where Lean goes another way, or a proof step whose
-Lean form is a self-contained finite check (Lemma 24's "the quadratic terms cannot be cancelled" is one
-`decide`; the premises it rests on enter where the target applies it). The graph draws such an edge
-dashed, `chain_check.py` accepts it without a Lean dependency, and the `implicit` cell says why.
-
-### 2. Choose encodings and fix names
-
-Write `NOTATION.md`: one row per paper object — paper symbol, Lean name, Lean type,
-meaning, scope (per key / per round / global). Take the encoding from the shared library first
-(`CipherLean/Lib/NOTATION.md`: `Vec ι` for `F_2^n`, `u ⬝ᵥ x`, `chi`, `walsh`, `linCount`, `ddt`,
-`diffUniformity`, `IsSubspace`/`coset`/`ann`, `Sbox.ofTable`/`toFun`); for objects it lacks, pick
-one from `references/lean-crypto-cheatsheet.md` (bits as `Bool`, words as `BitVec n`, masks and
-linear maps over `ZMod 2`, sums as integer sums over a `Fintype`, probabilities as counts).
-Prefer counting statements over probability statements: division is total in Lean
-(`x / 0 = 0`), so a theorem about `count / 2^n` can hold for reasons unrelated to the
-mathematics. Derive the normalized form as a corollary if the user wants it.
-
-### 3. Definitions and statement first, with `sorry`
-
-Create `CipherLean/<Slug>/Main.lean` from the template (`$SKILL/scripts/new_paper.sh` does this).
-Write the definitions, then every node of the confirmed chain as a Lean declaration with `sorry`, in
-dependency order (definitions, cited results as hypotheses or library lemmas, steps, lemmas, the
-target), and compile together with the finite checks of step 4 (they only need the definitions, so
-one build serves both). A later piece of a split theorem imports the earlier piece's file, which carries
-only its trimmed imports: keep `import Mathlib` in the new file until its own trim (`Submodule` was
-missing once, and the error cascaded into "declaration uses `sorry`" on half the file); import explicitly every
-library module the piece uses (`import CipherLean.Lib.F2.Subspace` for `dotForm`), since the previous piece
-re-exports only what it imported itself; and under `import Mathlib` qualify the library names Mathlib also uses
-(`CipherLean.deriv`: Mathlib's `deriv` is the analytic derivative, cheatsheet §4). When the last piece is done, `Main.lean` becomes
-the aggregator (imports of all pieces, the template `main : True := by sorry` replaced by the target restated
-from the last piece), so that no `sorry` stub survives in the directory (`WHConj3/Main.lean`). Fill the `lean` column of CHAIN.md as you go (exactly one declaration name of this formalization, or `—`;
-a cell that is not one name — `decide +kernel`, "proved in project X as foo" — is listed by `chain_check.py`
-as a note and not checked, so such notes go in the `implicit` column, where the reader expects them) and set `status: stated`. Give every
-declaration a docstring with the paper's wording (`/-- Paper: Theorem 2, "..." -/`), the way
-formal-conjectures requires an English version next to each formal statement. Type errors
-at this stage are cheap; a wrong statement discovered after a 200-line proof is not.
-
-### 4. Test the statement before proving it
-
-On a toy instance (block size 2–4 bits, a concrete S-box) state and prove by `decide` or
-`decide +kernel`: the conclusion holds where the hypotheses hold, and fails for a concrete
-object that drops one hypothesis (a constant map instead of a permutation, a zero mask).
-This is the only check that catches a definition encoding the wrong object, and it costs
-minutes. Keep these as theorems in the file; they also document why each hypothesis is
-there. For a symmetry or transpose statement, compute the toy's table outside Lean first (a
-ten-line Python script) and pick an instance where the wrong side really differs. When a
-hypothesis is implied by the others on finite types (one of the two inverse equations, say),
-prove that implication and record it instead of hunting for a counterexample that cannot
-exist. A toy whose `Decidable` instance nests `Finset` filters (a mask in `K_H(α)`: 64 masks times
-the attainable set) overflows the elaborator's `maxRecDepth` under plain `decide`; `decide +kernel`
-evaluates it in seconds and adds no axiom.
-
-### 5. Prove, one lemma per proof step
-
-- Before proving anything general, search the library (`rg <word> ~/cipherlean/CipherLean/Lib`)
-  and then Mathlib: `exact?`, `apply?`, `simp?`, and `$SKILL/scripts/search_mathlib.sh` (local
-  grep, Loogle, LeanSearch), even when you think you know the file: Mathlib uses both `theorem`
-  and `lemma`, and names drift between versions. Most algebra and big-operator facts exist
-  already; the character-sum, duality, DDT and Walsh facts are in `CipherLean/Lib`.
-- Tactic toolbox and compiled idioms for sums over bits, bijection reindexing, BitVec
-  identities, divisibility: `references/lean-crypto-cheatsheet.md`.
-- Test lemma names and small examples with `lean_eval.sh` (7 s), not with a module build; build
-  the module once a lemma is finished, and batch several finished lemmas into one build. Keep
-  the declaration headers fixed while proving; if a statement must change, go back to step 1
-  and say so.
-- `chain_check.py` reads proof terms and statement types: an edge `A uses def:KH` is `direct` when A's
-  proof mentions `KH`, `statement` when only A's type does (a defeq `exact` with no `rw [KH]`, as in
-  `WHConj3.KH_eq_orthogonal_dirAff`), `transitive` through helpers, and MISSING otherwise.
-- Budget: after a serious attempt (several tactic strategies, searched Mathlib; about half an
-  hour or five builds for one lemma), leave the lemma as `sorry` with a comment stating the exact
-  remaining goal and what was tried, and move on. Never hide a gap by weakening the statement,
-  and never close a general goal with `native_decide`: it is for the computational cases of
-  step 5b only, and allowing it does not shorten a proof whose hard part is symbolic.
-- Global stop: when the remaining work turns out to be a known-large piece (a case analysis over
-  appendix tables, an induction over a general parameter, a certificate that will take hours),
-  stop, write the estimate with its evidence into README, and ask the user; a run of fifty
-  one-minute turns each ending in a full check is the failure mode this rule prevents.
-
-### 5b. Cases the paper settles by computation
-
-A paper proof that splits into cases and settles some of them "by computer" is formalized along
-the same split (so the paper's argument is what gets checked), with each computational case a
-closed, decidable statement over a finite domain. Symbolic case splits (`m` odd or even, `i = 0`
-or `1`, a parameter in a range) are not computations: `rcases`, `fin_cases`, `interval_cases`,
-`omega`, no axiom involved. For the computations, in this order:
-
-1. **`decide +kernel`** up to roughly 2^14–2^16 evaluations: the kernel does the computation and
-   no axiom is added (a 4-bit S-box's whole DDT bound on `BitVec`: about 8 s).
-2. **Make the kernel able to do it** before reaching for anything stronger: compute on `BitVec`
-   rather than `Vec (Fin n)` (an order of magnitude, see `ddt_toFun`); use `Nat` arithmetic (the
-   kernel has native `Nat` add/mul/mod); turn a search into a check — compute the certificate
-   offline (Python, C++), ship it as data in the file, and let the kernel only verify it
-   (verifying is cheaper than searching).
-3. **`native_decide`** only when the kernel cannot finish. It compiles the decision procedure and
-   adds, per declaration, an axiom saying the compiled program returned `true`
-   (`<decl>._native.native_decide.ax_*` on Lean v4.33.0; the trust extends to the compiler). It
-   is acceptable with two obligations: a *semantic bridge* — a kernel-checked lemma
-   `checker_true : checker = true → P` so that what is trusted is only "this program returned
-   `true`", never what it means (cheatsheet idiom 26) — and *disclosure*: `check_lean.py` lists
-   the declaration as NATIVE (run with `--allow-native`), the README status table shows the
-   axiom, and the report says "proved relative to the compiler axiom" for everything that depends
-   on it. `bv_decide` (SAT with an LRAT certificate) has the same trust and the same obligations.
-
-Record in CHAIN.md which rows are computational cases and how each is discharged. Two rules from a
-build that lost a night (`references/verify-existing.md`): a checker refers to large closed data
-only through `opaque` definitions or precomputed literals, because compiled code recomputes a
-transparent `def` at every reference (measured 200 s vs 25 s for three references; `let`,
-`@[noinline]` and parameters do not help); and the first certificate module is built alone, timed,
-and profiled (`scripts/build_profile.py`) before the second one is written.
-
-### 6. Check
-
-`$SKILL/scripts/chain_check.py CHAIN.md CipherLean/<Slug>/Main.lean` (for a theorem split into pieces:
-every piece file in the same run, since the chain spans them and a declaration of another piece would
-otherwise count as unknown) compares the confirmed chain with
-the dependency graph Lean actually used (direct, transitive, missing and extra edges; a `?` after an id
-in `uses` marks the paper's route when Lean proves the step another way) and must end in
-`VERDICT: CONSISTENT`; explain every difference in CHAIN.md. Then
-`$SKILL/scripts/check_lean.py CipherLean/<Slug>/Main.lean` builds the module, lists every declaration
-with its axioms and its elaborated statement, and fails on `sorryAx`, on custom axioms, and
-on the compiler-trusting axioms that `native_decide` / `bv_decide` introduce
-(`<decl>._native.*.ax_*`, `Lean.ofReduceBool`) unless `--allow-native` is passed for
-the computational cases of step 5b, each with its bridge lemma. Read the printed statements
-against the paper one final time; this is the human half of the check.
-
-### 7. Trim and report
-
-Run `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/<File>.lean --apply` (it asks Mathlib's
-`#min_imports`, adds the tactic modules, and only rewrites the file after the trimmed copy
-compiles): every later build, check and reader of the file gets the 3–7 s load instead of 27 s. On a
-file whose imports were chosen by hand it does the same and says when they are already minimal.
-`#min_imports` names the modules that declare the constants the proof terms use, so a module can be
-suggested only because it was imported: a late instance (`IsAzumaya.id : IsAzumaya R R`, which extends
-`Module.Finite R R`) wins the typeclass search while its module is in scope, and the proof term then
-mentions it. That is how `WHConj3/Assembly.lean` came out of its first trim with `Mathlib.RingTheory.Henselian`
-and `Mathlib.Algebra.Azumaya.Basic`. The script therefore tries the file without each suggested Mathlib
-module and drops the ones it compiles without; `--why` shows what each module supplies when one survives.
-Then fill the status table in `README.md` (paper label · Lean declaration · status · axioms ·
-note) and the "Departures from the paper" section. Then step 7b. In the reply: what is proved, what is
-`sorry` and why, hypotheses the paper left implicit (these are findings about the paper),
-and the exact commands to rebuild. Say "proved" only after step 6 passes, and only for the paper's
-statement in full (both directions of an "exactly", every case of a case split). Every script the
-README cites (a Python table check, a counterexample search) lives in the paper directory, and every
-Lean name README, NOTATION or CHAIN cites exists (`$SKILL/scripts/notation_check.py NOTATION.md <every piece
-file and the aggregator> --also README.md CHAIN.md`, or `#check`): the first independent review found both
-kinds of slip in one file, the third a stale name in README's Departures after a promotion rename. "Done" means: the checks pass on the declared pin, the
-files and the evidence (`check_lean` output, `CHAIN.md`, `REVIEW.md`) are committed, and every
-caveat (an added hypothesis, a compiler axiom, a departure) stands at the top of the report, not
-in a footnote.
-
-### 7b. Promote to the shared library
-
-Run `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean [<File2>.lean …] --write` — all
-the piece files in one run, so that a lemma of piece C about piece B's object is class B and not A (a
-directory argument lists its built, non-template files). It classifies every
-declaration of the finished files: A (general lemma about library objects: move), B (general but
-about an object the paper defined), E (an object the paper defined: general notion or
-paper-specific?), F (general, Mathlib only), D (duplicate of a library statement: delete, import),
-C (toy or test instance: stays). The D class compares types, so for a `def` two unrelated maps of the
-same type look like duplicates (`internalPart` vs. `chiMap`): read the row. Read the statements, apply the five questions of
-`references/promotion.md` (general in `ι`? a notion two papers would share? already there? part of
-an unpublished result? explainable without the paper?), and give the user a table with one
-recommendation per row. After their decision, move the accepted ones with the checklist in
-`references/promotion.md`: library variables and names, docstring with the source, finite check for
-a definition, `lake_build.sh CipherLean`, `check_lean.py`, rows in `CipherLean/Lib/NOTATION.md` and
-`README.md`, the paper file re-pointed at the library and re-checked, the directory's `.md` files
-re-pointed with `scripts/repoint_names.py` (`<Slug>.name` → `CipherLean.name`, renames included; it
-lists every place before the move), `scripts/sync_library.sh`, commit. Unpublished results stay in the
-paper directory however general they look.
+### 7. Check, trim, report
+`chain_check.py` over every piece file compares the confirmed chain with the dependency graph Lean used (edges direct,
+statement-only, transitive, the paper's route or MISSING; extra edges; unknown names) and must end in `VERDICT: CONSISTENT`;
+explain every difference in CHAIN.md. `check_lean.py` builds each file, lists every declaration with its axioms and
+elaborated statement, and fails on `sorryAx`, on custom axioms and on the compiler-trusting axioms unless `--allow-native`
+covers the computational cases; read the printed statements against the paper once more — the human half of the check.
+Then `trim_imports.py --apply` (3–7 s loads instead of 27 s), the README status table (paper label · declaration · status ·
+axioms · note) and "Departures", and `notation_check.py --also README.md CHAIN.md`, so that every cited Lean name exists and
+every cited script lives in the paper directory. Say "proved" only after both verdicts, and only for the paper's statement
+in full (both directions of an "exactly", every case). In the reply: what is proved, what is `sorry` and why, the hypotheses
+the paper left implicit, the rebuild commands, every caveat at the top, and the Position block.
+#### Promote to the shared library
+`promote_candidates.py` over all piece files classifies every declaration (A general lemma about library objects · B general
+but about a paper object · E an object the paper defined · F general, Mathlib only · D duplicate of a library statement · C
+toy); apply the five questions of `references/promotion.md`, give the user one recommendation per row, and after their
+decision move the accepted ones with that page's checklist (library names and variables, docstring with the source, a finite
+check per definition, the library rebuilt and checked, NOTATION and README rows, the paper file and its `.md`
+files re-pointed, `sync_library.sh`, commit). Unpublished results stay with the paper however general they look.
 
 ### 8. Independent review (two agents)
-
-Lean checks the proof; nobody has yet checked that the *statement* is the paper's. For any
-result the user will cite or publish, hand the directory to a reviewer that has not seen your
-reasoning: a fresh subagent (or a second Claude Code session) given `references/review-brief.md`,
-the paper source, the theorem label, the directory and the workspace path. It compares every
-Lean statement with the paper's text, checks the confirmed CHAIN.md row by row against the paper,
-reruns `chain_check.py` and the check script, and appends a `Round n — reviewer` section to
-`REVIEW.md` (template `assets/REVIEW-template.md`) ending in `VERDICT: ACCEPT` or `REVISE`, with
-objections numbered `R<n>.<k>`. Answer every objection in writing in a `Round n — formalizer`
-section (`fixed` with what changed, `rejected` with a checkable reason, or `needs the user`), post
-the round's objections and answers in the chat, fix every BLOCKER and MAJOR, update README and
-CHAIN.md, and ask for a new round; the reviewer's next round starts by judging those answers.
-`REVIEW.md` is the complete, readable record of the exchange between the two agents and ships
-with the formalization. The task is finished when a round ends in ACCEPT and both checks pass;
-after three rounds without ACCEPT, stop and give the user the open objections. Skip this step
-only for throwaway statements, and say so.
+Lean checked the proof; nobody has checked that the *statement* is the paper's. For any result the user will cite, hand the
+directory to a reviewer that has not seen your reasoning — a fresh subagent or a second session given
+`references/review-brief.md`, the paper source, the label, the directory and the workspace. It compares every Lean statement
+with the paper, checks CHAIN.md row by row, reruns both scripts and appends `Round n — reviewer` to `REVIEW.md` (template
+`assets/REVIEW-template.md`) ending in `VERDICT: ACCEPT` or `REVISE` with objections `R<n>.<k>`. Answer each in `Round n —
+formalizer` (`fixed` / `rejected` with a checkable reason / `needs the user`), post objections and answers in the chat, fix
+every BLOCKER and MAJOR, ask for a new round; from round 2 the reviewer examines only what changed plus the answers. Finished
+when a round ends in ACCEPT and both checks pass; after three rounds without ACCEPT, stop and give the user the open objections.
 
 ## Verifying an existing formalization
-
-When the Lean project already exists (a colleague's, another model's) and the question is whether
-it proves the paper, follow `references/verify-existing.md` instead of steps 1–5: settle the pin
-and the sandbox before the first build (`scripts/sandbox_project.sh`), count the computational
-proofs and build the heaviest module alone under a written time budget
-(`scripts/build_profile.py --sites`, then the log), run `check_lean.py` on every top-level file,
-write the chain table from the README and run `chain_check.py`, and only then the review round
-(step 8) with the build evidence in hand. The page records what a six-hour run of this kind
-taught, with the measured numbers.
+When the Lean project already exists and the question is whether it proves the paper, `references/verify-existing.md`
+replaces steps 2–6 (pin and sandbox first, count the computational proofs, build the heaviest module alone under a written
+budget, `check_lean.py` on every file, a chain table from the README and `chain_check.py`), then step 8.
 
 ## What to formalize first
-
-Good first targets, in the order the blog recommends: normalization and conversion
-identities between statistics; local properties of components (S-box bijectivity and
-differential uniformity, round invertibility, key-schedule facts); divisibility or counting
-statements; the claim that a search-model constraint set is satisfied exactly by the valid
-transitions (no shipped example for this one yet). State as hypotheses, not as theorems, anything that is a modelling
-assumption (Markov-cipher independence, random round keys, heuristic trail probabilities).
-Asymptotic complexity claims and probabilistic statements over random keys need Mathlib's
-`PMF` / measure theory; do them only when the user asks for exactly that.
+Normalization and conversion identities between statistics; local properties of components (S-box bijectivity, differential
+uniformity, round invertibility, key-schedule facts); divisibility or counting statements; that a search model's constraints
+are satisfied exactly by the valid transitions. Modelling assumptions are hypotheses, never theorems; `PMF` only on request.
 
 ## Resources
-
-- `references/lean-crypto-cheatsheet.md` — encodings of cryptanalysis objects, compiled
-  Mathlib lemma names, tactic toolbox, pitfalls. Read before step 2.
-- `references/workflow-example.md` — one full run on the linear ↔ integral halfspace
-  identity (ePrint 2026/2471), including the departure it records.
-- `assets/CHAIN-template.md` — the proof-chain table (step 1b); `scripts/chain_graph.py` draws it,
-  `scripts/chain_check.py` compares it with Lean's dependency graph; `CipherLean/Examples/DdtInverse/CHAIN.md`
-  is a filled example with its `CHAIN.pdf`.
-- `references/promotion.md` — step 7b: the candidate classes, the five questions, the moving
-  checklist, and the first harvests as examples; `scripts/promote_candidates.py` and
-  `scripts/repoint_names.py` go with it.
-- `references/verify-existing.md` — verifying an existing Lean project: environment first, measure
-  before waiting, how `native_decide` evaluates (`opaque`, offline closures), what "done" means;
-  `scripts/build_profile.py` and `scripts/sandbox_project.sh` go with it.
-- `references/review-brief.md` — the reviewer agent's instructions and the stopping rule (step 8);
-  `assets/REVIEW-template.md` — the round-by-round record of the two agents' exchange.
-- `references/workspace.md` — layout, versions, commands, VS Code, upgrading, errors.
-- `references/ecosystem.md` — other Lean tools (Tex2Lean, PaperFormalizer, autoform-bot,
-  lean4-skills, lean-lsp-mcp, Lean REPL, VCVio) and what this skill borrows from each; when
-  to hand a whole paper to one of them.
-- `scripts/setup_env.sh` and `assets/workspace/` — the environment check / installer and the
-  pinned workspace files it installs (`lakefile.toml`, `lean-toolchain`, `lake-manifest.json`);
-  `scripts/lean_eval.sh` (snippet runner), `scripts/trim_imports.py` (minimal imports),
-  `scripts/lake_build.sh` (serialized build), `scripts/check_lean.py` (final check).
-- `assets/examples/` — compiled examples (Feistel round, halfspace identity, S-box DDT) and
-  the complete run `DdtInverse/` (Main.lean, README.md, NOTATION.md); `setup_env.sh` installs
-  them as `CipherLean/Examples/`.
-- `assets/lib/` — the shared library `CipherLean` (README.md, NOTATION.md, six modules);
-  `setup_env.sh --install` copies it to `CipherLean/Lib/` and compiles it.
+- `references/lean-crypto-cheatsheet.md` — encodings, compiled idioms, tactics, pitfalls, speed, names that do not exist; read before step 4.
+- `references/workspace.md` — versions, what costs time, VS Code, upgrading, errors.
+- `references/promotion.md` — the candidate classes, the five questions, the moving checklist (step 7).
+- `references/review-brief.md` — the reviewer's instructions and the stopping rule (step 8).
+- `references/verify-existing.md` — verifying someone else's project, with the measured lessons.
+- `references/postmortems.md` — two runs that went wrong and the rule each left behind.
+- `references/ecosystem.md` — other Lean tools and what this skill borrows from each.
+- `assets/` — the templates (README, CHAIN, NOTATION, REVIEW, `file-template.lean`), the examples, the library `lib/`, the pinned workspace files.

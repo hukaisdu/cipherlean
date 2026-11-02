@@ -56,18 +56,19 @@ library lacks it.
 | check / create the environment | `$SKILL/scripts/setup_env.sh --check` (2 s) / `--install` (first time) |
 | scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>]` (Main.lean, README, NOTATION, CHAIN) |
 | proof-chain graph (step 1b) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid |
-| chain vs. Lean (step 7) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/Main.lean` |
+| chain vs. Lean (step 7) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/<File>.lean [<File2>.lean …]` (a theorem split into pieces: all its files in one run) |
 | where the build time went | `$SKILL/scripts/build_profile.py <lake build log> [--sites <dir>]` |
 | verify someone else's project | `$SKILL/scripts/sandbox_project.sh <project>` then `references/verify-existing.md` |
 | compile one file | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
 | final check | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean` |
 | the status board | `$SKILL/scripts/status.py <Slug>` (files, sorry counts, CHAIN rows by status, README table, REVIEW round and open objections; `--check` reruns the verdicts) |
-| the same steps on a server | `$SKILL/scripts/remote.sh build\|check\|chain\|trim\|eval …` with `CIPHERLEAN_REMOTE=user@host` (the skill and workspace installed there; sources stay here) |
+| the same steps on a server | `$SKILL/scripts/remote.sh build\|check\|chain\|trim\|eval …` with `CIPHERLEAN_REMOTE=user@host` (the skill and workspace installed there; sources stay here; `chain` takes every piece file) |
 | find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` |
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
 | trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` |
 | rebuild the shared library | `$SKILL/scripts/lake_build.sh CipherLean` (after adding a lemma to `CipherLean/Lib/`) |
 | promotion candidates (step 7b) | `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/Main.lean --write` |
+| NOTATION names exist? (step 7) | `$SKILL/scripts/notation_check.py CipherLean/<Slug>/NOTATION.md CipherLean/<Slug>/<File>.lean [...]` |
 | library back into the skill | `$SKILL/scripts/sync_library.sh` (then commit / pull request, see `CONTRIBUTING.md`) |
 | independent review | a fresh agent with `references/review-brief.md` (step 8) |
 
@@ -156,6 +157,12 @@ seven directions, two appendix tables and a length induction (a conjecture of a 
 deliverable. For anything beyond one session, propose a split into lemma-sized pieces, each with
 its own chain and done criteria, and start with the first piece the user picks.
 
+A `?` after an id in `uses` (`step:feasible-all?`) marks a premise the paper's text relies on but the Lean
+lemma of that row will not use: the paper's route where Lean goes another way, or a proof step whose
+Lean form is a self-contained finite check (Lemma 24's "the quadratic terms cannot be cancelled" is one
+`decide`; the premises it rests on enter where the target applies it). The graph draws such an edge
+dashed, `chain_check.py` accepts it without a Lean dependency, and the `implicit` cell says why.
+
 ### 2. Choose encodings and fix names
 
 Write `NOTATION.md`: one row per paper object — paper symbol, Lean name, Lean type,
@@ -174,7 +181,9 @@ Create `CipherLean/<Slug>/Main.lean` from the template (`$SKILL/scripts/new_pape
 Write the definitions, then every node of the confirmed chain as a Lean declaration with `sorry`, in
 dependency order (definitions, cited results as hypotheses or library lemmas, steps, lemmas, the
 target), and compile together with the finite checks of step 4 (they only need the definitions, so
-one build serves both). Fill the `lean` column of CHAIN.md as you go (exactly one declaration name of this formalization, or `—`;
+one build serves both). A later piece of a split theorem imports the earlier piece's file, which carries
+only its trimmed imports: keep `import Mathlib` in the new file until its own trim (`Submodule` was
+missing once, and the error cascaded into "declaration uses `sorry`" on half the file). Fill the `lean` column of CHAIN.md as you go (exactly one declaration name of this formalization, or `—`;
 notes such as "proved in project X as foo" go in the `implicit` column, because `chain_check.py` reads the
 cell as a name) and set `status: stated`. Give every
 declaration a docstring with the paper's wording (`/-- Paper: Theorem 2, "..." -/`), the way
@@ -192,7 +201,9 @@ there. For a symmetry or transpose statement, compute the toy's table outside Le
 ten-line Python script) and pick an instance where the wrong side really differs. When a
 hypothesis is implied by the others on finite types (one of the two inverse equations, say),
 prove that implication and record it instead of hunting for a counterexample that cannot
-exist.
+exist. A toy whose `Decidable` instance nests `Finset` filters (a mask in `K_H(α)`: 64 masks times
+the attainable set) overflows the elaborator's `maxRecDepth` under plain `decide`; `decide +kernel`
+evaluates it in seconds and adds no axiom.
 
 ### 5. Prove, one lemma per proof step
 
@@ -251,7 +262,9 @@ and profiled (`scripts/build_profile.py`) before the second one is written.
 
 ### 6. Check
 
-`$SKILL/scripts/chain_check.py CHAIN.md CipherLean/<Slug>/Main.lean` compares the confirmed chain with
+`$SKILL/scripts/chain_check.py CHAIN.md CipherLean/<Slug>/Main.lean` (for a theorem split into pieces:
+every piece file in the same run, since the chain spans them and a declaration of another piece would
+otherwise count as unknown) compares the confirmed chain with
 the dependency graph Lean actually used (direct, transitive, missing and extra edges; a `?` after an id
 in `uses` marks the paper's route when Lean proves the step another way) and must end in
 `VERDICT: CONSISTENT`; explain every difference in CHAIN.md. Then
@@ -273,7 +286,7 @@ note) and the "Departures from the paper" section. Then step 7b. In the reply: w
 and the exact commands to rebuild. Say "proved" only after step 6 passes, and only for the paper's
 statement in full (both directions of an "exactly", every case of a case split). Every script the
 README cites (a Python table check, a counterexample search) lives in the paper directory, and every
-Lean name README or NOTATION cites exists (`status.py`, or `#check`): the first independent review
+Lean name README or NOTATION cites exists (`$SKILL/scripts/notation_check.py NOTATION.md <files>`, or `#check`): the first independent review
 found both kinds of slip in one file. "Done" means: the checks pass on the declared pin, the
 files and the evidence (`check_lean` output, `CHAIN.md`, `REVIEW.md`) are committed, and every
 caveat (an added hypothesis, a compiler axiom, a departure) stands at the top of the report, not
@@ -285,7 +298,8 @@ Run `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/Main.lean --write`. 
 declaration of the finished file: A (general lemma about library objects: move), B (general but
 about an object the paper defined), E (an object the paper defined: general notion or
 paper-specific?), F (general, Mathlib only), D (duplicate of a library statement: delete, import),
-C (toy or test instance: stays). Read the statements, apply the five questions of
+C (toy or test instance: stays). The D class compares types, so for a `def` two unrelated maps of the
+same type look like duplicates (`internalPart` vs. `chiMap`): read the row. Read the statements, apply the five questions of
 `references/promotion.md` (general in `ι`? a notion two papers would share? already there? part of
 an unpublished result? explainable without the paper?), and give the user a table with one
 recommendation per row. After their decision, move the accepted ones with the checklist in

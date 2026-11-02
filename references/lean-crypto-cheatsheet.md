@@ -190,6 +190,25 @@ formalization of a coset-average theorem that is not shipped, so those idioms ar
     `Sum.elim_comp_inl_inr` the other. With `variable [NeZero m]` in scope, lemmas that do not need the
     instance get `omit [NeZero m] in` to silence the unused-variable linter.
 
+32. **A submodule from a set-builder carrier** (`WHConj3.constMasks`, `perp`, `internal`): in
+    `def V : Submodule (ZMod 2) (Vec ι) where carrier := {w | P w} …`, the membership `x ∈ {w | P w}` is not
+    a structure for `⟨_, _⟩` (`setOf` is not reducible) and `rw [h]` with `h : a ∈ {w | …}` fails; type-ascribe
+    the field binders (`add_mem' := fun {a c} (ha : P a) (hc : P c) => by …`) or `change P (a + c)` first.
+    `Set.mem_setOf_eq` is deprecated in this Mathlib (`Set.mem_ofPred_eq`).
+33. **Name the implicit a `rw` will need** (`WHConj3.dot_eq_boundary_of_internal_zero`): a lemma with
+    `{μ : Vec (Fin r)}` and hypothesis `∀ i, μ i = 0`, applied to `h : ∀ j, lam (Sum.inr j) = 0`, gets
+    `μ := fun i => lam (Sum.inr i)` by higher-order unification, and the rewrite pattern
+    `(fun i ↦ …) ⬝ᵥ ?d` never matches `lam ∘ Sum.inr ⬝ᵥ …`; pass `(μ := lam ∘ Sum.inr)`.
+34. **`decide +kernel` for toys whose instance nests `Finset` filters** (`WHConj3.toy_two_active_KH`): plain
+    `decide` on "every mask in `K_H(α)` is zero" over `(3,3)` (64 masks, each membership evaluating
+    `inputDiffs`, 4096 derivatives) stops with "maximum recursion depth has been reached" — the elaborator's
+    limit, not the kernel's; `decide +kernel` passes in seconds, standard axioms.
+35. **A piece file imports the previous piece, not `Mathlib`** (`WHConj3.TwoActive`): the earlier piece was
+    trimmed, so `Submodule`, `Submodule.span`, `Fin.sum_univ_three` may be missing although the project
+    "imports Mathlib"; either keep `import Mathlib` until the new file's own trim, or add the modules
+    (`Mathlib.LinearAlgebra.Span.Basic`, `Mathlib.Algebra.BigOperators.Fin`). `trim_imports.py` only acts on a
+    bare `import Mathlib`.
+
 ## 3. Tactics, in the order to try them
 
 `simp only [...]` (controlled) → `rw [...]` (literal pattern) → `ring` / `linarith` / `omega`
@@ -218,7 +237,8 @@ a lemma yourself.
   script fails on `sorryAx` and prints every statement so the human half of the check
   is one read.
 - `omit [CharZero K] in` goes *before* the docstring of the theorem, not between docstring and
-  `theorem`; `intro` does not unfold `Nondegenerate`-style definitions (use `unfold` first or a
+  `theorem` ("unexpected token 'omit'; expected 'lemma'"); an edit loop driven by the unused-variable linter
+  makes the slip easy, so write it before the docstring from the start; `intro` does not unfold `Nondegenerate`-style definitions (use `unfold` first or a
   term-mode `fun`); `push_neg` is deprecated here (`simp only [not_exists, not_and, ne_eq, not_not]`);
   `haveI` on a `Prop` draws a linter warning (`have`); `Module.natCard_eq_pow_finrank` needs
   `(K := …)` because the field is not determined by `Nat.card`.

@@ -126,7 +126,9 @@ def classify(paper_decls, lib_decls, paper_ns, dups=None):
         uses_lib = sorted(short(u, ["CipherLean"]) for u in used if u in lib_names)
         uses_paper = sorted(short(u, paper_ns) for u in used if u in paper_defs and u != name)
         concrete = bool(CONCRETE.search(ty)) or bool(TOYNAME.search(short(name, paper_ns)))
-        dup = dups.get(name) or lib_by_type.get(norm_type(ty, ["CipherLean"] + paper_ns))
+        # D only for theorems: for a def the "statement" is its type, and two unrelated maps of the same
+        # type (`internalPart`, `chiMap` : Vec (Fin r) → Vec (Fin r)) are not duplicates (2026-11-02)
+        dup = (dups.get(name) or lib_by_type.get(norm_type(ty, ["CipherLean"] + paper_ns))) if d["kind"] == "theorem" else None
         if dup:
             cls, why = "D", f"same statement as library `{'`, `'.join(short(x, ['CipherLean']) for x in dup)}`"
         elif concrete:

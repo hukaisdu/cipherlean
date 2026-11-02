@@ -18,7 +18,9 @@ until this table and the graph below are confirmed.
 
 `kind`: theorem · lemma · step (one step of a proof) · def · external (cited result, checked in its
 own source) · assumption (a hypothesis of the theorem or a modelling assumption stated as such).
-`uses`: comma-separated ids. `where`: the paper's section and statement first (`§7.3 Lemma 24 (lem:…)`),
+`uses`: comma-separated ids; `id?` marks a premise the paper relies on that the Lean declaration of this row does not
+use (the paper's route where Lean goes another way, or a step whose Lean form is a self-contained finite check whose
+premises enter where the target applies it) — explained in `implicit`, accepted by `chain_check.py`. `where`: the paper's section and statement first (`§7.3 Lemma 24 (lem:…)`),
 then `;` and notes — the graph prints the part before the `;` under each node, and the H1 line of this
 file is the graph's title, so it names the paper; rows from another paper say that paper first.
 `implicit`: a hypothesis the text uses without stating, or `—`.

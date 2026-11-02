@@ -4,6 +4,7 @@ Released under the MIT license as described in the file LICENSE.
 Authors: Kai Hu
 -/
 import CipherLean.Lib.F2.Vec
+import CipherLean.Lib.F2.Subspace
 import Mathlib.LinearAlgebra.Span.Basic
 import Mathlib.Data.Fin.VecNotation
 
@@ -17,7 +18,10 @@ pairwise reading of "constant"; a subspace, `⊤` when `S` has at most one eleme
 a set of vectors is `ann V` in `F2/Subspace.lean`). `dirAff T = span{t + t′ : t, t′ ∈ T}` is the
 direction space of the affine hull of `T`: the span of `{t + t⁰ : t ∈ T}` for any anchor `t⁰ ∈ T`,
 written without choosing the anchor, and `⊥` for `T = ∅`. `dirAff_le_perp_iff` is the link: `λ`
-annihilates `dir Aff T` iff `⟨λ, t + t′⟩ = 0` for all `t, t′ ∈ T`, i.e. iff `λ ∈ constMasks T`.
+annihilates `dir Aff T` iff `⟨λ, t + t′⟩ = 0` for all `t, t′ ∈ T`, i.e. iff `λ ∈ constMasks T`; so
+`constMasks S = (dotForm ι).orthogonal (dirAff S)` (`constMasks_eq_orthogonal_dirAff`), with the dimension and
+cardinality sentences `finrank_constMasks_add_finrank_dirAff`, `natCard_constMasks` — the ChiChi paper's Lemma 1
+(promoted from `WHConj3`, piece C, 2026-11-02).
 
 Source: the ChiChi paper, §2.1 "The four spaces" (`K_H(α)`, `dir`) and App. C.1 (the empty-set
 convention); promoted from `WHConj3` (Lemma 24, piece B) on 2026-11-02. `K_H(α)` itself, the masks
@@ -74,6 +78,53 @@ theorem dirAff_le_perp_iff {T : Finset (Vec ι)} {lam : Vec ι} :
     exact h ⟨t, ht, t', ht', rfl⟩
   · rintro h v ⟨t, ht, t', ht', rfl⟩
     exact h t ht t' ht'
+
+/-! ## The masks constant on a set are the orthogonal complement of its direction space
+
+The ChiChi paper's Lemma 1 (§3.1, `K_H(α) = dir(D_α)^⊥`, `dim K_H(α) = N − dim D_α`,
+`#K_H(α) = 2^{N − dim D_α}`), for any finite set `S` of differences and without choosing an anchor
+`d^(0) ∈ S`: pairwise constancy is annihilating all pairwise sums (`dirAff_le_perp_iff`). -/
+
+/-- `constMasks S` is the orthogonal complement of `dir Aff S` for the dot product. -/
+theorem constMasks_eq_orthogonal_dirAff (S : Finset (Vec ι)) :
+    constMasks S = (dotForm ι).orthogonal (dirAff S) := by
+  ext lam
+  rw [LinearMap.BilinForm.mem_orthogonal_iff, mem_constMasks]
+  constructor
+  · intro h n hn
+    have hle : dirAff S ≤ perp lam := dirAff_le_perp_iff.mpr fun t ht t' ht' => by
+      rw [dotProduct_add, zmod2_add_eq_zero_iff]
+      exact h t ht t' ht'
+    have := hle hn
+    rw [mem_perp] at this
+    rw [dotForm_apply, dotProduct_comm]
+    exact this
+  · intro h d hd d' hd'
+    have hle : dirAff S ≤ perp lam := fun n hn => by
+      rw [mem_perp, dotProduct_comm]
+      simpa using h n hn
+    have := dirAff_le_perp_iff.mp hle d hd d' hd'
+    rwa [dotProduct_add, zmod2_add_eq_zero_iff] at this
+
+/-- `dim constMasks S + dim dir Aff S = n` (orthogonal-complement dimension for the nondegenerate
+dot product). -/
+theorem finrank_constMasks_add_finrank_dirAff (S : Finset (Vec ι)) :
+    Module.finrank (ZMod 2) (constMasks S) + Module.finrank (ZMod 2) (dirAff S) =
+      Fintype.card ι := by
+  rw [constMasks_eq_orthogonal_dirAff,
+    LinearMap.BilinForm.finrank_orthogonal dotForm_nondegenerate,
+    Module.finrank_fintype_fun_eq_card]
+  have := Submodule.finrank_le (dirAff S)
+  rw [Module.finrank_fintype_fun_eq_card] at this
+  omega
+
+/-- `#constMasks S = 2^{n − dim dir Aff S}`. -/
+theorem natCard_constMasks (S : Finset (Vec ι)) :
+    Nat.card (constMasks S) = 2 ^ (Fintype.card ι - Module.finrank (ZMod 2) (dirAff S)) := by
+  rw [natCard_eq_two_pow_finrank]
+  congr 1
+  have := finrank_constMasks_add_finrank_dirAff S
+  omega
 
 /-! ## Finite checks on `F_2^2` -/
 

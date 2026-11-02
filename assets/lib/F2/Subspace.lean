@@ -19,7 +19,9 @@ so that membership, cosets and annihilators are computable and `decide` can chec
 The duality facts `|V| · |V^⊥| = 2^n` and `V^⊥⊥ = V` come from Mathlib's bilinear-form
 orthogonality, through the `ZMod 2`-submodule `toSub hV` with the same underlying set.
 The character sum over an annihilator (`sum_chi_ann`) is the lemma behind every coset-average
-or fixed-key argument.
+or fixed-key argument. `natCard_eq_two_pow_finrank` (`#W = 2^{dim W}`) and `exists_le_finrank_eq` (a subspace
+of dimension `≥ k` contains one of dimension `k`) are the two dimension facts the ChiChi paper's Theorem 5 needs
+(promoted from `WHConj3` on 2026-11-02).
 -/
 
 namespace CipherLean
@@ -258,5 +260,38 @@ theorem sum_chi_subspace {V : Finset (Vec ι)} (hV : IsSubspace V) (y : Vec ι) 
   exact h
 
 end chi
+
+/-! ## Dimension and size of a subspace -/
+
+section finrank
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- A binary vector space of dimension `k` has `2^k` elements: the bridge from a count to a
+dimension. -/
+theorem natCard_eq_two_pow_finrank [Finite ι] (W : Submodule (ZMod 2) (Vec ι)) :
+    Nat.card W = 2 ^ Module.finrank (ZMod 2) W := by
+  rw [Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod]
+
+/-- A subspace of dimension at least `k` contains a subspace of dimension exactly `k`: the span of
+the first `k` vectors of a basis (any field; no Mathlib lemma states it). -/
+theorem exists_le_finrank_eq {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] (W : Submodule K V) {k : ℕ} (hk : k ≤ Module.finrank K W) :
+    ∃ A : Submodule K V, A ≤ W ∧ Module.finrank K A = k := by
+  classical
+  let bW := Module.finBasis K W
+  let g : Fin k → W := fun i => bW (Fin.castLE hk i)
+  let f : Fin k → V := fun i => (g i : V)
+  refine ⟨Submodule.span K (Set.range f), ?_, ?_⟩
+  · rw [Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact (g i).2
+  · have hg : LinearIndependent K g :=
+      bW.linearIndependent.comp (Fin.castLE hk) (Fin.castLE_injective hk)
+    have hf : LinearIndependent K f := by
+      have := hg.map (f := W.subtype) (by rw [Submodule.ker_subtype]; exact disjoint_bot_right)
+      simpa [f, g, Function.comp_def] using this
+    rw [finrank_span_eq_card hf, Fintype.card_fin]
+
+end finrank
 
 end CipherLean

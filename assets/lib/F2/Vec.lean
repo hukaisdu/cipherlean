@@ -40,6 +40,10 @@ theorem zmod2_add_eq_zero_iff {a b : ZMod 2} : a + b = 0 ↔ a = b := by revert 
 
 theorem zmod2_ne_zero_iff {a : ZMod 2} : a ≠ 0 ↔ a = 1 := by revert a; decide
 
+/-- `(p + q) + (q + r) = p + r` in `F_2`. -/
+theorem zmod2_add_add_add (p q r : ZMod 2) : p + q + (q + r) = p + r := by
+  revert p q r; decide
+
 section basic
 variable {ι : Type*}
 
@@ -176,6 +180,37 @@ theorem sum_chi [DecidableEq ι] (w : Vec ι) :
       exact Finset.mem_univ _
     · intro x _
       exact add_add_self x _
+
+/-- A sum of `2^n` signs `±1` equals `2^n` iff every sign is `+1`, and `−2^n` iff every sign is
+`−1` (the "absolute bias one" criterion). -/
+theorem sum_sgn_eq_iff [DecidableEq ι] (s : Vec ι → ZMod 2) :
+    ((∑ y, sgn ℤ (s y)) = 2 ^ Fintype.card ι ↔ ∀ y, s y = 0) ∧
+      ((∑ y, sgn ℤ (s y)) = -(2 ^ Fintype.card ι) ↔ ∀ y, s y = 1) := by
+  classical
+  have hsum : (∑ y, sgn ℤ (s y)) =
+      ((Finset.univ.filter fun y : Vec ι => s y = 0).card : ℤ) -
+        ((Finset.univ.filter fun y : Vec ι => ¬ s y = 0).card : ℤ) := by
+    simp only [sgn]
+    rw [Finset.sum_ite, Finset.sum_const, Finset.sum_const, nsmul_eq_mul, nsmul_eq_mul, mul_one,
+      mul_neg, mul_one, sub_eq_add_neg]
+  have hcardN : (Finset.univ.filter fun y : Vec ι => s y = 0).card +
+      (Finset.univ.filter fun y : Vec ι => ¬ s y = 0).card = 2 ^ Fintype.card ι := by
+    rw [Finset.card_filter_add_card_filter_not, Finset.card_univ, card_vec]
+  have hcard : ((Finset.univ.filter fun y : Vec ι => s y = 0).card : ℤ) +
+      ((Finset.univ.filter fun y : Vec ι => ¬ s y = 0).card : ℤ) = 2 ^ Fintype.card ι := by
+    exact_mod_cast hcardN
+  have hB : (Finset.univ.filter fun y : Vec ι => ¬ s y = 0).card = 0 ↔ ∀ y, s y = 0 := by
+    rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+    simp
+  have hA : (Finset.univ.filter fun y : Vec ι => s y = 0).card = 0 ↔ ∀ y, s y = 1 := by
+    rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+    simp [zmod2_ne_zero_iff]
+  rw [hsum]
+  constructor
+  · rw [← hB]
+    constructor <;> intro h <;> omega
+  · rw [← hA]
+    constructor <;> intro h <;> omega
 
 end sgn
 

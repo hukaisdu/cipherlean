@@ -38,12 +38,23 @@ All statistics are unnormalized integers or counts; normalized forms are corolla
 | `λ^⊥` (one mask) | `perp λ` | `Submodule (ZMod 2) (Vec ι)` | `{w : λ ⬝ᵥ w = 0}` (`mem_perp`, decidable); `V ≤ perp λ` says "λ annihilates V" |
 | `dir(Aff T)` | `dirAff T` | `Submodule (ZMod 2) (Vec ι)` | `span {t + t′ : t, t′ ∈ T}` (= `span {t + t⁰ : t ∈ T}` for any `t⁰ ∈ T`), `⊥` for `T = ∅`; `dirAff_le_perp_iff`: `dirAff T ≤ perp λ ↔ ∀ t, t′ ∈ T, λ ⬝ᵥ (t + t′) = 0` (ChiChi paper §2.1, App. C.1) |
 | `K_H(α) = {λ : ⟨λ, d⟩ constant for d ∈ S_α}` | `KH F α := constMasks (inputDiffs F α)` | `Submodule (ZMod 2) (Vec ι)` | forward reading (`d` an input difference of `F`, `α` its output difference; `mem_KH`, decidable); the paper's `S_α` through `H = F⁻¹`: `KH_eq_constMasks_outputDiffs hbij α` (ChiChi paper §2.1) |
+| `a` is a linear structure of `f : F_2^n → F_2` (`Δ_a f` constant) | `IsLinStruct f a` | `Prop` (decidable on a finite domain) | `∃ c, ∀ x, f (x + a) + f x = c`; `isLinStruct_zero`, `isLinStruct_add` (LS(f) is a subspace: Lai 1994, Carlet 2021 §2.3), `isLinStruct_iff` (`c = f a + f 0`) |
+| `E_λ = {α : λ ∈ K_H(α)}` (ChiChi paper §7.1; = `LS(⟨λ, H⟩)`, §2.3) | `Elam H lam` | `Submodule (ZMod 2) (Vec ι)` | the directions on which the component `⟨λ, H⟩` has a constant derivative, for any map `H`: `mem_Elam` (`λ` constant on `outputDiffs H α`), `mem_Elam_iff_isLinStruct`, `mem_Elam_iff_mem_KH hbij` (`H = F⁻¹`: `α ∈ Elam H λ ↔ λ ∈ KH F α`), `mem_Elam_iff_bias` (§2.1: the sign sum is `±2^n`), `Elam_zero` (`E_0 = ⊤`), `Elam_id` (a linear `H`: `⊤`); membership decidable |
+| `Bias(α, λ) = ±1` iff `⟨λ, d⟩` constant on `S_α` (ChiChi paper, proof of Lemma 1) | `sum_chi_deriv_eq_iff_mem_constMasks H α lam` | theorem | `(∑ y, chi ℤ lam (deriv H α y)) = 2^n ∨ … = −2^n ↔ lam ∈ constMasks (outputDiffs H α)` (the bias unnormalized, `2^n · Bias`) |
+| a sum of `2^n` signs is `±2^n` iff all signs agree | `sum_sgn_eq_iff s` | theorem | `(∑ y, sgn ℤ (s y)) = 2^n ↔ ∀ y, s y = 0`, and `= −2^n ↔ ∀ y, s y = 1` |
+| `K_H(α) = dir(D_α)^⊥`, `dim K_H(α) = n − dim D_α`, `#K_H(α) = 2^{n − dim D_α}` (ChiChi paper Lemma 1) | `constMasks_eq_orthogonal_dirAff S`, `finrank_constMasks_add_finrank_dirAff S`, `natCard_constMasks S`; `KH_eq_orthogonal_dirAff F α` | theorems | for any finite `S ⊆ F_2^n`: `constMasks S = (dotForm ι).orthogonal (dirAff S)`, `finrank (constMasks S) + finrank (dirAff S) = n`, `Nat.card (constMasks S) = 2 ^ (n − finrank (dirAff S))`; the forward instance `KH F α = (dotForm ι).orthogonal (dirAff (inputDiffs F α))` |
+| `#W = 2^{dim W}` | `natCard_eq_two_pow_finrank W` | theorem | `Nat.card W = 2 ^ Module.finrank (ZMod 2) W` for `W : Submodule (ZMod 2) (Vec ι)`, `Finite ι` |
+| a subspace of dimension `≥ k` contains one of dimension `k` | `exists_le_finrank_eq W hk` | theorem | any field `K`, finite-dimensional `V`, `W : Submodule K V`: `k ≤ finrank W → ∃ A ≤ W, finrank A = k` |
+| `(p + q) + (q + r) = p + r` in `F_2` | `zmod2_add_add_add` | theorem | cancellation in characteristic 2 |
 | S-box table | `Sbox.ofTable t`, `Sbox.toFun S` | `BitVec n → BitVec n`, `Vec (Fin n) → Vec (Fin n)` | `toFun S = toVec ∘ S ∘ ofVec` |
 | PRESENT S-box | `Sbox.present`, `Sbox.presentVec` | — | standard 4-bit test instance (CHES 2007) |
 | word ↔ vector | `toVec`, `ofVec`, `bvEquiv` | `BitVec n ≃ Vec (Fin n)` | coordinate `i` = bit `i` (LSB first) |
 
 Not interchangeable: `chi K w x` (the character) vs `chiMap r` (the χ map of Keccak); `walsh` (integer) vs `correlation` (rational); `ddt` (count) vs `ddt / 2^n`
 (probability, not defined here); `Vec (Fin n)` vs `BitVec n` (bridge required, `+` vs `^^^`). `constMasks S`, `perp λ`, `dirAff T`, `KH F α` are `Submodule`s (for `≤`, `⊥`, `⊤` statements), while
-`ann V` and `IsSubspace V` are `Finset`s (for counting): not interchangeable without a conversion.
+`ann V` and `IsSubspace V` are `Finset`s (for counting): not interchangeable without a conversion. `KH F α` (fixed
+difference, varying mask) vs `Elam H lam` (fixed mask, varying direction): dual readings of one condition, equal
+only through `mem_Elam_iff_mem_KH` for `H = F⁻¹`; `IsLinStruct f a` (a Boolean function) vs `a ∈ Elam H lam` (a
+vectorial map and a mask).
 
 Open: `lat` (LAT entry `W/2`) is not defined; add it with `two_mul_lat` when a paper needs it.

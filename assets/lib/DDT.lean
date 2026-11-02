@@ -284,7 +284,9 @@ theorem outputDiffs_inv_eq_inputDiffs {F : Vec ι → Vec ι} (hbij : Function.B
 constant for d ∈ S_α}` (§2.1 "The four spaces") read on the forward map: `S_α` is
 `inputDiffs F α`. The paper's `S_α = {H(y + α) + H(y) : y}` with `H = F⁻¹` gives the same submodule
 (`KH_eq_constMasks_outputDiffs`). Membership is decidable, for finite checks. Promoted from
-`WHConj3` (Lemma 24, piece B) on 2026-11-02. -/
+`WHConj3` (Lemma 24, piece B) on 2026-11-02; `KH_eq_orthogonal_dirAff` (the paper's Lemma 1 on this reading) and
+`sum_chi_deriv_eq_iff_mem_constMasks` (the differential–linear bias is `±1` iff the mask is constant on `S_α`)
+followed from piece C the same day. -/
 
 /-- `K_H(α)`: the masks `λ` with `⟨λ, d⟩` constant over the input differences `d` of `F` that
 attain `α` (the ChiChi paper, §2.1), a `ZMod 2`-submodule of `Vec ι`. -/
@@ -302,6 +304,43 @@ instance (F : Vec ι → Vec ι) (α lam : Vec ι) : Decidable (lam ∈ KH F α)
 theorem KH_eq_constMasks_outputDiffs {F : Vec ι → Vec ι} (hbij : Function.Bijective F)
     (α : Vec ι) : constMasks (outputDiffs (Equiv.ofBijective F hbij).symm α) = KH F α := by
   rw [KH, outputDiffs_inv_eq_inputDiffs]
+
+/-- The ChiChi paper's Lemma 1 on the forward reading: `K_H(α) = dir(D_α)^⊥` with
+`S_α = inputDiffs F α` (`constMasks_eq_orthogonal_dirAff` for that set). -/
+theorem KH_eq_orthogonal_dirAff (F : Vec ι → Vec ι) (α : Vec ι) :
+    KH F α = (dotForm ι).orthogonal (dirAff (inputDiffs F α)) := by
+  rw [KH]
+  exact constMasks_eq_orthogonal_dirAff _
+
+/-- The differential–linear bias of `H` at `(α, λ)` has absolute value one iff `⟨λ, d⟩` is constant
+on the output differences `S_α` (the first paragraph of the proof of the ChiChi paper's Lemma 1);
+unnormalized: `∑ y, (−1)^{⟨λ, H(y+α)+H(y)⟩}` is `2^n` or `−2^n`. -/
+theorem sum_chi_deriv_eq_iff_mem_constMasks (H : Vec ι → Vec ι) (α lam : Vec ι) :
+    ((∑ y, chi ℤ lam (deriv H α y)) = 2 ^ Fintype.card ι ∨
+        (∑ y, chi ℤ lam (deriv H α y)) = -(2 ^ Fintype.card ι)) ↔
+      lam ∈ constMasks (outputDiffs H α) := by
+  have hs := sum_sgn_eq_iff (fun y => lam ⬝ᵥ deriv H α y)
+  have e1 : ((∑ y, chi ℤ lam (deriv H α y)) = 2 ^ Fintype.card ι) ↔
+      ∀ y, lam ⬝ᵥ deriv H α y = 0 := hs.1
+  have e2 : ((∑ y, chi ℤ lam (deriv H α y)) = -(2 ^ Fintype.card ι)) ↔
+      ∀ y, lam ⬝ᵥ deriv H α y = 1 := hs.2
+  rw [e1, e2, mem_constMasks]
+  constructor
+  · rintro (h | h) d hd d' hd'
+    · obtain ⟨y, rfl⟩ := mem_outputDiffs.mp hd
+      obtain ⟨y', rfl⟩ := mem_outputDiffs.mp hd'
+      rw [h y, h y']
+    · obtain ⟨y, rfl⟩ := mem_outputDiffs.mp hd
+      obtain ⟨y', rfl⟩ := mem_outputDiffs.mp hd'
+      rw [h y, h y']
+  · intro h
+    rcases zmod2_cases (lam ⬝ᵥ deriv H α 0) with h0 | h0
+    · left
+      intro y
+      rw [h _ (mem_outputDiffs.mpr ⟨y, rfl⟩) _ (mem_outputDiffs.mpr ⟨0, rfl⟩), h0]
+    · right
+      intro y
+      rw [h _ (mem_outputDiffs.mpr ⟨y, rfl⟩) _ (mem_outputDiffs.mpr ⟨0, rfl⟩), h0]
 
 /-- Finite check: for `F(x) = (x_0 x_1, 0)` on `F_2^2` the input differences attaining `(1, 0)` are
 the three nonzero vectors, so only the zero mask is constant on them; for the identity map

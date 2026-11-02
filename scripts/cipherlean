@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# cipherlean — one entry point for the skill's scripts (the script paths keep working as before).
+#
+#   usage: cipherlean <subcommand> [arguments…]      (from the workspace root, ~/cipherlean)
+#
+#   setup      setup_env.sh          check / install the environment (--check, --install, --update-library, …)
+#   new        new_paper.sh          scaffold CipherLean/<Slug>/ (README, CHAIN, NOTATION, Main.lean; --file <Piece>)
+#   graph      chain_graph.py        CHAIN.md → CHAIN.tex + CHAIN.pdf (+ mermaid); --gaps, --focus, --rows
+#   status     status.py             the Position block and the status board (--position, --check)
+#   eval       lean_eval.sh          run a Lean snippet (light preset ≈ 7 s; --full)
+#   search     search_mathlib.sh     find a lemma: local grep, Loogle, LeanSearch
+#   build      lake_build.sh         lake build <targets> under the workspace lock
+#   inspect    inspect_lean.py       one Lean listing of the given modules (JSON; --dups, --out)
+#   check      check_lean.py         build + axioms + statements of one file (--no-build, --allow-native, --listing)
+#   chain      chain_check.py        the confirmed chain against Lean's dependency graph (--listing)
+#   trim       trim_imports.py       minimal imports of a finished file (--apply, --why)
+#   notation   notation_check.py     do the cited Lean names exist? (--also README.md CHAIN.md)
+#   promote    promote_candidates.py library candidates of the piece files (--write appends to PROMOTE.md)
+#   repoint    repoint_names.py      re-point the .md files after a promotion (--apply)
+#   sync-lib   sync_library.sh       copy the workspace library back into the skill
+#   remote     remote.sh             the same steps on a server (CIPHERLEAN_REMOTE=user@host)
+#   profile    build_profile.py      where a build's time went; computational sites (--sites)
+#   sandbox    sandbox_project.sh    copy someone else's project to a scratch directory for verification
+#
+#   cipherlean <subcommand> --help  shows that script's own help.
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+sub="${1:-}"; [ $# -gt 0 ] && shift
+case "$sub" in
+  setup)    exec bash "$HERE/setup_env.sh" "$@" ;;
+  new)      exec bash "$HERE/new_paper.sh" "$@" ;;
+  graph)    exec python3 "$HERE/chain_graph.py" "$@" ;;
+  status)   exec python3 "$HERE/status.py" "$@" ;;
+  eval)     exec bash "$HERE/lean_eval.sh" "$@" ;;
+  search)   exec bash "$HERE/search_mathlib.sh" "$@" ;;
+  build)    exec bash "$HERE/lake_build.sh" "$@" ;;
+  inspect)  exec python3 "$HERE/inspect_lean.py" "$@" ;;
+  check)    exec python3 "$HERE/check_lean.py" "$@" ;;
+  chain)    exec python3 "$HERE/chain_check.py" "$@" ;;
+  trim)     exec python3 "$HERE/trim_imports.py" "$@" ;;
+  notation) exec python3 "$HERE/notation_check.py" "$@" ;;
+  promote)  exec python3 "$HERE/promote_candidates.py" "$@" ;;
+  repoint)  exec python3 "$HERE/repoint_names.py" "$@" ;;
+  sync-lib) exec bash "$HERE/sync_library.sh" "$@" ;;
+  remote)   exec bash "$HERE/remote.sh" "$@" ;;
+  profile)  exec python3 "$HERE/build_profile.py" "$@" ;;
+  sandbox)  exec bash "$HERE/sandbox_project.sh" "$@" ;;
+  ""|-h|--help|help) sed -n '2,24p' "$0"; exit 0 ;;
+  *) echo "cipherlean: unknown subcommand '$sub' (see cipherlean --help)" >&2; exit 2 ;;
+esac

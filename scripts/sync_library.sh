@@ -6,7 +6,7 @@
 set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"; SKILL="$(cd "$HERE/.." && pwd)"
 WS="${CIPHERLEAN_WS:-$HOME/cipherlean}"
-[ "${1:-}" = "--workspace" ] && WS="$2"
+case "${1:-}" in -h|--help) sed -n '2,5p' "$0"; exit 0 ;; --workspace) WS="$2" ;; esac
 LIB="$WS/CipherLean/Lib"
 [ -d "$LIB" ] || { echo "no library at $LIB (set CIPHERLEAN_WS or --workspace)" >&2; exit 2; }
 mkdir -p "$SKILL/assets/lib"

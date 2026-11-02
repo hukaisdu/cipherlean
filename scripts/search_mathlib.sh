@@ -7,7 +7,8 @@
 #   leansearch https://leansearch.net — natural language, e.g. "sum over a bijection equals sum over codomain"
 set -uo pipefail
 WS="${CIPHERLEAN_WS:-$HOME/cipherlean}"
-Q="${1:?usage: search_mathlib.sh \"<query>\" [local|loogle|leansearch|all]}"
+case "${1:-}" in -h|--help|"") sed -n '2,7p' "$0"; exit 0 ;; esac
+Q="$1"
 MODE="${2:-all}"
 enc() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1]))' "$1"; }
 

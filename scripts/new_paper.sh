@@ -10,7 +10,8 @@ set -euo pipefail
 WS="${CIPHERLEAN_WS:-$HOME/cipherlean}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ASSETS="$HERE/../assets"
-SLUG="${1:?usage: new_paper.sh <Slug> [--paper-dir <dir>] [--file <Name>]}"; shift
+case "${1:-}" in -h|--help|"") sed -n '2,8p' "$0"; exit 0 ;; esac
+SLUG="$1"; shift
 PAPER_DIR=""
 FILE=""
 while [ $# -gt 0 ]; do

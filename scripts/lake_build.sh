@@ -3,6 +3,7 @@
 # several agents sharing ~/cipherlean never build at the same time (macOS has no `flock`).
 #   usage: lake_build.sh CipherLean.<Slug>.Main [more targets]
 set -euo pipefail
+case "${1:-}" in -h|--help|"") sed -n '2,4p' "$0"; exit 0 ;; esac
 WS="${CIPHERLEAN_WS:-$HOME/cipherlean}"
 export PATH="$HOME/.elan/bin:$PATH"
 [ -f "$WS/lakefile.toml" ] || { echo "workspace not found at $WS: run $(dirname "$0")/setup_env.sh --install" >&2; exit 2; }

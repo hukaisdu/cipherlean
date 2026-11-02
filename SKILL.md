@@ -33,23 +33,23 @@ Mathlib `v4.33.0` prebuilt (≈ 6 GB under `.lake/`), `autoImplicit = false`, on
 S-boxes: `CipherLean/Lib/NOTATION.md` and `README.md`). Every paper file starts with `import CipherLean`; define an object
 yourself only when the library lacks it. Run everything from the workspace root (the scripts put `~/.elan/bin` on PATH).
 
-| task | command (from `~/cipherlean`; `$SKILL` = `~/.claude/skills/cipherlean`; this table is the only copy in the skill) |
+| task | `$SKILL/scripts/cipherlean <subcommand>` from `~/cipherlean` (`$SKILL` = `~/.claude/skills/cipherlean`; the script paths `scripts/<name>` work too; this table is the only copy in the skill) |
 |---|---|
-| environment (step 1) | `$SKILL/scripts/setup_env.sh --check` (2 s); `--install [--examples]` once; `--update-library` after a `git pull` of the skill |
-| scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>] [--file <Piece>]` (README, CHAIN, NOTATION, Main.lean; `--file` adds a piece file) |
-| graph and roadmap (step 3) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid; `--gaps` what remains; `--focus <id> [--depth N]` or `--rows a,b,c` one piece's sub-chain |
-| position and status board | `$SKILL/scripts/status.py <Slug>` (`--position` the Position block alone; `--check` reruns the verdicts on one Lean listing, `$SKILL/scripts/inspect_lean.py <files> --out FILE.json`, which every check script also accepts as `--listing`) |
-| try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
-| find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` (local grep, Loogle, LeanSearch) |
-| build one module | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (`lake build` under the workspace lock; `CipherLean` rebuilds the library) |
-| chain vs. Lean (step 7) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/<File>.lean […]` (every piece file in one run) |
-| final check (step 7) | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean [--no-build] [--allow-native]` |
-| trim imports (step 7) | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/<File>.lean --apply` (`--why` names what each surviving module supplies) |
-| cited names exist? (step 7) | `$SKILL/scripts/notation_check.py CipherLean/<Slug>/NOTATION.md <every piece file> --also README.md CHAIN.md` |
-| promotion candidates (step 7) | `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean […] --write` (all pieces in one run; appends to `PROMOTE.md`) |
-| re-point after a move (step 7) | `$SKILL/scripts/repoint_names.py CipherLean/<Slug>/ <name>[=<new>] … [--lib] [--apply]`; then `$SKILL/scripts/sync_library.sh` copies the library into the skill |
-| the same steps on a server | `CIPHERLEAN_REMOTE=user@host $SKILL/scripts/remote.sh sync\|build\|check\|chain\|trim\|lib\|eval …` (sources stay here) |
-| someone else's project | `$SKILL/scripts/sandbox_project.sh <project>`; `$SKILL/scripts/build_profile.py <lake build log>` or `--sites <dir>`; then `references/verify-existing.md` |
+| environment (step 1) | `cipherlean setup --check` (2 s); `--install [--examples]` once; `--update-library` after a `git pull` of the skill |
+| scaffold a paper | `cipherlean new <Slug> [--paper-dir <paper repo>] [--file <Piece>]` (README, CHAIN, NOTATION, Main.lean; `--file` adds a piece file) |
+| graph and roadmap (step 3) | `cipherlean graph CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid; `--gaps` what remains; `--focus <id> [--depth N]` or `--rows a,b,c` one piece's sub-chain |
+| position and status board | `cipherlean status <Slug>` (`--position` the Position block alone; `--check` reruns the verdicts on one Lean listing, `cipherlean inspect <files> --out FILE.json`, which every check also accepts as `--listing`) |
+| try a snippet (7 s) | `printf '#check @Foo.bar\n' \| cipherlean eval -` (`--full` for all of Mathlib) |
+| find a lemma | `cipherlean search "<name fragment or statement shape>"` (local grep, Loogle, LeanSearch) |
+| build one module | `cipherlean build CipherLean.<Slug>.<File>` (`lake build` under the workspace lock; `CipherLean` rebuilds the library) |
+| chain vs. Lean (step 7) | `cipherlean chain CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/<File>.lean […]` (every piece file in one run) |
+| final check (step 7) | `cipherlean check CipherLean/<Slug>/<File>.lean [--no-build] [--allow-native]` |
+| trim imports (step 7) | `cipherlean trim CipherLean/<Slug>/<File>.lean --apply` (`--why` names what each surviving module supplies) |
+| cited names exist? (step 7) | `cipherlean notation CipherLean/<Slug>/NOTATION.md <every piece file> --also README.md CHAIN.md` |
+| promotion candidates (step 7) | `cipherlean promote CipherLean/<Slug>/<File>.lean […] --write` (all pieces in one run; appends to `PROMOTE.md`) |
+| re-point after a move (step 7) | `cipherlean repoint CipherLean/<Slug>/ <name>[=<new>] … [--lib] [--apply]`; then `cipherlean sync-lib` copies the library into the skill |
+| the same steps on a server | `CIPHERLEAN_REMOTE=user@host cipherlean remote sync\|build\|check\|chain\|trim\|lib\|eval …` (sources stay here) |
+| someone else's project | `cipherlean sandbox <project>`; `cipherlean profile <lake build log>` or `--sites <dir>`; then `references/verify-existing.md` |
 | independent review (step 8) | a fresh agent given `references/review-brief.md` |
 
 With `--paper-dir` the real files live in `<paper repo>/formal/`, symlinked as `CipherLean/<Slug>`. Models to imitate:

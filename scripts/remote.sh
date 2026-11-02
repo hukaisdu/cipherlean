@@ -25,6 +25,7 @@ RSKILL=${CIPHERLEAN_REMOTE_SKILL:-'$HOME/.claude/skills/cipherlean'}
 SSH="ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 $HOST"
 PRE="export PATH=\"\$HOME/.elan/bin:\$PATH\"; cd $RWS"
 cmd=${1:-}; shift || true
+case "$cmd" in -h|--help|"") sed -n 2,18p "$0"; exit 0 ;; esac
 sync_slug() {
   rsync -az --exclude '.lake' --exclude '*.aux' --exclude '*.log' --exclude '*.fls' --exclude '*.fdb_latexmk' \
     --exclude '*.synctex.gz' "$WS/CipherLean/$1/" "$HOST:$RWS/CipherLean/$1/"

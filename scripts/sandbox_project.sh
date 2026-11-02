@@ -6,6 +6,7 @@
 #   usage: sandbox_project.sh <project-dir> [<scratch-dir>]     (default scratch: /tmp/cipherlean-sandbox/<name>)
 set -eu
 export PATH="$HOME/.elan/bin:$PATH"      # non-login ssh shells do not have it
+case "${1:-}" in -h|--help|"") sed -n '2,7p' "$0"; exit 0 ;; esac
 SRC="$(cd "$1" && pwd)"; NAME="$(basename "$SRC")"
 DEST="${2:-/tmp/cipherlean-sandbox/$NAME}"
 WS="${CIPHERLEAN_WS:-$HOME/cipherlean}"

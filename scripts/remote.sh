@@ -8,7 +8,7 @@
 #   remote.sh sync  <Slug>                      rsync CipherLean/<Slug>/ to the remote workspace
 #   remote.sh build <Slug> <Module>             sync, then lake_build.sh CipherLean.<Slug>.<Module> (timed)
 #   remote.sh check <Slug> <File.lean> [args]   sync, then check_lean.py (summary, FAIL rows, errors)
-#   remote.sh chain <Slug> <File.lean>          sync, then chain_check.py CHAIN.md <File.lean>
+#   remote.sh chain <Slug> <File.lean> [...]    sync, then chain_check.py CHAIN.md <File.lean> ... (all pieces at once)
 #   remote.sh trim  <Slug> <File.lean>          sync, trim_imports.py --apply there, copy the file back here
 #   remote.sh eval  < snippet.lean              run a Lean snippet there with `lake env lean`
 # Variables: CIPHERLEAN_WS (local workspace, default ~/cipherlean), CIPHERLEAN_REMOTE_WS (default ~/cipherlean),
@@ -33,8 +33,8 @@ case "$cmd" in
          $SSH "$PRE; S=\$(date +%s); bash $RSKILL/scripts/lake_build.sh CipherLean.$1.$2 2>&1 | grep -v -E 'exceeds the 100|linter.style|^Note:|^\$' | tail -40; echo \"build elapsed=\$(( \$(date +%s) - S ))s\"" ;;
   check) slug=$1; file=$2; shift 2; sync_slug "$slug"
          $SSH "$PRE; S=\$(date +%s); python3 $RSKILL/scripts/check_lean.py CipherLean/$slug/$file $* > /tmp/check_$slug.log 2>&1; rc=\$?; echo \"check exit=\$rc elapsed=\$(( \$(date +%s) - S ))s\"; grep -E '^build:|VERDICT' /tmp/check_$slug.log; echo \"PASS=\$(grep -c '| PASS |' /tmp/check_$slug.log) NATIVE=\$(grep -c '| NATIVE |' /tmp/check_$slug.log) FAIL=\$(grep -c '| FAIL |' /tmp/check_$slug.log)\"; grep '| FAIL |' /tmp/check_$slug.log | head -20; grep -E '^(error|warning)' /tmp/check_$slug.log | grep -v 'exceeds the 100' | head -20" ;;
-  chain) sync_slug "$1"
-         $SSH "$PRE; python3 $RSKILL/scripts/chain_check.py CipherLean/$1/CHAIN.md CipherLean/$1/$2 2>&1 | grep -E 'UNKNOWN|MISSING|VERDICT|extra|^- '" ;;
+  chain) slug=$1; shift; sync_slug "$slug"; files=""; for f in "$@"; do files="$files CipherLean/$slug/$f"; done
+         $SSH "$PRE; python3 $RSKILL/scripts/chain_check.py CipherLean/$slug/CHAIN.md $files 2>&1 | grep -E 'UNKNOWN|MISSING|VERDICT|extra|^- '" ;;
   trim)  sync_slug "$1"
          $SSH "$PRE; python3 $RSKILL/scripts/trim_imports.py CipherLean/$1/$2 --apply 2>&1 | tail -8"
          scp -q "$HOST:$RWS/CipherLean/$1/$2" "$WS/CipherLean/$1/$2" && echo "trimmed file copied back to $WS/CipherLean/$1/$2" ;;

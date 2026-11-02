@@ -7,7 +7,7 @@ Prints, from the files alone (no Lean run unless --check): every .lean file with
 counts; CHAIN.md rows by status (pending / stated / proved / cited / assumed) and the open questions for
 the reader; the README status table; REVIEW.md rounds, the last verdict and the objections still without
 a formalizer answer; PROMOTE.md if present. With --check it also runs check_lean.py (--no-build) and
-chain_check.py on every .lean file and prints their verdict lines. Run it at the end of every step and
+chain_check.py once over all the .lean files (the pieces) and prints their verdict lines. Run it at the end of every step and
 paste the board into the chat, and say on which machine a long job is running.
 """
 import argparse, os, pathlib, re, subprocess, sys
@@ -79,13 +79,14 @@ def main():
     if a.check:
         skill = pathlib.Path(__file__).resolve().parent
         print("\n## Live checks")
-        for f in leans:
-            if "<Slug>" in f.read_text(encoding="utf-8", errors="replace"): continue
+        files = [f for f in leans if "<Slug>" not in f.read_text(encoding="utf-8", errors="replace")]
+        for f in files:
             out = subprocess.run([sys.executable, str(skill / "check_lean.py"), str(f.relative_to(ws)), "--no-build"], cwd=ws, capture_output=True, text=True).stdout
             v = re.findall(r"^VERDICT: .*", out, re.M); print(f"- check_lean {f.name}: {v[-1] if v else 'no verdict (build it first)'}")
-            if chain.exists():
-                out = subprocess.run([sys.executable, str(skill / "chain_check.py"), str(chain), str(f)], cwd=ws, capture_output=True, text=True).stdout
-                v = re.findall(r"^VERDICT: .*", out, re.M); print(f"- chain_check {f.name}: {v[-1] if v else 'no verdict'}")
+        if chain.exists() and files:
+            # one run over all the pieces: chain_check treats every file given as the paper module
+            out = subprocess.run([sys.executable, str(skill / "chain_check.py"), str(chain), *[str(f) for f in files]], cwd=ws, capture_output=True, text=True).stdout
+            v = re.findall(r"^VERDICT: .*", out, re.M); print(f"- chain_check {', '.join(f.name for f in files)}: {v[-1] if v else 'no verdict'}")
 
 if __name__ == "__main__":
     main()

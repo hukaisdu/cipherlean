@@ -2,7 +2,7 @@
 """chain_check.py — compare the proof chain the reader confirmed (CHAIN.md) with the dependency
 graph Lean actually used.  (step 7 of the skill, before the report; step 8's reviewer reruns it)
 
-For the paper module it lists, for every declaration, the constants its *proof term* uses (within
+For the paper module(s) it lists, for every declaration, the constants its *proof term* uses (within
 the module and the library CipherLean/Lib), maps CHAIN.md's `lean` column to those names, and
 reports:
   - chain edges `A uses B` that Lean realises directly, only transitively, or not at all;
@@ -10,7 +10,8 @@ reports:
   - chain rows whose `lean` name does not exist, and module declarations absent from the chain.
 External rows (kind `external`) are not checked. Exit 1 if an edge is missing or a name unknown.
 
-usage: chain_check.py CHAIN.md <file.lean> [--ws DIR]
+usage: chain_check.py CHAIN.md <file.lean> [<file2.lean> ...] [--ws DIR]
+(several files = the pieces of one formalization; all of them count as the paper module)
 """
 import argparse, os, pathlib, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -21,7 +22,7 @@ import chain_graph as cg  # noqa: E402
 LEAN = r'''
 import Lean
 import CipherLean
-import {paper}
+{imports}
 
 open Lean Elab Command Meta
 
@@ -52,18 +53,22 @@ def depsOf (env : Environment) (inScope : Name → Bool) (root : Name) (v : Expr
 
 def listDeps : CommandElabM Unit := do
   let env ← getEnv
-  let some pidx := env.getModuleIdx? `{paper} | throwError "paper module not loaded"
+  let paperMods : List Name := [{papers}]
+  let pidxs := paperMods.filterMap env.getModuleIdx?
+  if pidxs.length != paperMods.length then throwError "paper module not loaded"
   let libMods : List Name := [{libmods}]
   let lidxs := libMods.filterMap env.getModuleIdx?
   let inScope (n : Name) : Bool :=
     match env.getModuleIdxFor? n with
-    | some i => i == pidx || lidxs.contains i
+    | some i => pidxs.contains i || lidxs.contains i
     | none => false
   let names : Array Name := env.constants.fold (init := #[]) fun acc n _ =>
     if inScope n && !n.isInternalDetail then acc.push n else acc
   for n in names.qsort (fun a b => a.toString < b.toString) do
     let some c := env.find? n | continue
-    let side := if env.getModuleIdxFor? n == some pidx then "PAPER" else "LIB"
+    let side := match env.getModuleIdxFor? n with
+      | some i => if pidxs.contains i then "PAPER" else "LIB"
+      | none => "LIB"
     let val? : Option Expr := match c with
       | .defnInfo d => some d.value | .thmInfo t => some t.value | .opaqueInfo o => some o.value | _ => none
     let used := match val? with
@@ -77,18 +82,20 @@ def listDeps : CommandElabM Unit := do
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("chain"); ap.add_argument("file"); ap.add_argument("--ws"); ap.add_argument("--timeout", type=int, default=1800)
+    ap.add_argument("chain"); ap.add_argument("files", nargs="+"); ap.add_argument("--ws"); ap.add_argument("--timeout", type=int, default=1800)
     a = ap.parse_args()
     ws = ck.find_workspace(a.ws)
-    mod = ck.module_name(ws, a.file)
+    mods = [ck.module_name(ws, f) for f in a.files]
+    mod = ", ".join(mods)
     lib_dir = ws / "CipherLean" / "Lib"
     libmods = sorted(".".join(["CipherLean", "Lib", *f.relative_to(lib_dir).with_suffix("").parts]) for f in lib_dir.rglob("*.lean"))
-    scratch = ws / ".lake" / "promote" / (mod.replace(".", "_") + "_deps.lean")
+    scratch = ws / ".lake" / "promote" / ("_".join(m.replace(".", "_") for m in mods) + "_deps.lean")
     scratch.parent.mkdir(parents=True, exist_ok=True)
-    scratch.write_text(LEAN.format(paper=mod, libmods=", ".join("`" + m for m in libmods)), encoding="utf-8")
+    scratch.write_text(LEAN.format(imports="\n".join(f"import {m}" for m in mods), papers=", ".join("`" + m for m in mods),
+                                   libmods=", ".join("`" + m for m in libmods)), encoding="utf-8")
     code, out = ck.run([ck.lake(), "env", "lean", str(scratch)], cwd=str(ws), timeout=a.timeout)
     if code != 0 or "DEP\t" not in out:
-        ck.die(f"dependency listing failed for {mod} (built? `lake_build.sh {mod}`):\n{out[-2000:]}")
+        ck.die(f"dependency listing failed for {mod} (built? `lake_build.sh <module>` for each):\n{out[-2000:]}")
     deps, side = {}, {}
     for line in out.splitlines():
         if line.startswith("DEP\t"):

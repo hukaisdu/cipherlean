@@ -3,12 +3,15 @@
 
 usage: status.py <Slug> [--ws DIR] [--check]
 
-Prints, from the files alone (no Lean run unless --check): every .lean file with its line and `sorry`
-counts; CHAIN.md rows by status (pending / stated / proved / cited / assumed) and the open questions for
+Prints, from the files alone (no Lean run unless --check): every .lean file with its line, source
+declaration and `sorry` counts (source declarations = `theorem/lemma/def/...` lines; check_lean.py counts
+the module's environment, which adds the auxiliary lemmas Lean generates, so its number can be larger);
+CHAIN.md rows by status (pending / stated / proved / cited / assumed) and the open questions for
 the reader; the README status table; REVIEW.md rounds, the last verdict and the objections still without
-a formalizer answer; PROMOTE.md if present. With --check it also runs check_lean.py (--no-build) and
-chain_check.py once over all the .lean files (the pieces) and prints their verdict lines. Run it at the end of every step and
-paste the board into the chat, and say on which machine a long job is running.
+a formalizer answer; every classification table of PROMOTE.md and PROMOTE-*.md (one per piece). With --check
+it also runs check_lean.py (--no-build) and chain_check.py once over all the .lean files (the pieces) and
+prints their verdict lines with the declaration counts. Run it at the end of every step and paste the board
+into the chat, and say on which machine a long job is running.
 """
 import argparse, os, pathlib, re, subprocess, sys
 
@@ -40,7 +43,7 @@ def main():
         n_sorry = len(re.findall(r"\bsorry\b", t)); n_native = len(re.findall(r"\bnative_decide\b", t))
         decls = len(re.findall(r"^(?:theorem|lemma|def|abbrev|instance|structure)\s", t, re.M))
         tag = "template, untouched" if "<Slug>" in t or "theorem main : True" in t else ""
-        print(f"- `{f.name}`: {len(t.splitlines())} lines, {decls} declarations, sorry {n_sorry}, native_decide {n_native} {tag}".rstrip())
+        print(f"- `{f.name}`: {len(t.splitlines())} lines, {decls} source declarations, sorry {n_sorry}, native_decide {n_native} {tag}".rstrip())
     chain = d / "CHAIN.md"
     if chain.exists():
         rows = table_rows(chain.read_text(encoding="utf-8"), "| id |")
@@ -73,9 +76,17 @@ def main():
         answered = {i for i, _ in ans}
         open_ = [f"{i} ({s})" for i, s in obj if i not in answered]
         print("- objections without a formalizer answer: " + (", ".join(open_) if open_ else "none"))
-    if (d / "PROMOTE.md").exists():
-        m = re.search(r"Counts: (.*)", (d / "PROMOTE.md").read_text(encoding="utf-8"))
-        print(f"\n## PROMOTE.md: {m.group(1) if m else 'present'}")
+    for pf in sorted(d.glob("PROMOTE*.md")):
+        # one classification table per module (a theorem split into pieces has several): each heading
+        # "# Promotion candidates — `Module`" with the "Counts: ..." line that follows it
+        t = pf.read_text(encoding="utf-8")
+        heads = [(m.group(1), m.start()) for m in re.finditer(r"^# Promotion candidates — `([^`]+)`", t, re.M)]
+        parts = []
+        for i, (mod, start) in enumerate(heads):
+            end = heads[i + 1][1] if i + 1 < len(heads) else len(t)
+            c = re.search(r"[Cc]ounts: ([^.)]*)", t[start:end])     # the script's line, or a hand-written "(counts: A 9, ...)"
+            parts.append(f"`{mod.split('.')[-1]}` {' '.join(c.group(1).split()) if c else '(no counts line)'}")
+        print(f"\n## {pf.name}: " + ("; ".join(parts) if parts else "present"))
     if a.check:
         skill = pathlib.Path(__file__).resolve().parent
         print("\n## Live checks")
@@ -85,7 +96,8 @@ def main():
         files = [f for f in leans if not is_template(f)]
         for f in files:
             out = subprocess.run([sys.executable, str(skill / "check_lean.py"), str(f.relative_to(ws)), "--no-build"], cwd=ws, capture_output=True, text=True).stdout
-            v = re.findall(r"^VERDICT: .*", out, re.M); print(f"- check_lean {f.name}: {v[-1] if v else 'no verdict (build it first)'}")
+            v = re.findall(r"^VERDICT: .*", out, re.M); n = re.findall(r"^declarations: (.*)", out, re.M)
+            print(f"- check_lean {f.name}: {v[-1] if v else 'no verdict (build it first)'}" + (f"; {n[-1]}" if n else ""))
         if chain.exists() and files:
             # one run over all the pieces: chain_check treats every file given as the paper module
             out = subprocess.run([sys.executable, str(skill / "chain_check.py"), str(chain), *[str(f) for f in files]], cwd=ws, capture_output=True, text=True).stdout

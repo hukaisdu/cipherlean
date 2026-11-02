@@ -60,8 +60,8 @@ library lacks it.
 | where the build time went | `$SKILL/scripts/build_profile.py <lake build log> [--sites <dir>]` |
 | verify someone else's project | `$SKILL/scripts/sandbox_project.sh <project>` then `references/verify-existing.md` |
 | compile one file | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
-| final check | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean` |
-| the status board | `$SKILL/scripts/status.py <Slug>` (files, sorry counts, CHAIN rows by status, README table, REVIEW round and open objections; `--check` reruns the verdicts) |
+| final check | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean` (counts source and Lean-generated auxiliary declarations apart; an aggregator with no declaration of its own passes with "0 declarations") |
+| the status board | `$SKILL/scripts/status.py <Slug>` (files with source declaration and sorry counts, CHAIN rows by status, README table, REVIEW round and open objections, every PROMOTE table; `--check` reruns the verdicts with check_lean's own counts) |
 | the same steps on a server | `$SKILL/scripts/remote.sh build\|check\|chain\|trim\|lib\|eval …` with `CIPHERLEAN_REMOTE=user@host` (the skill and workspace installed there; sources stay here; `chain` takes every piece file) |
 | find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` |
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |

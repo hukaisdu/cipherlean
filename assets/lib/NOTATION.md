@@ -27,11 +27,17 @@ All statistics are unnormalized integers or counts; normalized forms are corolla
 | `|V| ≠ 0`, `|V^⊥| ≠ 0` in `K` | `card_ne_zero_of_isSubspace`, `card_ann_ne_zero` | theorems | `K` any `AddMonoidWithOne` of characteristic zero (for dividing) |
 | the DDT as a table | `ddtMatrix F` | `Matrix (Vec ι) (Vec κ) ℕ` | `ddtMatrix_symm`: the DDT of `F⁻¹` is the transpose; `ddt_invFun`, `ddt_eq_ddt_of_leftInverse`: the other spellings of `F⁻¹` |
 | `e_{i₀}·x = x_{i₀}` | `single_dot`, `filter_ne_zero_eq` | theorems | the selected-coordinate mask; complement of a halfspace |
+| `Δ_d F(x) = F(x + d) + F(x)` | `deriv F d x` | `Vec κ` | derivative of `F : Vec ι → Vec κ` in direction `d` (Carlet 2021 §2.3.1); `ddt F a b = #{x : deriv F a x = b}` |
+| `{d : ∃ x, Δ_d F(x) = β}` | `inputDiffs F β` | `Finset (Vec ι)` | input differences attaining `β` = support of DDT column `β` (`mem_inputDiffs`, `mem_inputDiffs_iff_ddt_ne_zero`) |
+| `{H(y + α) + H(y) : y}` | `outputDiffs H α` | `Finset (Vec κ)` | output differences of `H` at `α` (`mem_outputDiffs`); for `H = F⁻¹`: `outputDiffs_inv_eq_inputDiffs hbij α` (the "viewpoint table") |
+| `χ_r` (Keccak χ on a cycle of length `r`) | `chiMap r` | `Vec (Fin r) → Vec (Fin r)` | `z i + (z (i+1) + 1) * z (i+2)`, `Fin r` arithmetic; `deriv_chiMap_apply` is `Δ_d χ_r(x)` coordinatewise; `chiMap_three_bijective`, `chiMap_four_not_bijective` (`chi` is the character, not this map) |
+| `u + v = w ↔ u = w + v` over `F_2` | `add_eq_iff_eq_add` | theorem | moving a term across `=` |
+| `Sum.elim A B = f ↔ A = f ∘ inl ∧ B = f ∘ inr` | `sum_elim_eq_iff` | theorem | gluing / splitting a vector indexed by `ι ⊕ κ` (two words) |
 | S-box table | `Sbox.ofTable t`, `Sbox.toFun S` | `BitVec n → BitVec n`, `Vec (Fin n) → Vec (Fin n)` | `toFun S = toVec ∘ S ∘ ofVec` |
 | PRESENT S-box | `Sbox.present`, `Sbox.presentVec` | — | standard 4-bit test instance (CHES 2007) |
 | word ↔ vector | `toVec`, `ofVec`, `bvEquiv` | `BitVec n ≃ Vec (Fin n)` | coordinate `i` = bit `i` (LSB first) |
 
-Not interchangeable: `walsh` (integer) vs `correlation` (rational); `ddt` (count) vs `ddt / 2^n`
+Not interchangeable: `chi K w x` (the character) vs `chiMap r` (the χ map of Keccak); `walsh` (integer) vs `correlation` (rational); `ddt` (count) vs `ddt / 2^n`
 (probability, not defined here); `Vec (Fin n)` vs `BitVec n` (bridge required, `+` vs `^^^`).
 
 Open: `lat` (LAT entry `W/2`) is not defined; add it with `two_mul_lat` when a paper needs it.

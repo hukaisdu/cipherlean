@@ -57,6 +57,24 @@ theorem add_eq_zero_iff {x y : Vec ι} : x + y = 0 ↔ x = y := by
   · rintro rfl
     exact add_self x
 
+/-- Over `F_2`, `u + v = w ↔ u = w + v` (adding `v` to both sides). -/
+theorem add_eq_iff_eq_add {u v w : Vec ι} : u + v = w ↔ u = w + v := by
+  constructor
+  · intro h
+    rw [← h, add_add_self]
+  · intro h
+    rw [h, add_add_self]
+
+/-- Gluing two words: `Sum.elim A B = f` iff `A` and `B` are the two restrictions of `f`
+(not in Mathlib, which has only `Sum.elim_comp_inl_inr`). -/
+theorem sum_elim_eq_iff {κ : Type*} {f : Vec (ι ⊕ κ)} {A : Vec ι} {B : Vec κ} :
+    Sum.elim A B = f ↔ A = f ∘ Sum.inl ∧ B = f ∘ Sum.inr := by
+  constructor
+  · rintro rfl
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨rfl, rfl⟩
+    exact Sum.elim_comp_inl_inr f
+
 /-- A nonzero vector has a coordinate equal to `1`. -/
 theorem exists_eq_one_of_ne_zero {w : Vec ι} (hw : w ≠ 0) : ∃ i, w i = 1 := by
   by_contra h

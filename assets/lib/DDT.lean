@@ -6,6 +6,7 @@ Authors: Kai Hu
 import CipherLean.Lib.Sbox
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Tactic.SplitIfs
+import Mathlib.Data.Fin.VecNotation
 
 /-!
 # `CipherLean.Lib.DDT` — difference distribution table and differential uniformity
@@ -213,5 +214,74 @@ theorem present_ddt_zero : ddt presentVec 0 0 = 16 := by
   rw [ddt_zero_left, if_pos rfl]; rfl
 
 end toy
+
+/-! ## Derivatives and the two difference sets of a map
+
+`deriv F d x = F (x + d) + F x` is the derivative of `F` in direction `d` (Carlet 2021, §2.3.1;
+the papers write `Δ_d F(x)`). For an output difference `β`, `inputDiffs F β` is the set of input
+differences `d` that attain it, i.e. the support of column `β` of the DDT
+(`mem_inputDiffs_iff_ddt_ne_zero`); for an input difference `α`, `outputDiffs H α` is the set of
+output differences `H (y + α) + H y`. When `H = F⁻¹`, the output differences of `H` at `α` are the input
+differences of `F` that attain `α` (`outputDiffs_inv_eq_inputDiffs`): the "viewpoint table" of the
+ChiChi paper (§2.1), by which a statement about an inverse is read on the forward map. First used by
+`WHConj3` (§6.1 of that paper). -/
+
+omit [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] in
+/-- The derivative `Δ_d F(x) = F(x + d) + F(x)` of a vectorial map. -/
+def deriv (F : Vec ι → Vec κ) (d x : Vec ι) : Vec κ := F (x + d) + F x
+
+/-- The input differences of `F` that attain the output difference `β`: `{d : ∃ x, Δ_d F(x) = β}`. -/
+def inputDiffs (F : Vec ι → Vec κ) (β : Vec κ) : Finset (Vec ι) :=
+  Finset.univ.filter (fun d => ∃ x, deriv F d x = β)
+
+/-- The output differences of `H` at the input difference `α`: `{H (y + α) + H y : y}`. -/
+def outputDiffs (H : Vec ι → Vec κ) (α : Vec ι) : Finset (Vec κ) :=
+  Finset.univ.image (fun y => deriv H α y)
+
+omit [DecidableEq κ] in
+theorem mem_inputDiffs {F : Vec ι → Vec κ} {β : Vec κ} {d : Vec ι} :
+    d ∈ inputDiffs F β ↔ ∃ x, deriv F d x = β := by
+  simp [inputDiffs]
+
+omit [DecidableEq κ] in
+theorem mem_outputDiffs {H : Vec ι → Vec κ} {α : Vec ι} {d : Vec κ} :
+    d ∈ outputDiffs H α ↔ ∃ y, deriv H α y = d := by
+  simp [outputDiffs]
+
+omit [DecidableEq κ] in
+/-- `inputDiffs F β` is the support of column `β` of the DDT. -/
+theorem mem_inputDiffs_iff_ddt_ne_zero (F : Vec ι → Vec κ) (d : Vec ι) (β : Vec κ) :
+    d ∈ inputDiffs F β ↔ ddt F d β ≠ 0 := by
+  rw [mem_inputDiffs, ddt, Ne, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  simp [deriv]
+
+/-- For a permutation `F` with inverse `H`, the output differences of `H` at `α` are the input
+differences of `F` that attain `α` (the viewpoint table; the argument of Lemma 2 of the ChiChi paper
+for one χ cycle, here for any bijection). -/
+theorem outputDiffs_inv_eq_inputDiffs {F : Vec ι → Vec ι} (hbij : Function.Bijective F) (α : Vec ι) :
+    outputDiffs (Equiv.ofBijective F hbij).symm α = inputDiffs F α := by
+  set e := Equiv.ofBijective F hbij with he
+  have hF : ∀ z, F z = e z := fun z => rfl
+  ext d
+  rw [mem_inputDiffs, mem_outputDiffs]
+  simp only [deriv]
+  constructor
+  · rintro ⟨y, rfl⟩
+    refine ⟨e.symm y, ?_⟩
+    have h1 : e.symm y + (e.symm (y + α) + e.symm y) = e.symm (y + α) := by
+      rw [add_comm (e.symm (y + α)), ← add_assoc, add_self, zero_add]
+    rw [h1, hF, hF, e.apply_symm_apply, e.apply_symm_apply, add_comm y α, add_add_self]
+  · rintro ⟨x, hx⟩
+    refine ⟨F x, ?_⟩
+    have h1 : F x + α = F (x + d) := by
+      rw [← hx, add_comm (F (x + d)) (F x), ← add_assoc, add_self, zero_add]
+    rw [h1, hF (x + d), hF x, e.symm_apply_apply, e.symm_apply_apply, add_comm x d, add_add_self]
+
+/-- Finite check: for the identity map every direction attains exactly itself. -/
+theorem inputDiffs_id_example : inputDiffs (fun x : Vec (Fin 2) => x) ![1, 0] = {![1, 0]} := by
+  decide
+
+theorem outputDiffs_id_example : outputDiffs (fun x : Vec (Fin 2) => x) ![1, 0] = {![1, 0]} := by
+  decide
 
 end CipherLean

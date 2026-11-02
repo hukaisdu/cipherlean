@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """chain_check.py — compare the proof chain the reader confirmed (CHAIN.md) with the dependency
-graph Lean actually used.  (step 7 of the skill, before the report; step 8's reviewer reruns it)
+graph Lean actually used.  (step 6 of the skill, before the report; step 8's reviewer reruns it)
 
-For the paper module(s) it lists, for every declaration, the constants its *proof term* uses (within
-the module and the library CipherLean/Lib), maps CHAIN.md's `lean` column to those names, and
-reports:
-  - chain edges `A uses B` that Lean realises directly, only transitively, or not at all;
-  - Lean dependencies between chain nodes that the chain does not mention (extra edges);
-  - chain rows whose `lean` name does not exist, and module declarations absent from the chain.
-External rows (kind `external`) are not checked. Exit 1 if an edge is missing or a name unknown.
+For the paper module(s) it lists, for every declaration, the constants its *proof term* uses and the
+constants its *statement* (type) uses (within the module and the library CipherLean/Lib), maps
+CHAIN.md's `lean` column to those names, and reports:
+  - chain edges `A uses B` that Lean realises directly (the proof of A uses B), only in the statement
+    of A (its type mentions B, the proof never unfolds it), only transitively, or not at all;
+  - Lean dependencies between chain nodes that the chain does not mention (extra edges; proof terms only);
+  - chain rows whose `lean` name does not exist, and module declarations absent from the chain
+    (the auxiliary declarations Lean generates, `foo.congr_simp` and the like, are left out).
+A `lean` cell that is not one identifier (`decide +kernel`, "proved in project X as foo") is listed as a
+note and not checked. External rows (kind `external`) are not checked. Exit 1 if an edge is missing or a
+name unknown.
 
 usage: chain_check.py CHAIN.md <file.lean> [<file2.lean> ...] [--ws DIR]
 (several files = the pieces of one formalization; all of them count as the paper module)
@@ -74,10 +78,17 @@ def listDeps : CommandElabM Unit := do
     let used := match val? with
       | some v => (depsOf env inScope n v).toList
       | none => []
-    IO.println s!"DEP\t{{n}}\t{{side}}\t{{",".intercalate (used.map toString)}}"
+    -- the statement's own constants (item 36: a lemma about `KH` proved by a defeq `exact` never
+    -- mentions `KH` in its proof term, but its type does)
+    let tused := (depsOf env inScope n c.type).toList
+    IO.println s!"DEP\t{{n}}\t{{side}}\t{{",".intercalate (used.map toString)}}\t{{",".intercalate (tused.map toString)}}"
 
 #eval listDeps
 '''
+
+# a `lean` cell is one declaration name: letters, digits, `_`, `.`, `'`, `!`, `?`, subscripts, `«»`;
+# anything else (spaces, `:`, `+`, several names) is a note
+IDENT = re.compile(r"^[^\W\d][\w.'!?₀-₉«»]*$")
 
 
 def main():
@@ -96,30 +107,34 @@ def main():
     code, out = ck.run([ck.lake(), "env", "lean", str(scratch)], cwd=str(ws), timeout=a.timeout)
     if code != 0 or "DEP\t" not in out:
         ck.die(f"dependency listing failed for {mod} (built? `lake_build.sh <module>` for each):\n{out[-2000:]}")
-    deps, side = {}, {}
+    deps, tdeps, side = {}, {}, {}
     for line in out.splitlines():
         if line.startswith("DEP\t"):
-            _, n, sd, used = line.split("\t", 3)
+            _, n, sd, used, tused = (line.split("\t", 4) + [""] * 5)[:5]
             deps[n] = set(u for u in used.split(",") if u) - {n}; side[n] = sd
+            tdeps[n] = set(u for u in tused.split(",") if u) - {n}
 
     rows = cg.parse_chain(pathlib.Path(a.chain).read_text(encoding="utf-8"))
     nodes, edges = cg.nodes_edges(rows)
-    lean_of = {}
+    lean_of, notes = {}, {}
     for r in rows:
-        nid = r["id"].strip("`"); ln = r.get("lean", "").strip().strip("`")
+        nid = r["id"].strip("`"); ln = r.get("lean", "").strip().strip("`").strip()
         if nid in nodes and ln and ln != "—":
-            lean_of[nid] = ln
-    # transitive closure of the Lean graph
+            if IDENT.match(ln):
+                lean_of[nid] = ln
+            else:
+                notes[nid] = ln          # item 9: a note, not a name; listed, never UNKNOWN
+    # transitive closure of the Lean graph (proof terms and statements)
     closure = {}
     def reach(n):
         if n in closure:
             return closure[n]
-        seen, stack = set(), list(deps.get(n, []))
+        seen, stack = set(), list(deps.get(n, set()) | tdeps.get(n, set()))
         while stack:
             m = stack.pop()
             if m in seen:
                 continue
-            seen.add(m); stack.extend(deps.get(m, []))
+            seen.add(m); stack.extend(deps.get(m, set()) | tdeps.get(m, set()))
         closure[n] = seen
         return seen
 
@@ -128,6 +143,8 @@ def main():
     outside = {nid for nid, ln in lean_of.items() if ln not in deps and nodes[nid]["kind"] in ("external", "assumption")}
     for nid in sorted(outside):
         report.append(f"- `{nid}` → `{lean_of[nid]}` is outside the module and the library (Mathlib or a type): not checked")
+    for nid, ln in notes.items():
+        report.append(f"- `{nid}`: the `lean` cell is a note, not a declaration name (\"{ln}\"): not checked")
     unknown = [(nid, ln) for nid, ln in lean_of.items() if ln not in deps and nid not in outside]
     for nid, ln in unknown:
         report.append(f"- UNKNOWN `{nid}` → `{ln}` is not a declaration of the module or the library"); bad += 1
@@ -141,6 +158,8 @@ def main():
             report.append(f"| `{A}` | `{B}` | no Lean name on one side |"); continue
         if lb in deps.get(la, set()):
             report.append(f"| `{A}` | `{B}` | direct |")
+        elif lb in tdeps.get(la, set()):
+            report.append(f"| `{A}` | `{B}` | statement (the type of `{la}` mentions `{lb}`; the proof does not unfold it) |")
         elif lb in reach(la):
             report.append(f"| `{A}` | `{B}` | transitive (through helpers) |")
         elif la == lb:
@@ -175,9 +194,13 @@ def main():
     if not extra:
         report.append("- none")
     report.append("\n## Module declarations not in the chain\n")
-    missing = [n for n, s in side.items() if s == "PAPER" and n not in inv]
+    missing = [n for n, s in side.items() if s == "PAPER" and n not in inv and not ck.is_auxiliary(n)]
     report.append(", ".join(f"`{n}`" for n in missing) if missing else "- none")
-    report.append(f"\nVERDICT: {'CONSISTENT' if bad == 0 else 'INCONSISTENT'} ({bad} missing edge(s)/unknown name(s), {extra} extra edge(s))")
+    n_aux = sum(1 for n, s in side.items() if s == "PAPER" and ck.is_auxiliary(n))
+    if n_aux:
+        report.append(f"\n({n_aux} auxiliary declaration(s) generated by Lean, `*.congr_simp` and the like, left out)")
+    report.append(f"\nVERDICT: {'CONSISTENT' if bad == 0 else 'INCONSISTENT'} ({bad} missing edge(s)/unknown name(s), {extra} extra edge(s)"
+                  + (f", {len(notes)} lean cell(s) that are notes" if notes else "") + ")")
     print("\n".join(report))
     sys.exit(1 if bad else 0)
 

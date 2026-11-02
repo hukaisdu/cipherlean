@@ -56,7 +56,7 @@ library lacks it.
 | check / create the environment | `$SKILL/scripts/setup_env.sh --check` (2 s) / `--install` (first time) |
 | scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>]` (Main.lean, README, NOTATION, CHAIN) |
 | proof-chain graph (step 1b) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid |
-| chain vs. Lean (step 7) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/<File>.lean [<File2>.lean …]` (a theorem split into pieces: all its files in one run) |
+| chain vs. Lean (step 6) | `$SKILL/scripts/chain_check.py CipherLean/<Slug>/CHAIN.md CipherLean/<Slug>/<File>.lean [<File2>.lean …]` (a theorem split into pieces: all its files in one run; edges `direct` / `statement` / `transitive`; a `lean` cell that is not one name is listed as a note) |
 | where the build time went | `$SKILL/scripts/build_profile.py <lake build log> [--sites <dir>]` |
 | verify someone else's project | `$SKILL/scripts/sandbox_project.sh <project>` then `references/verify-existing.md` |
 | compile one file | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
@@ -189,8 +189,8 @@ re-exports only what it imported itself; and under `import Mathlib` qualify the 
 (`CipherLean.deriv`: Mathlib's `deriv` is the analytic derivative, cheatsheet §4). When the last piece is done, `Main.lean` becomes
 the aggregator (imports of all pieces, the template `main : True := by sorry` replaced by the target restated
 from the last piece), so that no `sorry` stub survives in the directory (`WHConj3/Main.lean`). Fill the `lean` column of CHAIN.md as you go (exactly one declaration name of this formalization, or `—`;
-notes such as "proved in project X as foo" go in the `implicit` column, because `chain_check.py` reads the
-cell as a name) and set `status: stated`. Give every
+a cell that is not one name — `decide +kernel`, "proved in project X as foo" — is listed by `chain_check.py`
+as a note and not checked, so such notes go in the `implicit` column, where the reader expects them) and set `status: stated`. Give every
 declaration a docstring with the paper's wording (`/-- Paper: Theorem 2, "..." -/`), the way
 formal-conjectures requires an English version next to each formal statement. Type errors
 at this stage are cheap; a wrong statement discovered after a 200-line proof is not.
@@ -223,9 +223,9 @@ evaluates it in seconds and adds no axiom.
   the module once a lemma is finished, and batch several finished lemmas into one build. Keep
   the declaration headers fixed while proving; if a statement must change, go back to step 1
   and say so.
-- `chain_check.py` reads proof terms, not statement types: when a chain row's `uses` names a definition
-  (`def:KH`), the proof must mention it (`rw [KH]` or `unfold KH` before a defeq `exact`), or the edge is
-  reported MISSING although the statement is about that object (`WHConj3.KH_eq_orthogonal_dirAff`).
+- `chain_check.py` reads proof terms and statement types: an edge `A uses def:KH` is `direct` when A's
+  proof mentions `KH`, `statement` when only A's type does (a defeq `exact` with no `rw [KH]`, as in
+  `WHConj3.KH_eq_orthogonal_dirAff`), `transitive` through helpers, and MISSING otherwise.
 - Budget: after a serious attempt (several tactic strategies, searched Mathlib; about half an
   hour or five builds for one lemma), leave the lemma as `sorry` with a comment stating the exact
   remaining goal and what was tried, and move on. Never hide a gap by weakening the statement,

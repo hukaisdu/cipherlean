@@ -186,7 +186,9 @@ only its trimmed imports: keep `import Mathlib` in the new file until its own tr
 missing once, and the error cascaded into "declaration uses `sorry`" on half the file); import explicitly every
 library module the piece uses (`import CipherLean.Lib.F2.Subspace` for `dotForm`), since the previous piece
 re-exports only what it imported itself; and under `import Mathlib` qualify the library names Mathlib also uses
-(`CipherLean.deriv`: Mathlib's `deriv` is the analytic derivative, cheatsheet §4). Fill the `lean` column of CHAIN.md as you go (exactly one declaration name of this formalization, or `—`;
+(`CipherLean.deriv`: Mathlib's `deriv` is the analytic derivative, cheatsheet §4). When the last piece is done, `Main.lean` becomes
+the aggregator (imports of all pieces, the template `main : True := by sorry` replaced by the target restated
+from the last piece), so that no `sorry` stub survives in the directory (`WHConj3/Main.lean`). Fill the `lean` column of CHAIN.md as you go (exactly one declaration name of this formalization, or `—`;
 notes such as "proved in project X as foo" go in the `implicit` column, because `chain_check.py` reads the
 cell as a name) and set `status: stated`. Give every
 declaration a docstring with the paper's wording (`/-- Paper: Theorem 2, "..." -/`), the way

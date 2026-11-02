@@ -28,7 +28,9 @@ if [ -n "$FILE" ]; then
   [ -d "$DEST" ] || { echo "no such directory: $DEST (scaffold it first)" >&2; exit 1; }
   [ -e "$DEST/$FILE.lean" ] && { echo "already exists: $DEST/$FILE.lean" >&2; exit 1; }
   sed "s/<Slug>/$SLUG/g" "$ASSETS/file-template.lean" > "$DEST/$FILE.lean"
-  echo "created $DEST/$FILE.lean (add \`import CipherLean.$SLUG.$FILE\` to Main.lean when the piece is done)"
+  echo "created $DEST/$FILE.lean (add \`import CipherLean.$SLUG.$FILE\` to Main.lean when the piece is done; the last piece"
+  echo "      turns Main.lean into the aggregator: imports of all pieces, the template main replaced by the target restated"
+  echo "      from the last piece — a reviewer flags a leftover \`theorem main : True := by sorry\`)"
   exit 0
 fi
 [ -e "$DEST" ] || [ -L "$DEST" ] && { echo "already exists: $DEST" >&2; exit 1; }

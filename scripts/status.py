@@ -13,7 +13,7 @@ declaration and `sorry` counts (source declarations = `theorem/lemma/def/...` li
 the module's environment, which adds the auxiliary lemmas Lean generates, so its number can be larger);
 CHAIN.md rows by status and the open questions for the reader; the README status table; REVIEW.md rounds,
 the last verdict and the objections still without a formalizer answer; every classification table of
-PROMOTE.md. With --check it also runs check_lean.py (--no-build) and chain_check.py once over all the .lean
+PROMOTE.md (every run's table). With --check it also runs check_lean.py (--no-build) and chain_check.py once over all the .lean
 files (the pieces) and prints their verdict lines with the declaration counts. Run it at the end of every
 step and at every stop, paste the board into the chat, and say on which machine a long job is running.
 """
@@ -98,10 +98,10 @@ def main():
         open_ = [f"{i} ({s})" for i, s in obj if i not in answered]
         print("- objections without a formalizer answer: " + (", ".join(open_) if open_ else "none"))
     for pf in sorted(d.glob("PROMOTE*.md")):
-        # one classification table per module (a theorem split into pieces has several): each heading
-        # "# Promotion candidates — `Module`" with the "Counts: ..." line that follows it
+        # one classification table per module and run: each heading "### Candidates — `Module`" (older
+        # files: "# Promotion candidates — `Module`") with the "Counts: ..." line that follows it
         t = pf.read_text(encoding="utf-8")
-        heads = [(m.group(1), m.start()) for m in re.finditer(r"^# Promotion candidates — `([^`]+)`", t, re.M)]
+        heads = [(m.group(1), m.start()) for m in re.finditer(r"^#+ (?:Promotion candidates|Candidates) — `([^`]+)`", t, re.M)]
         parts = []
         for i, (mod, start) in enumerate(heads):
             end = heads[i + 1][1] if i + 1 < len(heads) else len(t)

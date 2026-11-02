@@ -14,7 +14,9 @@ Response: `fixed` (what changed, where) · `rejected` (a reason the reviewer can
 ## Round 1 — reviewer (<date>)
 
 ### Statement fidelity
-| paper statement | Lean declaration | OK / ISSUE | why |
+The Lean column is pasted from `check_lean.py`'s "Statements" section (never retyped); one row per declaration
+of README's status table.
+| paper statement | Lean declaration and statement (pasted) | OK / ISSUE | why |
 |---|---|---|---|
 | | | | |
 
@@ -38,16 +40,28 @@ VERDICT: REVISE
 
 ## Round 1 — formalizer (<date>)
 
-| id | response | what changed / why not |
-|---|---|---|
-| R1.1 | fixed / rejected / needs the user | |
+| id | response | what changed / why not | declarations changed or added |
+|---|---|---|---|
+| R1.1 | fixed / rejected / needs the user | | `<Slug>.foo`, `<Slug>.bar` |
 
 ## Round 2 — reviewer (<date>)
+
+From round 2 on the reviewer re-examines only the declarations the formalizer's answers list as changed or
+added (statement fidelity and proof correspondence for those rows, pasted from the new `check_lean.py` run),
+judges every answer, and reruns the two checks; unchanged rows are not re-tabulated.
 
 ### Previous objections
 | id | status | note |
 |---|---|---|
 | R1.1 | resolved / still open / superseded | |
+
+### Changed or added declarations (from the formalizer's answers)
+| declaration | statement (pasted from `check_lean.py`) | OK / ISSUE | why |
+|---|---|---|---|
+| | | | |
+
+### Checks
+- `check_lean.py`: <verdict> · `chain_check.py`: <verdict>
 
 ### New objections
 | id | severity | where | objection |

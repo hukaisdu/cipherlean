@@ -19,13 +19,14 @@ declaration with its elaborated statement and the constants that statement uses,
   D  the same statement already exists in the library (theorems only) -> delete the copy, import
 
 "Paper objects" are the definitions of all the files given, so a lemma of piece C about piece B's
-`Bout` is B, not A. The output is one Markdown report with one table per module (stdout, or PROMOTE.md
-next to the first file with --write) that the agent reads and the user decides on; the mechanical move is
-described in references/promotion.md, the re-pointing of the .md files is `repoint_names.py`.
+`Bout` is B, not A. The output is one Markdown report with one table per module (stdout; with --write it is
+appended as a dated section to the paper directory's PROMOTE.md, one file per paper whatever the number of
+pieces or runs) that the agent reads and the user decides on; the mechanical move is described in
+references/promotion.md, the re-pointing of the .md files is `repoint_names.py`.
 
 usage: promote_candidates.py <file.lean | CipherLean/<Slug>/> [<file2.lean> ...] [--ws DIR] [--write] [--json]
 """
-import argparse, json, os, pathlib, re, sys
+import argparse, datetime, json, os, pathlib, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import check_lean as ck  # noqa: E402  (find_workspace, module_name, lake, run, die)
@@ -166,7 +167,7 @@ def report(rows, module, file, context=""):
     order = {"A": 0, "B": 1, "E": 2, "F": 3, "D": 4, "C": 5}
     rows = sorted(rows, key=lambda r: (order[r["class"]], r["name"]))
     counts = {k: sum(1 for r in rows if r["class"] == k) for k in "ABEFDC"}
-    out = [f"# Promotion candidates — `{module}`", "",
+    out = [f"### Candidates — `{module}`", "",
            f"Source: `{file}`. Classes: A lemma about library objects only · B general but uses a paper",
            "object · E object defined here · F general, Mathlib only · D duplicate of a library statement ·",
            "C concrete / toy. Counts: " + ", ".join(f"{k} {v}" for k, v in counts.items()) + "."
@@ -175,15 +176,17 @@ def report(rows, module, file, context=""):
     for r in rows:
         out.append(f"| {r['class']} | `{r['name']}` | {r['kind']} | {r['why']} | `{r['target']}` |" if r["target"] != "—"
                    else f"| {r['class']} | `{r['name']}` | {r['kind']} | {r['why']} | — |")
-    out += ["", "## Statements (for the fidelity check before moving)", ""]
+    out += ["", "#### Statements (for the fidelity check before moving)", ""]
     for r in rows:
         if r["class"] in ("A", "B", "E", "F"):
             out.append(f"- `{r['name']}` : `{r['type']}`")
-    out += ["", "Decide per row (references/promotion.md): A and F move as they are; E moves only if the",
-            "object is a general notion (then its B lemmas follow); D is deleted in favour of the import;",
-            "C stays. After moving: rebuild `CipherLean`, run check_lean.py on the module, add the rows to",
-            "`CipherLean/Lib/NOTATION.md`, re-check the paper file, re-point the .md files (`repoint_names.py`)."]
     return "\n".join(out) + "\n"
+
+
+FOOTER = ("Decide per row (references/promotion.md): A and F move as they are; E moves only if the object is a general\n"
+          "notion (then its B lemmas follow); D is deleted in favour of the import; C stays. After moving: rebuild\n"
+          "`CipherLean`, run check_lean.py on the module, add the rows to `CipherLean/Lib/NOTATION.md`, re-check the\n"
+          "paper file, re-point the .md files (`repoint_names.py`).\n")
 
 
 def is_template(f):
@@ -217,7 +220,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("paths", nargs="+", help=".lean files (the pieces of one formalization) or a paper directory CipherLean/<Slug>/")
     ap.add_argument("--ws")
-    ap.add_argument("--write", action="store_true", help="also write PROMOTE.md next to the first file (all tables)")
+    ap.add_argument("--write", action="store_true", help="also append the report, dated, to PROMOTE.md next to the first file")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--timeout", type=int, default=1800)
     a = ap.parse_args()
@@ -255,15 +258,20 @@ def main():
         mrows = [r for r in rows if r["module"] == mod]
         texts.append(report(mrows, mod, rel(f), context))
         out_json.append({"module": mod, "rows": mrows})
-    text = "\n".join(texts)
+    text = "\n".join(texts) + "\n" + FOOTER
     if a.json:
         print(json.dumps(out_json, ensure_ascii=False, indent=1))
     else:
         print(text)
     if a.write:
         dest = files[0].parent / "PROMOTE.md"
-        dest.write_text(text, encoding="utf-8")
-        print(f"[written {dest}]", file=sys.stderr)
+        slug = files[0].parent.name
+        head = f"# PROMOTE — {slug}: library candidates (step 7), one dated report per run, newest last\n"
+        stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        section = f"\n## {stamp} — " + ", ".join(f"`{m}`" for m in mods) + "\n\n" + text
+        old = dest.read_text(encoding="utf-8") if dest.exists() else ""
+        dest.write_text((old if old.startswith("# PROMOTE — ") else head + old) + section, encoding="utf-8")
+        print(f"[appended to {dest}]", file=sys.stderr)
 
 
 if __name__ == "__main__":

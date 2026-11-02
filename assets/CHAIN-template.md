@@ -23,13 +23,19 @@ use (the paper's route where Lean goes another way, or a step whose Lean form is
 premises enter where the target applies it) — explained in `implicit`, accepted by `chain_check.py`. `where`: the paper's section and statement first (`§7.3 Lemma 24 (lem:…)`),
 then `;` and notes — the graph prints the part before the `;` under each node, and the H1 line of this
 file is the graph's title, so it names the paper; rows from another paper say that paper first.
-`implicit`: a hypothesis the text uses without stating, or `—`.
+`implicit`: a hypothesis the text uses without stating, or `—`. Cells stay short — `statement` at most 300
+characters, `implicit` at most 200 — so the table reads and the graph's labels fit; anything longer (how the
+paper argues, what Lean does instead, why an edge is `?`) goes under "Notes" below, keyed by the row id.
 `lean`: the one Lean declaration of this formalization that discharges the row (filled in step 3; a library
 lemma is allowed), or `—`; a note about another project's declaration goes in `implicit` (a cell that is
 not one name is listed by `chain_check.py` as a note and not checked).
 A row the paper settles by computation says so in `implicit` ("computation: 2^12 cases") and, once
 formalized, names the route in `lean` (`decide +kernel`, or the `checker_eval` of a native bridge).
 `status`: pending · stated (Lean statement with `sorry`) · proved · cited · assumed.
+
+## Notes (by row id)
+
+- `lem:<a>`: <the long explanation that does not fit the cell: the paper's argument, the Lean route, the reason for a `?`>
 
 ## External results
 

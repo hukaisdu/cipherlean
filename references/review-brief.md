@@ -24,8 +24,8 @@ and compile scratch files (`$SKILL/scripts/lean_eval.sh`). Your only output is a
 
 1. **Statement fidelity, before reading any proof.** For every row of README's status table:
    copy the statement from the *paper source* (not from README); list its objects, hypotheses and
-   conclusion; take the elaborated Lean statement from `check_lean.py` (section "Statements") or
-   `#check`. Confirm, one by one: every paper hypothesis is present, either as a Lean hypothesis
+   conclusion; paste the elaborated Lean statement from `check_lean.py` (section "Statements") into the
+   fidelity table — never retype it, the table is the evidence. Confirm, one by one: every paper hypothesis is present, either as a Lean hypothesis
    or by construction of the encoding (say which); no hypothesis was added except ones README
    declares as implicit-in-the-paper with a reason; the generality is the paper's (constants,
    ranges of quantifiers, coefficient field, block sizes) or every departure is in README's
@@ -50,8 +50,10 @@ and compile scratch files (`$SKILL/scripts/lean_eval.sh`). Your only output is a
    infeasible, and README must disclose the axiom; a `native_decide` on a general goal is a BLOCKER.
 4. **Verdict.** Append `## Round n — reviewer (<date>)` to `REVIEW.md` with the sections of the
    template: in round n > 1 first a `Previous objections` table that judges every answer of the
-   formalizer (`resolved` / `still open` with the reason / `superseded`), then statement fidelity,
-   proof correspondence, checks, and `New objections`. Objections are numbered `R<n>.<k>`, each
+   formalizer (`resolved` / `still open` with the reason / `superseded`), then — for the declarations
+   the formalizer's answers list as changed or added, and only those — statement fidelity and proof
+   correspondence with the statements pasted from a fresh `check_lean.py` run, the two checks rerun,
+   and `New objections`; unchanged rows are not re-tabulated (round 1 is the record for them). Objections are numbered `R<n>.<k>`, each
    with a severity (BLOCKER: statement unfaithful, proof gap, non-standard axiom, chain
    inconsistent · MAJOR: departure or added hypothesis not recorded, missing finite check · MINOR:
    naming, docs) and a location (file:line or chain row). End with `VERDICT: ACCEPT | REVISE`.
@@ -64,7 +66,8 @@ and compile scratch files (`$SKILL/scripts/lean_eval.sh`). Your only output is a
 ## The loop and its stopping condition
 Between rounds the formalizer appends `## Round n — formalizer (<date>)`: one row per objection,
 `fixed` (what changed, where), `rejected` (a reason the reviewer can check) or `needs the user`
-(the question goes to the user before the next round). No next round starts until every
+(the question goes to the user before the next round), and the declarations changed or added, which
+is what the next round re-examines. No next round starts until every
 objection of the previous round has a written answer, and the agent running the loop posts the
 round's objections and answers in the chat, so the exchange is visible as it happens and
 `REVIEW.md` is its complete record afterwards. A new round reads the files afresh. Stop when a

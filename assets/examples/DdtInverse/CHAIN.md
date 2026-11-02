@@ -19,8 +19,20 @@ re-checked against it afterwards (`chain_check.py`).
 | def:ddtMatrix | def | DDT as a matrix | the table (a, b) ↦ DDT entry, rows = input difference, columns = output difference | def:ddt | source, "the DDT of S" | — | CipherLean.ddtMatrix | stated |
 | assume:perm | assumption | S is a permutation | "Let S be a permutation of F_2^n and S^{-1} its inverse": S bijective, S^{-1} its two-sided inverse | — | source | n = 0 allowed; on F_2^n one of the two inverse equations implies the other | Equiv.Perm | assumed |
 
-`kind`: theorem · lemma · step · def · external · assumption. `uses`: comma-separated ids.
-`lean`: the declaration that discharges the row (library lemmas allowed). `status`: pending · stated · proved · cited · assumed.
+`kind`: theorem · lemma · step · def · external · assumption. `uses`: comma-separated ids. `lean`: the declaration
+that discharges the row (library lemmas allowed). `status`: pending · stated · proved · cited · assumed. Cells are
+short; the longer explanations are in the Notes below, keyed by row id.
+
+## Notes (by row id)
+
+- `step:bijection`: the two maps `x ↦ S(x)` and `y ↦ S^{-1}(y)` are mutually inverse between the two counted
+  sets, so `Finset.card_nbij'` gives the equality of the counts; only `S^{-1} ∘ S = id` is used for the first
+  direction and `S ∘ S^{-1} = id` for the second (`CipherLean.ddt_eq_ddt_of_inverse`).
+- `rem:one-equation`: on a finite type `Finite.injective_iff_surjective` turns a left inverse into a two-sided
+  one, so the lemma holds for any `T` with `T ∘ S = id`; this is a finding of the formalization, not a claim of
+  the source.
+- `assume:perm`: `Equiv.Perm` carries both inverse equations (`S.symm_apply_apply`, `S.apply_symm_apply`); the
+  bijective-function spelling uses Mathlib's noncomputable `Function.invFun`.
 
 ## External results
 
@@ -36,10 +48,19 @@ None: the source gives no proof and cites nothing; the argument is the standard 
 
 - Is n = 0 meant to be excluded? The formal statement allows it (the lemma holds trivially there).
 
+## Roadmap
+
+End S: self-contained — every row proved here with standard axioms; reached on 2026-11-01.
+
+| piece | title | rows | route | size | status | actual |
+|---|---|---|---|---|---|---|
+| A | the lemma, its spellings and the matrix form | cor:transpose, lem:ddt-inverse, rem:invFun, rem:one-equation, step:bijection, step:image, def:ddt, def:ddtMatrix | prove here | 1 session (nine rows, no computational case; the toy is one `decide` on 64 pairs) | done 2026-11-01 | 1 session; `Main.lean` 99 lines after the promotion of the four spellings into the library |
+| hyp | the lemma's hypothesis | assume:perm | hypothesis | — | — | |
+
 ## Dependency graph
 
-`$SKILL/scripts/chain_graph.py CHAIN.md` writes `CHAIN.tex` (TikZ) and compiles `CHAIN.pdf`; the
-mermaid version below is kept in sync by the same script.
+`chain_graph.py` writes `CHAIN.tex` (TikZ) and compiles `CHAIN.pdf` (border = kind of row, fill = status,
+legend with the counts and the roadmap's progress); the mermaid version below is kept in sync by the same script.
 
 <!-- chain-graph:begin -->
 ```mermaid
@@ -66,15 +87,15 @@ graph TD
   stepbijection --> defddt
   stepimage --> assumeperm
   defddtMatrix --> defddt
-  classDef theorem fill:#dbe6fb,stroke:#1f3a93,stroke-width:3px
-  class cortranspose,lemddtinverse theorem
-  classDef lemma fill:#eef3fd,stroke:#1f3a93,stroke-width:2px
-  class reminvFun,remoneequation lemma
-  classDef step fill:#ffffff,stroke:#333,stroke-dasharray:4 3
-  class stepbijection,stepimage step
-  classDef def fill:#e6e6e6,stroke:#333
-  class defddt,defddtMatrix def
-  classDef assumption fill:#fdeaea,stroke:#333,stroke-dasharray:1 3
-  class assumeperm assumption
+  classDef theorem_proved fill:#d4f0d4,stroke:#1f3a93,stroke-width:3px
+  class cortranspose,lemddtinverse theorem_proved
+  classDef lemma_proved fill:#d4f0d4,stroke:#1f3a93,stroke-width:2px
+  class reminvFun,remoneequation lemma_proved
+  classDef step_proved fill:#d4f0d4,stroke:#333,stroke-dasharray:4 3
+  class stepbijection,stepimage step_proved
+  classDef def_stated fill:#fff3b0,stroke:#333
+  class defddt,defddtMatrix def_stated
+  classDef assumption_assumed fill:#e6e6e6,stroke:#333,stroke-dasharray:1 3
+  class assumeperm assumption_assumed
 ```
 <!-- chain-graph:end -->

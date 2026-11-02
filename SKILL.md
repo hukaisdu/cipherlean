@@ -39,7 +39,8 @@ Persistent Lake project at `~/cipherlean` (override with `CIPHERLEAN_WS`), creat
 paper, `autoImplicit = false` so a misspelled variable is an error instead of a silent new
 hypothesis. Commands, VS Code use,
 version bumps and troubleshooting: `references/workspace.md`. Run everything from the
-workspace root.
+workspace root. The scripts put `~/.elan/bin` on PATH themselves (a non-login ssh shell lacks it);
+only your own bare `lake` / `lean` commands need `export PATH="$HOME/.elan/bin:$PATH"`.
 
 Shared library `CipherLean/Lib/` (installed and compiled by `setup_env.sh`): the carrier
 `Vec ι := ι → ZMod 2` with the `BitVec` bridge, characters, `Finset` subspaces with cosets,
@@ -91,7 +92,9 @@ the paper) and `CipherLean/<Slug>` is a symlink to them; without it they live in
 The reader is not watching the tool calls: at the end of every step, and whenever a job that takes
 minutes starts, print the status board (`$SKILL/scripts/status.py <Slug>`) in the chat and say which
 machine the job runs on and what the next gate is. Before starting, read the task's `NOTATION.md` if one exists and keep the day's log as
-usual; the per-paper `NOTATION.md` created here is that table for the formalization task.
+usual (append it with a quoted heredoc, `<<'EOF'`: in an unquoted one the shell executes backticked words
+such as `` `simp only` `` and the entry loses text); the per-paper `NOTATION.md` created here is that table
+for the formalization task.
 
 ## Workflow
 

@@ -41,6 +41,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+ELAN_ON_PATH=0; command -v elan >/dev/null 2>&1 && ELAN_ON_PATH=1     # before we add ~/.elan/bin ourselves
 export PATH="$HOME/.elan/bin:$PATH"
 TOOLCHAIN="$(cat "$SKILL/assets/workspace/lean-toolchain")"
 VERSION="${TOOLCHAIN#leanprover/lean4:}"
@@ -71,6 +72,7 @@ fi
 step "elan (Lean version manager)"
 if command -v elan >/dev/null 2>&1; then
   ok "elan $(elan --version 2>/dev/null | head -1)"
+  [ "$ELAN_ON_PATH" = 1 ] || note "~/.elan/bin is not on this shell's PATH (a non-login ssh shell?): the skill's scripts add it themselves; for your own lake/lean commands run: export PATH=\"\$HOME/.elan/bin:\$PATH\""
 elif [ "$MODE" = install ]; then
   echo "  installing elan into ~/.elan with the official installer (no default toolchain)"
   curl -sSfL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none || fail "elan installation failed"

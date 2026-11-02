@@ -5,6 +5,7 @@
 # says what differs). Never builds inside a synced folder (~/sync) or writes to ~/.elan.
 #   usage: sandbox_project.sh <project-dir> [<scratch-dir>]     (default scratch: /tmp/cipherlean-sandbox/<name>)
 set -eu
+export PATH="$HOME/.elan/bin:$PATH"      # non-login ssh shells do not have it
 SRC="$(cd "$1" && pwd)"; NAME="$(basename "$SRC")"
 DEST="${2:-/tmp/cipherlean-sandbox/$NAME}"
 WS="${CIPHERLEAN_WS:-$HOME/cipherlean}"

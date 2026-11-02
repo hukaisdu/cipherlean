@@ -134,6 +134,6 @@ and is what this workspace uses.
 | `error: … lake-manifest.json: name: expected a Name` | package names must be Lean identifiers (no hyphens) |
 | `no default toolchain configured` | `elan default stable` (only affects files outside a project; this workspace pins its own) |
 | Lake starts building thousands of Mathlib files | the pin changed or `.lake/packages` is gone: stop, restore the pin or run `lake exe cache get` |
-| `elan: command not found` right after `--install` | `~/.elan/bin` is not on the PATH of this shell yet: open a new shell or `export PATH=$HOME/.elan/bin:$PATH` |
+| `elan: command not found` right after `--install`, or in a non-login ssh shell | `~/.elan/bin` is not on the PATH of this shell: open a new shell or `export PATH=$HOME/.elan/bin:$PATH`. The skill's scripts add it themselves (`setup_env.sh --check` says when it is missing), so only bare `lake` / `lean` commands of your own need it |
 | `lake exe cache get` fails or stalls | network / proxy / GitHub access; rerun `setup_env.sh --install` (it resumes), or `--build-from-source` |
 | `no such file: .lake/packages/mathlib` | the clone was interrupted: rerun `setup_env.sh --install` |

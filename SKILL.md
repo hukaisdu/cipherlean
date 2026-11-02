@@ -61,6 +61,8 @@ library lacks it.
 | verify someone else's project | `$SKILL/scripts/sandbox_project.sh <project>` then `references/verify-existing.md` |
 | compile one file | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (= `lake build` under a file lock, so parallel agents queue instead of colliding) |
 | final check | `$SKILL/scripts/check_lean.py CipherLean/<Slug>/<File>.lean` |
+| the status board | `$SKILL/scripts/status.py <Slug>` (files, sorry counts, CHAIN rows by status, README table, REVIEW round and open objections; `--check` reruns the verdicts) |
+| the same steps on a server | `$SKILL/scripts/remote.sh build\|check\|chain\|trim\|eval …` with `CIPHERLEAN_REMOTE=user@host` (the skill and workspace installed there; sources stay here) |
 | find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` |
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
 | trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` |
@@ -84,7 +86,9 @@ transpose).
 With `--paper-dir`, the real files live in `<paper repo>/formal/` (versioned and synced with
 the paper) and `CipherLean/<Slug>` is a symlink to them; without it they live in the workspace.
 
-Before starting, read the task's `NOTATION.md` if one exists and keep the day's log as
+The reader is not watching the tool calls: at the end of every step, and whenever a job that takes
+minutes starts, print the status board (`$SKILL/scripts/status.py <Slug>`) in the chat and say which
+machine the job runs on and what the next gate is. Before starting, read the task's `NOTATION.md` if one exists and keep the day's log as
 usual; the per-paper `NOTATION.md` created here is that table for the formalization task.
 
 ## Workflow
@@ -170,7 +174,9 @@ Create `CipherLean/<Slug>/Main.lean` from the template (`$SKILL/scripts/new_pape
 Write the definitions, then every node of the confirmed chain as a Lean declaration with `sorry`, in
 dependency order (definitions, cited results as hypotheses or library lemmas, steps, lemmas, the
 target), and compile together with the finite checks of step 4 (they only need the definitions, so
-one build serves both). Fill the `lean` column of CHAIN.md as you go and set `status: stated`. Give every
+one build serves both). Fill the `lean` column of CHAIN.md as you go (exactly one declaration name of this formalization, or `—`;
+notes such as "proved in project X as foo" go in the `implicit` column, because `chain_check.py` reads the
+cell as a name) and set `status: stated`. Give every
 declaration a docstring with the paper's wording (`/-- Paper: Theorem 2, "..." -/`), the way
 formal-conjectures requires an English version next to each formal statement. Type errors
 at this stage are cheap; a wrong statement discovered after a 200-line proof is not.
@@ -264,7 +270,11 @@ compiles): every later build, check and reader of the file gets the 3–7 s load
 Then fill the status table in `README.md` (paper label · Lean declaration · status · axioms ·
 note) and the "Departures from the paper" section. Then step 7b. In the reply: what is proved, what is
 `sorry` and why, hypotheses the paper left implicit (these are findings about the paper),
-and the exact commands to rebuild. Say "proved" only after step 6 passes. "Done" means: the checks pass on the declared pin, the
+and the exact commands to rebuild. Say "proved" only after step 6 passes, and only for the paper's
+statement in full (both directions of an "exactly", every case of a case split). Every script the
+README cites (a Python table check, a counterexample search) lives in the paper directory, and every
+Lean name README or NOTATION cites exists (`status.py`, or `#check`): the first independent review
+found both kinds of slip in one file. "Done" means: the checks pass on the declared pin, the
 files and the evidence (`check_lean` output, `CHAIN.md`, `REVIEW.md`) are committed, and every
 caveat (an added hypothesis, a compiler axiom, a departure) stands at the top of the report, not
 in a footnote.

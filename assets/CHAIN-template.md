@@ -22,7 +22,8 @@ own source) · assumption (a hypothesis of the theorem or a modelling assumption
 then `;` and notes — the graph prints the part before the `;` under each node, and the H1 line of this
 file is the graph's title, so it names the paper; rows from another paper say that paper first.
 `implicit`: a hypothesis the text uses without stating, or `—`.
-`lean`: the Lean declaration that discharges the row (filled in step 3; a library lemma is allowed).
+`lean`: the one Lean declaration of this formalization that discharges the row (filled in step 3; a library
+lemma is allowed), or `—`; a note about another project's declaration goes in `implicit`.
 A row the paper settles by computation says so in `implicit` ("computation: 2^12 cases") and, once
 formalized, names the route in `lean` (`decide +kernel`, or the `checker_eval` of a native bridge).
 `status`: pending · stated (Lean statement with `sorry`) · proved · cited · assumed.

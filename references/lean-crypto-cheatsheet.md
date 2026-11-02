@@ -173,6 +173,23 @@ formalization of a coset-average theorem that is not shipped, so those idioms ar
     computed by breadth-first search inside the proof grows exponentially with the depth (K = 8:
     272 s, K = 9: minutes); compute it offline and let Lean check closedness.
 
+28. **Numerals in `Fin r` with a variable modulus** (`WHConj3.deriv_map`): `norm_num` does not prove
+    `(1 : Fin m) + 2 = 3` under `[NeZero m]` (the `Fin` `OfNat` instance is not the `NatCast` one it
+    expects); `rw [Fin.ext_iff, Fin.val_add]; simp` does. Needed whenever a definition writes `x 2`,
+    `x 3` and a lemma produces `x (1 + 1)`, `x (1 + 2)`.
+29. **A coordinate identity over `F_2` with several atoms** (`WHConj3.deriv_map`, nine atoms such as
+    `x (Sum.inl 1)`, `d (Sum.inr 0)`, `b`): `ring` does not know `x + x = 0`; instead `simp only` the
+    definitions away, `generalize x (Sum.inl 1) = x1` for every atom, `revert` them all, `decide`
+    (kernel, 2^9 cases in well under a second). `native_decide` is never needed for these.
+30. **A `Finset` object needs its own `mem_` lemma** (`WHConj3.mem_Sfwd`, `mem_cell`): prove
+    `d ∈ Sfwd F α ↔ ∃ x, …` once by `simp [Sfwd]` and always `rw [mem_Sfwd]` afterwards; `simp only [Sfwd]`
+    inside a membership goal unfolds `Finset.filter` down to `Quot.lift` and `Finset.mem_filter` no longer
+    fires.
+31. **Gluing two branches** (`WHConj3.sum_elim_eq_iff`): `Sum.elim A B = f ↔ A = f ∘ Sum.inl ∧ B = f ∘ Sum.inr`
+    is not in Mathlib (only `Sum.elim_comp_inl_inr`); `rintro rfl` one way, `rintro ⟨rfl, rfl⟩` plus
+    `Sum.elim_comp_inl_inr` the other. With `variable [NeZero m]` in scope, lemmas that do not need the
+    instance get `omit [NeZero m] in` to silence the unused-variable linter.
+
 ## 3. Tactics, in the order to try them
 
 `simp only [...]` (controlled) → `rw [...]` (literal pattern) → `ring` / `linarith` / `omega`
@@ -227,6 +244,11 @@ a lemma yourself.
   flat, no swap = progress, not a hang), and never run probes or a second `lake build` beside it.
   Afterwards `scripts/build_profile.py <log>` shows where the time went (one module was 94 % of a
   6 800 s build). Killing a progressing build at 85 min threw away 58 min of CPU and saved nothing.
+
+- A Linux server with the workspace installed (`scripts/remote.sh`, `CIPHERLEAN_REMOTE=user@host`):
+  on a 128-core Ubuntu 24.04 box `import CipherLean` takes 2 s (laptop: 7 s), a trimmed module
+  builds in 5 s, `check_lean.py` runs in 8 s; the paper directory is rsynced before each step and
+  the sources never leave this machine. Measured 2026-11-02 on `WHConj3/Reduction.lean`.
 
 ## 6. Names that do not exist in Mathlib v4.33.0 (do not search again)
 

@@ -11,7 +11,8 @@ How: appends `#min_imports` (Mathlib.Tactic.MinImports) to a scratch copy, reads
 suggests, adds the umbrella modules of the tactics the file uses (the command sees the lemmas a
 tactic produced, not the tactic's own implementation), compiles the trimmed copy with
 `lake env lean`; on failure adds `Mathlib.Tactic.Common`, then `Mathlib.Tactic`; if nothing
-compiles the file is left unchanged. Only the `import Mathlib` line is replaced; other imports
+compiles the file is left unchanged. The `import Mathlib` line is replaced and any other import line
+that turns out redundant (an umbrella such as `import CipherLean`) is dropped; other imports
 (sibling modules, Aesop, ...) are kept. Writes the file only with --apply.
 
 usage: trim_imports.py <file.lean> [--apply] [--ws DIR]
@@ -116,10 +117,23 @@ def main():
                 print(f"tidy: {len(chosen)} -> {len(tidy)} imports (parent umbrellas cover the rest)")
                 chosen = tidy
         block = "\n".join(f"import {m}" for m in chosen)
+        # 5. other import lines of the header (an umbrella such as `import CipherLean`) are dropped one by
+        #    one when the file still compiles without them (2026-11-02: the umbrella stayed behind once)
+        others = [i for i, l in enumerate(lines) if l.startswith("import ") and i not in idx]
+        dropped = []
+        for i in others:
+            trial = lines[:]; trial[idx[0]] = block
+            for j in idx[1:]: trial[j] = ""
+            for j in dropped + [i]: trial[j] = ""
+            cand = scratch / "drop.lean"; cand.write_text("\n".join(trial) + "\n", encoding="utf-8")
+            rc, out = run_lean(ws, cand)
+            if rc == 0 and ": error" not in out:
+                dropped.append(i); print(f"redundant, dropped: {lines[i].strip()}")
         print("RESULT:\n" + block)
         if a.apply:
             new = lines[:]; new[idx[0]] = block
             for j in idx[1:]: new[j] = ""
+            for j in dropped: new[j] = ""
             f.write_text("\n".join(new) + "\n", encoding="utf-8")
             print(f"applied to {f}; rebuild with lake_build.sh")
         else:

@@ -9,7 +9,7 @@ Lean library of the objects these statements use (vectors over `F_2`, characters
 duality, Walsh coefficients, the DDT, table S-boxes) with its lemmas machine-checked.
 
 ## Requirements
-- macOS (tested) or Linux (untested; Windows through WSL also untested), `curl`, `git`,
+- macOS (tested) or Linux (Ubuntu 24.04 tested 2026-11-02; Windows through WSL untested), `curl`, `git`,
   `python3`, 10 GB of free disk (the installed workspace takes about 7 GB), network for
   the first setup (Lean toolchain ≈ 300 MB, shallow git clones ≈ 170 MB, prebuilt Mathlib ≈ 2 GB).
 - Claude Code (the skill lives in `~/.claude/skills/`). Lean and Mathlib are installed by the
@@ -62,6 +62,16 @@ paper instead (`<repo>/formal/`, symlinked into the workspace).
   (needs `uv`); that server's documentation says it keeps Mathlib loaded between proof attempts.
   This option has not been tested from this skill.
 
+## On a server
+
+The same skill and workspace install on a Linux machine (tested 2026-11-02 on Ubuntu 24.04, x86_64:
+`git clone` of this repository to `~/.claude/skills/cipherlean`, then `setup_env.sh --install --examples`,
+3 minutes with a fast connection to the Mathlib cache; `ENVIRONMENT OK`). Keep the sources on your own
+machine and run the slow steps there with `scripts/remote.sh` (`CIPHERLEAN_REMOTE=user@host`):
+`remote.sh build <Slug> <Module>`, `check`, `chain`, `trim` (copies the trimmed file back) and `eval`
+(a snippet on stdin). The script rsyncs `CipherLean/<Slug>/` first and prefixes every remote command with
+`PATH=$HOME/.elan/bin:$PATH`, which non-login ssh shells lack.
+
 ## What one session can deliver
 A theorem whose proof chain has about ten rows and one or two computational cases: pinned
 statement, confirmed chain and graph, definitions tested on a toy, lemmas proved, checks passed,
@@ -79,6 +89,15 @@ cautions from a run in another harness: do not let the harness re-inject the tas
 "goal" (it produced fifty one-minute turns), and the workflow's judgement steps (1b, 5, 7b) need a
 frontier-class model; a small model is fine for the checks. One agent per workspace: the build lock
 serializes two agents, it does not make them fast.
+
+### Task books for another agent
+
+When you hand a formalization step to another agent as a written task (a "task book"), date it against
+the repository state (the commit of this skill and of the paper directory), say which log file the
+agent may write and that the installed workspace is to be checked with `setup_env.sh --check` before
+anything is reinstalled, and ask for the status board (`scripts/status.py <Slug>`) at the end of every
+step. A task book that contradicts the standing rules of the user's own configuration (which files may
+be written, where logs go) costs the agent a round of clarification.
 
 ## Growing the library
 After a formalization, `scripts/promote_candidates.py CipherLean/<Slug>/Main.lean` lists the

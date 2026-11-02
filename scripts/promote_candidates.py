@@ -35,6 +35,8 @@ import {paper}
 
 open Lean Elab Command Meta
 
+set_option maxRecDepth 8192
+
 def listDecls : CommandElabM Unit := do
   let env ← getEnv
   let some pidx := env.getModuleIdx? `{paper} | throwError "paper module not loaded"
@@ -42,7 +44,9 @@ def listDecls : CommandElabM Unit := do
   let lidxs := libMods.filterMap env.getModuleIdx?
   let names : Array Name := env.constants.fold (init := #[]) fun acc n _ =>
     match env.getModuleIdxFor? n with
-    | some i => if (i == pidx || lidxs.contains i) && !n.isInternalDetail then acc.push n else acc
+    | some i => if (i == pidx || lidxs.contains i) && !n.isInternalDetail
+                  && !(n.components.getLast?.map (fun c => c.toString == "congr_simp" || (c.toString.startsWith "match_") || (c.toString.startsWith "proof_") || (c.toString.startsWith "eq_")) |>.getD false)
+               then acc.push n else acc
     | none => acc
   let names := names.qsort (fun a b => a.toString < b.toString)
   for n in names do
@@ -71,7 +75,9 @@ def listDecls : CommandElabM Unit := do
         let us ← mkFreshLevelMVars c.levelParams.length
         let t1 := c.type.instantiateLevelParams c.levelParams us
         let t2 := d.type.instantiateLevelParams d.levelParams us
-        withoutModifyingState (isDefEq t1 t2)
+        -- reducible transparency: a duplicate is the same statement up to notation, and full
+        -- unfolding can recurse without bound on finite checks (maxRecDepth, 2026-11-02)
+        withoutModifyingState (try withReducible (isDefEq t1 t2) catch _ => pure false)
       if same then IO.println s!"DUP\t{{n}}\t{{m}}"
 
 #eval listDecls

@@ -19,7 +19,7 @@
 # (git --depth 1, a few hundred MB instead of the full history); download the
 # prebuilt Mathlib with `lake exe cache get` (~2 GB download, ~6 GB on disk); copy the examples;
 # build CipherLean/Smoke.lean and run check_lean.py on it. Needs curl, git, python3, >= 10 GB free
-# disk and network access. macOS (tested); Linux and WSL on Windows (untested).
+# disk and network access. macOS (tested); Linux (Ubuntu 24.04, tested 2026-11-02); WSL on Windows (untested).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL="$(cd "$HERE/.." && pwd)"

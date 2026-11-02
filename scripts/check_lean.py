@@ -4,9 +4,10 @@
 What it does (the trust model of the cipherlean skill):
   1. `lake build <Module>` for the file (module name derived from its path; symlinked
      `CipherLean/<Slug>` directories are resolved).
-  2. Loads the module in a scratch Lean file and prints, for EVERY non-internal
-     declaration of the module, its kind, the axioms it depends on, and its elaborated
-     statement (so a human can compare it with the paper).
+  2. Lists, for EVERY non-internal declaration of the module, its kind, the axioms it
+     depends on, and its elaborated statement (so a human can compare it with the paper):
+     one `lake env lean` run through inspect_lean.py, or the JSON of an earlier run
+     (--listing, as status.py --check passes it: one listing for all the piece files).
   3. Classifies each declaration:
        PASS    axioms ⊆ {propext, Classical.choice, Quot.sound}
        NATIVE  additionally Lean.ofReduceBool / Lean.trustCompiler or a generated
@@ -21,22 +22,25 @@ Lean generates on first use (`foo.congr_simp` from `simp`, `foo.match_1`, `foo.p
 which `status.py` does not see in the source. A module with no declaration of its own (an aggregator
 that only imports the pieces of a split theorem) passes with "0 declarations".
 
-usage: check_lean.py <file.lean> [--ws DIR] [--allow-native] [--json] [--timeout SEC]
+usage: check_lean.py <file.lean> [--ws DIR] [--allow-native] [--json] [--timeout SEC] [--no-build] [--listing FILE.json]
 """
-import argparse, json, os, pathlib, re, shutil, subprocess, sys, tempfile
+import argparse, json, os, pathlib, re, sys
 
 STANDARD = {"propext", "Classical.choice", "Quot.sound"}
 NATIVE = {"Lean.ofReduceBool", "Lean.trustCompiler"}
 
 
-AUX_RE = re.compile(r"\.(congr_simp|match_\d+|proof_\d+|eq_\d+|_cstage\d*)$")
+# the workspace helpers and the auxiliary-name test live in inspect_lean (shared by every check script);
+# they keep their names here because chain_check, notation_check, promote_candidates and trim_imports use `ck.*`
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import inspect_lean as il  # noqa: E402
+from inspect_lean import is_auxiliary, find_workspace, module_name, lake, run  # noqa: E402,F401
 
 
-def is_auxiliary(name):
-    """Declarations Lean generates next to a user's: `foo.congr_simp` (simp's first use of `foo`),
-    `foo.match_1`, `foo.proof_1`, `foo.eq_1`. They carry axioms like any other, so the check keeps
-    them, but they are counted apart from the source declarations."""
-    return bool(AUX_RE.search(name))
+def die(msg, code=2):
+    print(f"check_lean: {msg}", file=sys.stderr)
+    sys.exit(code)
 
 
 def is_native(ax):
@@ -46,96 +50,6 @@ def is_native(ax):
 GREP = ["sorry", "native_decide", "bv_decide", r"\baxiom\b", r"\bunsafe\b",
         "implemented_by", r"\bextern\b", r"\badmit\b", "decide +native"]
 
-LEAN_LISTING = r'''
-import Lean
-import {module}
-
-open Lean Elab Command Meta
-
-/-- List every non-internal constant of one module: name, kind, axioms, statement. -/
-def listModuleDecls (modName : Name) : CommandElabM Unit := do
-  let env ← getEnv
-  let some idx := env.getModuleIdx? modName
-    | throwError "module {{modName}} is not loaded"
-  let names : Array Name := env.constants.fold (init := #[]) fun acc n _ =>
-    if env.getModuleIdxFor? n == some idx && !n.isInternalDetail then acc.push n else acc
-  let names := names.qsort (fun a b => a.toString < b.toString)
-  for n in names do
-    let some c := env.find? n | continue
-    let kind := match c with
-      | .thmInfo _ => "theorem" | .defnInfo _ => "def" | .axiomInfo _ => "axiom"
-      | .opaqueInfo _ => "opaque" | .inductInfo _ => "inductive" | .quotInfo _ => "quot"
-      | .ctorInfo _ => "ctor" | .recInfo _ => "rec"
-    if kind == "ctor" || kind == "rec" || kind == "quot" then continue
-    let axioms ← collectAxioms n
-    let axStr := ",".intercalate (axioms.toList.map toString)
-    let tyStr ← liftTermElabM do
-      let fmt ← Meta.ppExpr c.type
-      pure (fmt.pretty 100000)
-    let tyOne := (tyStr.replace "\n" " ").replace "\t" " "
-    IO.println s!"DECL\t{{n}}\t{{kind}}\t{{axStr}}\t{{tyOne}}"
-
-#eval listModuleDecls `{module}
-'''
-
-
-def die(msg, code=2):
-    print(f"check_lean: {msg}", file=sys.stderr)
-    sys.exit(code)
-
-
-def find_workspace(arg):
-    ws = arg or os.environ.get("CIPHERLEAN_WS") or os.path.expanduser("~/cipherlean")
-    ws = pathlib.Path(ws).resolve()
-    if not (ws / "lakefile.toml").exists() and not (ws / "lakefile.lean").exists():
-        die(f"no lakefile in workspace {ws}: run scripts/setup_env.sh --install (or set --ws / CIPHERLEAN_WS)")
-    return ws
-
-
-def module_name(ws, file):
-    f = pathlib.Path(file).resolve()
-    if f.suffix != ".lean":
-        die(f"not a .lean file: {file}")
-    try:
-        rel = f.relative_to(ws)
-        return ".".join(rel.with_suffix("").parts)
-    except ValueError:
-        pass
-    formal = ws / "CipherLean"
-    if formal.is_dir():
-        for link in sorted(formal.iterdir()):
-            if link.is_symlink():
-                try:
-                    rel = f.relative_to(link.resolve())
-                    return ".".join(["CipherLean", link.name, *rel.with_suffix("").parts])
-                except ValueError:
-                    continue
-    die(f"{f} is not inside the workspace {ws} (directly or through a CipherLean/<Slug> symlink)")
-
-
-def lake():
-    exe = shutil.which("lake") or os.path.expanduser("~/.elan/bin/lake")
-    if not os.path.exists(exe):
-        die("lake not found; install elan (https://lean-lang.org/install/)")
-    return exe
-
-
-def run(cmd, cwd, timeout):
-    """Run `cmd` in the workspace under the shared build lock (one Lean job per workspace)."""
-    import fcntl
-    lock_path = pathlib.Path(cwd) / ".lake" / "cipherlean-build.lock"
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    # ~/.elan/bin first: non-login ssh shells do not have it on PATH (SKILL-NOTES item 2)
-    env = dict(os.environ, PATH=os.path.expanduser("~/.elan/bin") + os.pathsep + os.environ.get("PATH", ""))
-    with open(lock_path, "w") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
-        try:
-            p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout, env=env)
-        except subprocess.TimeoutExpired:
-            die(f"timed out after {timeout}s: {' '.join(cmd)}")
-    return p.returncode, (p.stdout or "") + (p.stderr or "")
-
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("file")
@@ -144,6 +58,7 @@ def main():
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--timeout", type=int, default=3600)
     ap.add_argument("--no-build", action="store_true", help="skip `lake build` (the module was just built)")
+    ap.add_argument("--listing", metavar="FILE.json", help="use this inspect_lean.py listing instead of running Lean")
     a = ap.parse_args()
     import time as _time
     _t0 = _time.time()
@@ -166,19 +81,22 @@ def main():
         emit(report, a, decls=[], verdict="FAIL (build error)")
         sys.exit(1)
 
-    # 2. axioms + statements
-    with tempfile.TemporaryDirectory(prefix="check_lean_") as td:
-        listing = pathlib.Path(td) / "Listing.lean"
-        listing.write_text(LEAN_LISTING.format(module=mod), encoding="utf-8")
-        _t1 = _time.time()
-        rc2, out2 = run([lake(), "env", "lean", str(listing)], ws, a.timeout)
-        report["listing_seconds"] = round(_time.time() - _t1, 1)
+    # 2. axioms + statements (one listing, shared with the other checks)
+    _t1 = _time.time()
+    if a.listing:
+        lst = il.load(a.listing)
+        ok = lst.get("ok", True) and mod in lst.get("modules", [])
+        if mod not in lst.get("modules", []):
+            lst = {"ok": False, "declarations": [], "output": f"{a.listing} does not list {mod} (it lists {', '.join(lst.get('modules', []))})"}
+    else:
+        lst = il.listing(ws, [a.file], timeout=a.timeout)
+        ok = lst["ok"]
+    report["listing_seconds"] = round(_time.time() - _t1, 1)
     decls = []
-    for line in out2.splitlines():
-        if not line.startswith("DECL\t"):
+    for d in lst["declarations"]:
+        if d["side"] != "PAPER" or d["module"] != mod or d["kind"] in ("ctor", "rec", "quot"):
             continue
-        _, name, kind, axs, ty = (line.split("\t", 4) + [""] * 5)[:5]
-        axioms = [x for x in axs.split(",") if x]
+        axioms = d["axioms"] or []
         bad = [x for x in axioms if x not in STANDARD and not is_native(x)]
         if "sorryAx" in axioms or bad:
             status = "FAIL"
@@ -186,10 +104,10 @@ def main():
             status = "NATIVE"
         else:
             status = "PASS"
-        decls.append({"name": name, "kind": kind, "axioms": axioms, "status": status, "statement": ty,
-                      "auxiliary": is_auxiliary(name)})
-    if rc2 != 0:
-        report["listing_output"] = out2[-4000:]
+        decls.append({"name": d["name"], "kind": d["kind"], "axioms": axioms, "status": status, "statement": d["statement"],
+                      "auxiliary": d["auxiliary"]})
+    if not ok:
+        report["listing_output"] = lst.get("output", "")[-4000:]
         emit(report, a, decls, verdict="FAIL (could not list declarations)")
         sys.exit(1)
     report["declarations_source"] = sum(1 for d in decls if not d["auxiliary"])

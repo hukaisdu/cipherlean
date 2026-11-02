@@ -3,8 +3,9 @@
 library CipherLean/Lib?  (step 7b of the skill)
 
 For the paper file(s) given — several files are the pieces of one theorem, a directory is every built,
-non-template .lean file in it — it loads the modules next to the library in one Lean process, lists every
-declaration with its elaborated statement and the constants that statement uses, and sorts them into:
+non-template .lean file in it — it loads the modules next to the library in one Lean process (inspect_lean.py
+with --dups, or an earlier run's JSON with --listing), lists every declaration with its elaborated statement and
+the constants that statement uses, and sorts them into:
 
   A  lemma about library objects only, general in the index type      -> strong candidate
   B  general, but its statement uses an object the paper defined      -> candidate together with
@@ -24,74 +25,13 @@ appended as a dated section to the paper directory's PROMOTE.md, one file per pa
 pieces or runs) that the agent reads and the user decides on; the mechanical move is described in
 references/promotion.md, the re-pointing of the .md files is `repoint_names.py`.
 
-usage: promote_candidates.py <file.lean | CipherLean/<Slug>/> [<file2.lean> ...] [--ws DIR] [--write] [--json]
+usage: promote_candidates.py <file.lean | CipherLean/<Slug>/> [<file2.lean> ...] [--ws DIR] [--write] [--json] [--listing FILE.json]
 """
 import argparse, datetime, json, os, pathlib, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import check_lean as ck  # noqa: E402  (find_workspace, module_name, lake, run, die)
-
-LEAN = r'''
-import Lean
-import CipherLean
-{imports}
-
-open Lean Elab Command Meta
-
-set_option maxRecDepth 8192
-
-def listDecls : CommandElabM Unit := do
-  let env ← getEnv
-  let paperMods : List Name := [{papers}]
-  let pidxs := paperMods.filterMap env.getModuleIdx?
-  if pidxs.length != paperMods.length then throwError "paper module not loaded"
-  let libMods : List Name := [{libmods}]
-  let lidxs := libMods.filterMap env.getModuleIdx?
-  let names : Array Name := env.constants.fold (init := #[]) fun acc n _ =>
-    match env.getModuleIdxFor? n with
-    | some i => if (pidxs.contains i || lidxs.contains i) && !n.isInternalDetail
-                  && !(n.components.getLast?.map (fun c => c.toString == "congr_simp" || (c.toString.startsWith "match_") || (c.toString.startsWith "proof_") || (c.toString.startsWith "eq_")) |>.getD false)
-               then acc.push n else acc
-    | none => acc
-  let names := names.qsort (fun a b => a.toString < b.toString)
-  for n in names do
-    let some c := env.find? n | continue
-    let kind := match c with
-      | .thmInfo _ => "theorem" | .defnInfo _ => "def" | .axiomInfo _ => "axiom"
-      | .opaqueInfo _ => "opaque" | .inductInfo _ => "inductive" | .quotInfo _ => "quot"
-      | .ctorInfo _ => "ctor" | .recInfo _ => "rec"
-    if kind == "ctor" || kind == "rec" || kind == "quot" then continue
-    let modName := match env.getModuleIdxFor? n with
-      | some i => if pidxs.contains i then toString (env.header.moduleNames[i.toNat]!) else "LIB"
-      | none => "LIB"
-    let tyStr ← liftTermElabM do
-      let fmt ← Meta.ppExpr c.type
-      pure (fmt.pretty 100000)
-    let tyOne := (tyStr.replace "\n" " ").replace "\t" " "
-    let used := ",".intercalate (c.type.getUsedConstants.toList.map toString)
-    IO.println s!"DECL\t{{n}}\t{{modName}}\t{{kind}}\t{{tyOne}}\t{{used}}"
-  -- duplicates: a paper declaration whose type is definitionally equal to a library declaration's
-  let isPaper (n : Name) : Bool := match env.getModuleIdxFor? n with
-    | some i => pidxs.contains i
-    | none => false
-  let libNames := names.filter fun n => !isPaper n
-  for n in names do
-    if !isPaper n then continue
-    let some c := env.find? n | continue
-    for m in libNames do
-      let some d := env.find? m | continue
-      if c.levelParams.length != d.levelParams.length then continue
-      let same ← liftTermElabM do
-        let us ← mkFreshLevelMVars c.levelParams.length
-        let t1 := c.type.instantiateLevelParams c.levelParams us
-        let t2 := d.type.instantiateLevelParams d.levelParams us
-        -- reducible transparency: a duplicate is the same statement up to notation, and full
-        -- unfolding can recurse without bound on finite checks (maxRecDepth, 2026-11-02)
-        withoutModifyingState (try withReducible (isDefEq t1 t2) catch _ => pure false)
-      if same then IO.println s!"DUP\t{{n}}\t{{m}}"
-
-#eval listDecls
-'''
+import check_lean as ck  # noqa: E402  (find_workspace, module_name, die)
+import inspect_lean as il  # noqa: E402
 
 TARGETS = [  # (regex on the statement, suggested module)
     (r"\b(walsh|linCount|correlation)\b", "CipherLean/Lib/Walsh.lean"),
@@ -223,32 +163,28 @@ def main():
     ap.add_argument("--write", action="store_true", help="also append the report, dated, to PROMOTE.md next to the first file")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--timeout", type=int, default=1800)
+    ap.add_argument("--listing", metavar="FILE.json", help="use this inspect_lean.py --dups listing instead of running Lean")
     a = ap.parse_args()
     ws = ck.find_workspace(a.ws)
     files = collect(ws, a.paths)
     mods = [ck.module_name(ws, f) for f in files]
-    lib_dir = ws / "CipherLean" / "Lib"
-    libmods = sorted(".".join(["CipherLean", "Lib", *f.relative_to(lib_dir).with_suffix("").parts])
-                     for f in lib_dir.rglob("*.lean"))
-    scratch_dir = ws / ".lake" / "promote"
-    scratch_dir.mkdir(parents=True, exist_ok=True)
-    scratch = scratch_dir / ("_".join(m.replace(".", "_") for m in mods) + "_promote.lean")
-    scratch.write_text(LEAN.format(imports="\n".join(f"import {m}" for m in mods), papers=", ".join("`" + m for m in mods),
-                                   libmods=", ".join("`" + m for m in libmods)), encoding="utf-8")
-    code, out = ck.run([ck.lake(), "env", "lean", str(scratch)], cwd=str(ws), timeout=a.timeout)
-    if code != 0 or "DECL\t" not in out:
-        ck.die(f"listing failed for {', '.join(mods)} (built? `lake_build.sh <module>` for each):\n{out[-2000:]}")
-    paper, lib, dups = [], [], {}
-    for line in out.splitlines():
-        if line.startswith("DUP\t"):
-            _, pn, ln = line.split("\t", 2)
-            dups.setdefault(pn, []).append(ln)
+    if a.listing:
+        lst = il.load(a.listing)
+        if not lst.get("ok", True) or any(m not in lst.get("modules", []) for m in mods):
+            ck.die(f"{a.listing} does not list {', '.join(mods)}")
+        if "dups" not in lst:
+            ck.die(f"{a.listing} was made without --dups")
+    else:
+        lst = il.listing(ws, files, dups=True, timeout=a.timeout)
+        if not lst["ok"]:
+            ck.die(f"listing failed for {', '.join(mods)} (built? `lake_build.sh <module>` for each):\n{lst.get('output', '')[-2000:]}")
+    paper, lib, dups = [], [], lst.get("dups", {})
+    for d in lst["declarations"]:
+        if d["kind"] in ("ctor", "rec", "quot") or d["auxiliary"]:
             continue
-        if not line.startswith("DECL\t"):
-            continue
-        _, name, modname, kind, ty, used = line.split("\t", 5)
-        d = {"name": name, "kind": kind, "type": ty, "used": [u for u in used.split(",") if u], "module": modname}
-        (lib if modname == "LIB" else paper).append(d)
+        row = {"name": d["name"], "kind": d["kind"], "type": d["statement"], "used": d["type_consts"],
+               "module": d["module"] if d["side"] == "PAPER" and d["module"] in mods else "LIB"}
+        (paper if row["module"] != "LIB" else lib).append(row)
     paper_ns = sorted({n.rsplit(".", 1)[0] for n in (d["name"] for d in paper) if "." in n}, key=len, reverse=True)
     rows = classify(paper, lib, paper_ns, dups)     # one context: the paper objects of every piece
     rel = lambda f: f.relative_to(ws) if str(f).startswith(str(ws)) else f

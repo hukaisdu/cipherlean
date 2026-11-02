@@ -126,9 +126,10 @@ SKILL.md          the workflow Claude follows (steps 1–8: environment, stateme
 references/       cheatsheet (encodings, idioms, pitfalls), workspace notes, promotion criteria, review brief,
                   verifying an existing project, postmortems, related tools
 scripts/          the environment installer, the paper scaffold, the chain graph and the chain check, the
-                  status board, the snippet runner, the lemma search, the serialized build, the final axiom
-                  check, the import trimmer, the notation check, the promotion classifier and the re-pointer,
-                  the library sync, the remote runner, the build profiler, the sandbox for external projects
+                  status board, the snippet runner, the lemma search, the serialized build, the one Lean listing
+                  (inspect_lean) that the final axiom check, the chain check, the notation check and the promotion
+                  classifier read, the import trimmer, the re-pointer, the library sync, the remote runner, the
+                  build profiler, the sandbox for external projects
 assets/           templates (README, CHAIN, NOTATION, REVIEW, Lean file), examples (Feistel, Halfspace,
                   SboxDDT, the complete run DdtInverse/), the shared library lib/ (installed as
                   CipherLean/Lib/), the pinned workspace files (lakefile, lean-toolchain, lake-manifest.json)

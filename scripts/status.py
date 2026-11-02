@@ -13,8 +13,9 @@ declaration and `sorry` counts (source declarations = `theorem/lemma/def/...` li
 the module's environment, which adds the auxiliary lemmas Lean generates, so its number can be larger);
 CHAIN.md rows by status and the open questions for the reader; the README status table; REVIEW.md rounds,
 the last verdict and the objections still without a formalizer answer; every classification table of
-PROMOTE.md (every run's table). With --check it also runs check_lean.py (--no-build) and chain_check.py once over all the .lean
-files (the pieces) and prints their verdict lines with the declaration counts. Run it at the end of every
+PROMOTE.md (every run's table). With --check it runs one Lean listing (inspect_lean.py) over all the .lean files (the
+pieces), then check_lean.py (--no-build) per file and chain_check.py once, offline on that listing, and prints their
+verdict lines with the declaration counts. Run it at the end of every
 step and at every stop, paste the board into the chat, and say on which machine a long job is running.
 """
 import argparse, datetime, os, pathlib, re, subprocess, sys
@@ -115,13 +116,24 @@ def main():
             s = f.read_text(encoding="utf-8", errors="replace")
             return "<Slug>" in s or "theorem main : True" in s     # the untouched Main.lean of new_paper.sh
         files = [f for f in leans if not is_template(f)]
+        listing = ws / ".lake" / "inspect" / f"status_{a.slug.replace('/', '_')}.json"
+        listing.parent.mkdir(parents=True, exist_ok=True)
+        # one `lake env lean` run over all the pieces (inspect_lean.py); check_lean and chain_check then read it
+        p = subprocess.run([sys.executable, str(skill / "inspect_lean.py"), *[str(f) for f in files], "--out", str(listing)],
+                           cwd=ws, capture_output=True, text=True)
+        if p.returncode != 0:
+            print(f"- listing failed (build the files first): {(p.stderr or p.stdout).strip()[-600:]}")
+        else:
+            print(f"- listing: {p.stdout.strip()}")
         for f in files:
-            out = subprocess.run([sys.executable, str(skill / "check_lean.py"), str(f.relative_to(ws)), "--no-build"], cwd=ws, capture_output=True, text=True).stdout
+            out = subprocess.run([sys.executable, str(skill / "check_lean.py"), str(f.relative_to(ws)), "--no-build", "--listing", str(listing)],
+                                 cwd=ws, capture_output=True, text=True).stdout
             v = re.findall(r"^VERDICT: .*", out, re.M); n = re.findall(r"^declarations: (.*)", out, re.M)
             print(f"- check_lean {f.name}: {v[-1] if v else 'no verdict (build it first)'}" + (f"; {n[-1]}" if n else ""))
         if chain.exists() and files:
             # one run over all the pieces: chain_check treats every file given as the paper module
-            out = subprocess.run([sys.executable, str(skill / "chain_check.py"), str(chain), *[str(f) for f in files]], cwd=ws, capture_output=True, text=True).stdout
+            out = subprocess.run([sys.executable, str(skill / "chain_check.py"), str(chain), *[str(f) for f in files], "--listing", str(listing)],
+                                 cwd=ws, capture_output=True, text=True).stdout
             v = re.findall(r"^VERDICT: .*", out, re.M); print(f"- chain_check {', '.join(f.name for f in files)}: {v[-1] if v else 'no verdict'}")
 
 if __name__ == "__main__":

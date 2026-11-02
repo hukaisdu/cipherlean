@@ -38,7 +38,7 @@ yourself only when the library lacks it. Run everything from the workspace root 
 | environment (step 1) | `$SKILL/scripts/setup_env.sh --check` (2 s); `--install [--examples]` once; `--update-library` after a `git pull` of the skill |
 | scaffold a paper | `$SKILL/scripts/new_paper.sh <Slug> [--paper-dir <paper repo>] [--file <Piece>]` (README, CHAIN, NOTATION, Main.lean; `--file` adds a piece file) |
 | graph and roadmap (step 3) | `$SKILL/scripts/chain_graph.py CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid; `--gaps` what remains; `--focus <id> [--depth N]` or `--rows a,b,c` one piece's sub-chain |
-| position and status board | `$SKILL/scripts/status.py <Slug>` (`--position` the Position block alone; `--check` reruns the verdicts) |
+| position and status board | `$SKILL/scripts/status.py <Slug>` (`--position` the Position block alone; `--check` reruns the verdicts on one Lean listing, `$SKILL/scripts/inspect_lean.py <files> --out FILE.json`, which every check script also accepts as `--listing`) |
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
 | find a lemma | `$SKILL/scripts/search_mathlib.sh "<name fragment or statement shape>"` (local grep, Loogle, LeanSearch) |
 | build one module | `$SKILL/scripts/lake_build.sh CipherLean.<Slug>.<File>` (`lake build` under the workspace lock; `CipherLean` rebuilds the library) |

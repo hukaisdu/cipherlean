@@ -5,7 +5,8 @@ The first independent review of a formalization found a NOTATION row naming a Le
 exist; the third found a stale name in README's Departures after a promotion rename. This script reads every
 table row of NOTATION.md, takes the backticked snippets of its "Lean name" column (the second column),
 extracts the leading identifier of each snippet and checks it: first against the declarations of the paper
-modules given and of the library CipherLean/Lib (one `lake env lean` listing), then, for what is left, with
+modules given and of the library CipherLean/Lib (one `lake env lean` listing through inspect_lean.py, or an
+earlier run's JSON with --listing), then, for what is left, with
 `#check @name` (so Mathlib names pass too). Snippets that are binders (`hbij : …`), start with a symbol, are
 a path or a file name (`Lib/LinStruct.lean`, `check_lemma24.py`), name a module that exists as a file
 (`CipherLean.Lib.DDT`), or whose leading token is one or two characters (a variable, also `S.symm`, a
@@ -17,30 +18,15 @@ resolved when it matches a declaration's last component or `#check` (a Mathlib l
 lemma-looking names that match nothing are listed for reading (prose, a name of another project, or stale?)
 without failing the verdict.
 
-usage: notation_check.py CipherLean/<Slug>/NOTATION.md <file.lean> [<file2.lean> ...] [--also <md> ...] [--ws DIR] [--open NS ...]
+usage: notation_check.py CipherLean/<Slug>/NOTATION.md <file.lean> [<file2.lean> ...] [--also <md> ...] [--ws DIR] [--open NS ...] [--listing FILE.json]
 Exit 1 if a name is UNKNOWN. Read the list: a stray prose word in backticks is reported as unknown too.
 """
 import argparse, os, pathlib, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import check_lean as ck  # noqa: E402
+import inspect_lean as il  # noqa: E402
 
-LIST = r'''
-import Lean
-import CipherLean
-{imports}
-open Lean Elab Command
-def listNames : CommandElabM Unit := do
-  let env ← getEnv
-  let mods : List Name := [{mods}]
-  let idxs := mods.filterMap env.getModuleIdx?
-  for (n, _) in env.constants.toList do
-    if n.isInternalDetail then continue
-    match env.getModuleIdxFor? n with
-    | some i => if idxs.contains i then IO.println s!"NAME\t{{n}}"
-    | none => pure ()
-#eval listNames
-'''
 CHECK = r'''
 import CipherLean
 {imports}
@@ -109,20 +95,22 @@ def main():
     ap.add_argument("--open", nargs="*", default=None, help="namespaces to open for #check (default: CipherLean and the slug)")
     ap.add_argument("--also", nargs="*", default=[], metavar="MD", help="more Markdown files to scan (README.md, CHAIN.md)")
     ap.add_argument("--timeout", type=int, default=600)
+    ap.add_argument("--listing", metavar="FILE.json", help="use this inspect_lean.py listing instead of running Lean")
     a = ap.parse_args()
     ws = ck.find_workspace(a.ws)
     mods = [ck.module_name(ws, f) for f in a.files]
     slug = mods[0].split(".")[1] if mods[0].count(".") >= 2 else mods[0].split(".")[-1]
     opens = a.open if a.open is not None else ["CipherLean", slug]
-    lib_dir = ws / "CipherLean" / "Lib"
-    libmods = sorted(".".join(["CipherLean", "Lib", *f.relative_to(lib_dir).with_suffix("").parts]) for f in lib_dir.rglob("*.lean"))
-    scratch_dir = ws / ".lake" / "promote"; scratch_dir.mkdir(parents=True, exist_ok=True)
-    s1 = scratch_dir / "notation_names.lean"
-    s1.write_text(LIST.format(imports="\n".join(f"import {m}" for m in mods), mods=", ".join("`" + m for m in mods + libmods)), encoding="utf-8")
-    code, out = ck.run([ck.lake(), "env", "lean", str(s1)], cwd=str(ws), timeout=a.timeout)
-    if "NAME\t" not in out:
-        ck.die(f"name listing failed (modules built?):\n{out[-2000:]}")
-    names = {l.split("\t", 1)[1].strip() for l in out.splitlines() if l.startswith("NAME\t")}
+    scratch_dir = ws / ".lake" / "inspect"; scratch_dir.mkdir(parents=True, exist_ok=True)
+    if a.listing:
+        lst = il.load(a.listing)
+        if not lst.get("ok", True) or any(m not in lst.get("modules", []) for m in mods):
+            ck.die(f"{a.listing} does not list {', '.join(mods)}")
+    else:
+        lst = il.listing(ws, a.files, timeout=a.timeout)
+        if not lst["ok"]:
+            ck.die(f"name listing failed (modules built?):\n{lst.get('output', '')[-2000:]}")
+    names = {d["name"] for d in lst["declarations"]}
     shorts = {}
     for n in names:
         shorts.setdefault(n.split(".")[-1], set()).add(n)

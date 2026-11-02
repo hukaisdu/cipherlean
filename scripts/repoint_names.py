@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""repoint_names.py — after a promotion (step 7b), re-point the moved names in the paper directory's
+"""repoint_names.py — after a promotion (step 7), re-point the moved names in the paper directory's
 Markdown files from `<Slug>.name` to `CipherLean.name` (and `old` to `new` when the move renamed it).
 
 Why: every promotion so far re-pointed by hand the `lean` cells of CHAIN.md, the Lean-name column of

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """promote_candidates.py — which declarations of a finished formalization belong in the shared
-library CipherLean/Lib?  (step 7b of the skill)
+library CipherLean/Lib?  (step 7 of the skill, promotion)
 
 For the paper file(s) given — several files are the pieces of one theorem, a directory is every built,
 non-template .lean file in it — it loads the modules next to the library in one Lean process (inspect_lean.py

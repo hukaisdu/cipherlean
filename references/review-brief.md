@@ -44,7 +44,7 @@ and compile scratch files (`$SKILL/scripts/lean_eval.sh`). Your only output is a
 3. **Mechanical checks, yourself.** Run `check_lean.py` and record the verdict and axioms; grep
    for `sorry`, `native_decide`, `axiom`; confirm the finite checks test what README says (recompute
    the toy numbers from the definitions by hand or with `lean_eval.sh`; confirm each counterexample
-   drops exactly one hypothesis and nothing else). For every NATIVE declaration (step 5b): the
+   drops exactly one hypothesis and nothing else). For every NATIVE declaration (step 6, computational cases): the
    computation must be a closed decidable statement, a kernel-checked bridge lemma must connect
    `checker = true` to the mathematical statement, the kernel route must have been tried or shown
    infeasible, and README must disclose the axiom; a `native_decide` on a general goal is a BLOCKER.

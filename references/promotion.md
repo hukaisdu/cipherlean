@@ -1,7 +1,7 @@
-# Promoting definitions and lemmas into the shared library (step 7b)
+# Promoting definitions and lemmas into the shared library (step 7, promotion)
 
 Every paper formalization leaves behind a few declarations that the next paper will need again.
-Step 7b finds them, the user decides, and the move is done before the paper directory is closed.
+Step 7 finds them, the user decides, and the move is done before the paper directory is closed.
 The mechanical part is `scripts/promote_candidates.py`; the judgement is yours and the user's.
 
 ## What the script does

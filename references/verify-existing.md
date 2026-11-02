@@ -1,6 +1,6 @@
 # Verifying an existing Lean formalization (someone else's project)
 
-The skill's workflow (steps 0–8) is for formalizing a theorem yourself in the workspace. A
+The skill's workflow (steps 1–8) is for formalizing a theorem yourself in the workspace. A
 different job comes up often: a Lean project already exists — written by a colleague, by another
 model, months ago — and the question is whether it really proves the paper's theorems. The
 lessons below come from one such run (2026-10-31/11-01: a 81-file, 52 000-line project proving
@@ -59,7 +59,7 @@ avoidable. Each lesson is a rule; the numbers are what was measured.
   them). Replace them: fewer compiler axioms, same build time.
 - Trust boundary on Lean v4.33.0: each `native_decide` adds a per-declaration axiom
   `<decl>._native.native_decide.ax_*`; the four theorems carried 11/9/55/53 of them (77 distinct).
-  Report the count, the list, and the bridge lemma for every group (step 5b).
+  Report the count, the list, and the bridge lemma for every group (step 6, computational cases).
 
 ## 4. Two sessions, and what the second one must not do
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """chain_check.py — compare the proof chain the reader confirmed (CHAIN.md) with the dependency
-graph Lean actually used.  (step 6 of the skill, before the report; step 8's reviewer reruns it)
+graph Lean actually used.  (step 7 of the skill, before the report; step 8's reviewer reruns it)
 
 For the paper module(s) it takes, from one `lake env lean` run (inspect_lean.py, or an earlier run's JSON
 with --listing), for every declaration the constants its *proof term* uses and the constants its *statement*

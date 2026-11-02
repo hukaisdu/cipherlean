@@ -26,7 +26,7 @@ file is the graph's title, so it names the paper; rows from another paper say th
 `implicit`: a hypothesis the text uses without stating, or `—`. Cells stay short — `statement` at most 300
 characters, `implicit` at most 200 — so the table reads and the graph's labels fit; anything longer (how the
 paper argues, what Lean does instead, why an edge is `?`) goes under "Notes" below, keyed by the row id.
-`lean`: the one Lean declaration of this formalization that discharges the row (filled in step 3; a library
+`lean`: the one Lean declaration of this formalization that discharges the row (filled in step 4; a library
 lemma is allowed), or `—`; a note about another project's declaration goes in `implicit` (a cell that is
 not one name is listed by `chain_check.py` as a note and not checked).
 A row the paper settles by computation says so in `implicit` ("computation: 2^12 cases") and, once
@@ -62,7 +62,7 @@ line count, the number of computational cases, what a comparable piece took); `s
 `next` · `in progress` · `planned`; `actual` the sessions and lines a done piece took (so the next estimate
 is better). Nothing is formalized until the table above, the graph and this roadmap are confirmed.
 
-End S: self-contained — every row of the chain proved here, standard axioms (`decide +kernel`; a disclosed `native_decide` only under step 5's rule).
+End S: self-contained — every row of the chain proved here, standard axioms (`decide +kernel`; a disclosed `native_decide` only under the computational-cases rule of step 6).
 Milestone R: <an intermediate end, e.g. the theorem under one named hypothesis>, reached after piece <x>.
 
 | piece | title | rows | route | size | status | actual |

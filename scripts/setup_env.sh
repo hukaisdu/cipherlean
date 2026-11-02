@@ -170,7 +170,7 @@ fi
 step "shared library"
 LIB="$WS/CipherLean/Lib"
 # INST keeps a copy of the assets/lib last copied into LIB. A file of LIB that equals neither
-# assets/lib nor that copy was changed in the workspace (a lemma promoted in step 7b, say), so
+# assets/lib nor that copy was changed in the workspace (a lemma promoted in step 7, say), so
 # --update-library lists it and stops instead of overwriting it. A workspace set up before this
 # check has no INST; there every file that differs from assets/lib counts as changed.
 INST="$WS/.lake/cipherlean-lib-installed"

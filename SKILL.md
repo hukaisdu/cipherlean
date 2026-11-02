@@ -115,8 +115,15 @@ refuted. Kernel costs, `maxRecDepth`, a stuck `decide`: cheatsheet idioms 25, 34
   lemmas into one build. Keep the declaration headers fixed; if a statement must change, go back to step 2.
 - Budget: after a serious attempt (several strategies, Mathlib searched; about half an hour or five builds for one lemma) leave it
   as `sorry` with the exact remaining goal and what was tried, and move on. Never weaken a statement to hide a gap, never close a
-  general goal with `native_decide`. When the remaining work is a known-large piece (appendix tables, an induction over a general
-  parameter, a certificate that takes hours): update the Roadmap, print the position, ask.
+  general goal with `native_decide`. When the rest of the piece is proved, settle every `sorry` in this order: (1) one more attempt
+  with what the piece taught (split it into helpers, search again, change the encoding); (2) suspect the statement: `decide` the
+  lemma itself on the toy, and if it is false, that is a finding about the paper or the encoding: back to step 3, not a proof;
+  (3) still open: turn it into a named `Prop` hypothesis of the theorem, as `Lemma23` was, so the gap stands in the signature and
+  `check_lean` passes; the chain row becomes `assumed` with "budget, <date>, remaining goal" in `implicit`; (4) add it to the
+  Roadmap as a piece (route, size, evidence), print the position and ask the user: another session with another approach, a
+  mathematical hint (a step the paper settles in one sentence is the usual place), or keep it assumed and go on. A `sorry` never
+  survives the end of a piece. The same stop when the remaining work is a known-large piece (appendix tables, an induction over a
+  general parameter, a certificate that takes hours): update the Roadmap, print the position, ask.
 #### Cases the paper settles by computation
 Formalize along the paper's case split, each computational case a closed decidable statement over a finite domain; symbolic splits
 (`m` odd or even, a parameter in a range) are `rcases` / `fin_cases` / `interval_cases` / `omega`, no axiom. For the computations,
@@ -136,8 +143,8 @@ computational cases; read the printed statements against the paper once more —
 --apply`, the README status table (paper label · declaration · status · axioms · note) and "Departures", and `notation_check.py
 --also README.md CHAIN.md`: every cited Lean name exists, every cited script lives in the paper directory. Say "proved" only after
 both verdicts, and only for the paper's statement in full (both directions of an "exactly", every case). In the reply: what is
-proved, what is `sorry` and why, the hypotheses the paper left implicit, the rebuild commands, every caveat at the top, and the
-Position block.
+proved, what is assumed and why (budget gaps of step 6 included), the hypotheses the paper left implicit, the rebuild commands,
+every caveat at the top, and the Position block.
 #### Promote to the shared library
 `promote_candidates.py` over all piece files classifies every declaration (A general lemma about library objects · B general but
 about a paper object · E an object the paper defined · F general, Mathlib only · D duplicate of a library statement · C toy);

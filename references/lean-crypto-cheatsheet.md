@@ -69,7 +69,12 @@ formalization of a coset-average theorem that is not shipped, so those idioms ar
    `decide` computes after `rw [ddt_toFun]`. `∀ x : BitVec 4`, `∑ x : BitVec 3`, and
    `Finset.univ.filter` over `BitVec 3` all work with plain `decide`. Beyond ~2^14
    evaluations prove symbolically instead.
-7. **Bijectivity of a concrete S-box**: `Finite.injective_iff_bijective.mp (by decide)`.
+7. **Bijectivity of a concrete S-box**: `Finite.injective_iff_bijective.mp (by decide)`. From an inverse
+   table (`WHConj3.map33_bijective`): `h : ∀ x, table (f x) = x` by `decide +kernel` (2 s on 64 states), then
+   `Finite.injective_iff_bijective.mp (Function.LeftInverse.injective h)` — one kernel check instead of
+   `Fintype.decidableBijectiveFintype` — and `⇑(Equiv.ofBijective f hbij).symm = table` by `funext y;
+   obtain ⟨x, rfl⟩ := hbij.2 y; rw [Equiv.ofBijective_symm_apply_apply, h]` (`ofBijective_symm_eq_inv33`), so a
+   theorem about the noncomputable inverse is literally instantiated on the table.
 8. **Fixed-width bit identities**: `bv_decide` (SAT, e.g. `(x &&& y) + (x ||| y) = x + y` on
    `BitVec 8`). It adds an axiom `<decl>._native.bv_decide.ax_*` whenever a certificate is
    needed, as `native_decide` adds `<decl>._native.native_decide.ax_*`; `decide +kernel`
@@ -208,6 +213,17 @@ formalization of a coset-average theorem that is not shipped, so those idioms ar
     "imports Mathlib"; either keep `import Mathlib` until the new file's own trim, or add the modules
     (`Mathlib.LinearAlgebra.Span.Basic`, `Mathlib.Algebra.BigOperators.Fin`). `trim_imports.py` only acts on a
     bare `import Mathlib`.
+36. **Bisect a stuck kernel `decide` by components** (`WHConj3` piece C, step 4): the message "Reduction got
+    stuck at the `Decidable` instance …" of a failed `decide +kernel` is produced by the elaborator's `whnf`, so
+    the printed term (there: the `Finset.univ` iteration) is not where the kernel failed. One scratch file with
+    one `example … := by decide +kernel` per helper (`Nat.cast` into `ZMod 2`, `ZMod.val`, `List.getD`, `![…]`,
+    `Nat` pow/div/mod, one coordinate, `∀ x : State 3 3, x = x`, each table helper on one point) finds the
+    culprit in a single `lean_eval.sh` run; the culprit was a definition that was wrong, not slow (pitfall below).
+37. **A `Decidable` instance for a `Submodule` membership through its cheapest equivalent predicate**
+    (`WHConj3.Elam`): `decidable_of_iff (∀ x, f (x + α) + f x = f α + f 0) (mem_Elam_iff_isLinStruct.trans
+    (isLinStruct_iff _ _)).symm` — 64 evaluations per membership instead of 128 for `∃ c, ∀ x, …` or ≈ 64² dot
+    products for the pairwise `constMasks` form; `#E_λ ≤ 4` for all 63 masks of `(3,3)` then takes 36 s in the
+    kernel (three masks as explicit `Finset`s 7 s).
 
 ## 3. Tactics, in the order to try them
 
@@ -239,11 +255,20 @@ a lemma yourself.
 - `omit [CharZero K] in` goes *before* the docstring of the theorem, not between docstring and
   `theorem` ("unexpected token 'omit'; expected 'lemma'"); an edit loop driven by the unused-variable linter
   makes the slip easy, so write it before the docstring from the start; `intro` does not unfold `Nondegenerate`-style definitions (use `unfold` first or a
-  term-mode `fun`); `push_neg` is deprecated here (`simp only [not_exists, not_and, ne_eq, not_not]`);
+  term-mode `fun`); `push_neg` is deprecated here: `push Not at h` is the replacement (or `simp only [not_exists, not_and, ne_eq, not_not]`);
   `haveI` on a `Prop` draws a linter warning (`have`); `Module.natCard_eq_pow_finrank` needs
   `(K := …)` because the field is not determined by `Nat.card`.
 - Lean checks proofs, not definitions: a toy instance with the expected numbers and a
   counterexample for each hypothesis are the only tests of the definitions.
+- Under `import Mathlib` a library name that Mathlib also uses is ambiguous: `deriv H α y` still elaborates
+  (only `CipherLean.deriv` typechecks), but `simp [deriv]` fails with "Invalid simp theorem: Expected a
+  proposition" and `fun y => … deriv H α y` with "Ambiguous term" — write `CipherLean.deriv` in tactic lemma
+  lists and binders (or trim the imports first).
+- `st (k % 2) ((k / 2) % 2) …` with `k : ℕ` and `ZMod 2` expected puts the coercion on `k` (`#print` shows
+  `↑k % 2`, `↑k / 2 % 2`, computed in `ZMod 2`): a silently wrong table decoder, and every kernel `decide`
+  through it is "stuck". Write `((k % 2 : ℕ) : ZMod 2)` and `#eval` one point of every table helper
+  (`encode (decode k) = k`) before any kernel check.
+- After `Finset.sum_const` the scalar is an ℕ-smul: `nsmul_eq_mul`, not `smul_eq_mul`.
 
 ## 5. Speed
 
@@ -269,8 +294,16 @@ a lemma yourself.
   on a 128-core Ubuntu 24.04 box `import CipherLean` takes 2 s (laptop: 7 s), a trimmed module
   builds in 5 s, `check_lean.py` runs in 8 s; the paper directory is rsynced before each step and
   the sources never leave this machine. Measured 2026-11-02 on `WHConj3/Reduction.lean`.
+- Kernel `decide` costs on `(3,3)` for `E_λ` (`WHConj3/Assembly.lean`, 2026-11-02): table left inverse 2 s,
+  three masks' `E_λ` as explicit `Finset`s 7 s, `#E_λ ≤ 4` for all 63 masks 36 s (idiom 37); a piece file with
+  those checks builds in 44 s on the laptop, 50 s on the server.
 
 ## 6. Names that do not exist in Mathlib v4.33.0 (do not search again)
+
+`Submodule.finrank_span_singleton_le`, `Finset.filter_card_add_filter_neg_card_eq_card`,
+`Submodule.finrank_le_finrank_of_le` (use `finrank_span_singleton`, `Finset.card_filter_add_card_filter_not`,
+`Submodule.finrank_mono`); no lemma "a subspace of dimension ≥ k contains one of dimension exactly k" (Loogle
+0 hits; `WHConj3.exists_le_finrank_eq`, 15 lines from `Module.finBasis` and `Fin.castLE`).
 
 `Fintype.card_bitVec`, `BitVec.card`, `FinEnum.card_eq`, `Finset.sum_mod`, `BitVec.ofFn`,
 `finFunctionFinEquiv_symm_apply`, `ZMod.natCast_zmod_eq_zero_iff_dvd` (now `ZMod.natCast_eq_zero_iff`

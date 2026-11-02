@@ -183,7 +183,10 @@ dependency order (definitions, cited results as hypotheses or library lemmas, st
 target), and compile together with the finite checks of step 4 (they only need the definitions, so
 one build serves both). A later piece of a split theorem imports the earlier piece's file, which carries
 only its trimmed imports: keep `import Mathlib` in the new file until its own trim (`Submodule` was
-missing once, and the error cascaded into "declaration uses `sorry`" on half the file). Fill the `lean` column of CHAIN.md as you go (exactly one declaration name of this formalization, or `—`;
+missing once, and the error cascaded into "declaration uses `sorry`" on half the file); import explicitly every
+library module the piece uses (`import CipherLean.Lib.F2.Subspace` for `dotForm`), since the previous piece
+re-exports only what it imported itself; and under `import Mathlib` qualify the library names Mathlib also uses
+(`CipherLean.deriv`: Mathlib's `deriv` is the analytic derivative, cheatsheet §4). Fill the `lean` column of CHAIN.md as you go (exactly one declaration name of this formalization, or `—`;
 notes such as "proved in project X as foo" go in the `implicit` column, because `chain_check.py` reads the
 cell as a name) and set `status: stated`. Give every
 declaration a docstring with the paper's wording (`/-- Paper: Theorem 2, "..." -/`), the way
@@ -218,6 +221,9 @@ evaluates it in seconds and adds no axiom.
   the module once a lemma is finished, and batch several finished lemmas into one build. Keep
   the declaration headers fixed while proving; if a statement must change, go back to step 1
   and say so.
+- `chain_check.py` reads proof terms, not statement types: when a chain row's `uses` names a definition
+  (`def:KH`), the proof must mention it (`rw [KH]` or `unfold KH` before a defeq `exact`), or the edge is
+  reported MISSING although the statement is about that object (`WHConj3.KH_eq_orthogonal_dirAff`).
 - Budget: after a serious attempt (several tactic strategies, searched Mathlib; about half an
   hour or five builds for one lemma), leave the lemma as `sorry` with a comment stating the exact
   remaining goal and what was tried, and move on. Never hide a gap by weakening the statement,

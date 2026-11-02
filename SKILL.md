@@ -67,7 +67,8 @@ library lacks it.
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| $SKILL/scripts/lean_eval.sh -` (`--full` for all of Mathlib) |
 | trim imports when done | `$SKILL/scripts/trim_imports.py CipherLean/<Slug>/Main.lean --apply` |
 | rebuild the shared library | `$SKILL/scripts/lake_build.sh CipherLean` (after adding a lemma to `CipherLean/Lib/`) |
-| promotion candidates (step 7b) | `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/Main.lean --write` |
+| promotion candidates (step 7b) | `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean [<File2>.lean …] --write` (all the pieces in one run, or the directory: its built, non-template files) |
+| re-point the .md files after a move (7b) | `$SKILL/scripts/repoint_names.py CipherLean/<Slug>/ <name>[=<new>] … [--lib] [--apply]` (`<Slug>.name` → `CipherLean.name` in CHAIN, NOTATION, README, PROMOTE, REVIEW) |
 | NOTATION names exist? (step 7) | `$SKILL/scripts/notation_check.py CipherLean/<Slug>/NOTATION.md CipherLean/<Slug>/<File>.lean [...] --also README.md CHAIN.md` (every piece file and the aggregator) |
 | library back into the skill | `$SKILL/scripts/sync_library.sh` (then commit / pull request, see `CONTRIBUTING.md`) |
 | independent review | a fresh agent with `references/review-brief.md` (step 8) |
@@ -306,8 +307,10 @@ in a footnote.
 
 ### 7b. Promote to the shared library
 
-Run `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/Main.lean --write`. It classifies every
-declaration of the finished file: A (general lemma about library objects: move), B (general but
+Run `$SKILL/scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean [<File2>.lean …] --write` — all
+the piece files in one run, so that a lemma of piece C about piece B's object is class B and not A (a
+directory argument lists its built, non-template files). It classifies every
+declaration of the finished files: A (general lemma about library objects: move), B (general but
 about an object the paper defined), E (an object the paper defined: general notion or
 paper-specific?), F (general, Mathlib only), D (duplicate of a library statement: delete, import),
 C (toy or test instance: stays). The D class compares types, so for a `def` two unrelated maps of the
@@ -317,8 +320,10 @@ an unpublished result? explainable without the paper?), and give the user a tabl
 recommendation per row. After their decision, move the accepted ones with the checklist in
 `references/promotion.md`: library variables and names, docstring with the source, finite check for
 a definition, `lake_build.sh CipherLean`, `check_lean.py`, rows in `CipherLean/Lib/NOTATION.md` and
-`README.md`, the paper file re-pointed at the library and re-checked, `scripts/sync_library.sh`,
-commit. Unpublished results stay in the paper directory however general they look.
+`README.md`, the paper file re-pointed at the library and re-checked, the directory's `.md` files
+re-pointed with `scripts/repoint_names.py` (`<Slug>.name` → `CipherLean.name`, renames included; it
+lists every place before the move), `scripts/sync_library.sh`, commit. Unpublished results stay in the
+paper directory however general they look.
 
 ### 8. Independent review (two agents)
 
@@ -370,7 +375,8 @@ Asymptotic complexity claims and probabilistic statements over random keys need 
   `scripts/chain_check.py` compares it with Lean's dependency graph; `CipherLean/Examples/DdtInverse/CHAIN.md`
   is a filled example with its `CHAIN.pdf`.
 - `references/promotion.md` — step 7b: the candidate classes, the five questions, the moving
-  checklist, and the first harvests as examples.
+  checklist, and the first harvests as examples; `scripts/promote_candidates.py` and
+  `scripts/repoint_names.py` go with it.
 - `references/verify-existing.md` — verifying an existing Lean project: environment first, measure
   before waiting, how `native_decide` evaluates (`opaque`, offline closures), what "done" means;
   `scripts/build_profile.py` and `scripts/sandbox_project.sh` go with it.

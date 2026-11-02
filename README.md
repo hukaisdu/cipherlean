@@ -100,10 +100,12 @@ step. A task book that contradicts the standing rules of the user's own configur
 be written, where logs go) costs the agent a round of clarification.
 
 ## Growing the library
-After a formalization, `scripts/promote_candidates.py CipherLean/<Slug>/Main.lean` lists the
-declarations that are general enough for the shared library (class A/B/E/F) and those that are
-not (toys, duplicates); the user decides, the agent moves them, `scripts/sync_library.sh` copies
-the library back into this repository. Criteria and checklist: `references/promotion.md`.
+After a formalization, `scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean …` (all the
+pieces of a split theorem in one run) lists the declarations that are general enough for the shared
+library (class A/B/E/F) and those that are not (toys, duplicates); the user decides, the agent moves
+them, `scripts/repoint_names.py` re-points the directory's Markdown files at the library names, and
+`scripts/sync_library.sh` copies the library back into this repository. Criteria and checklist:
+`references/promotion.md`.
 
 ## Contribute
 Pull requests that add general lemmas to the library, fix scripts, or add an example are
@@ -129,6 +131,8 @@ scripts/search_mathlib.sh  local grep + Loogle + LeanSearch
 scripts/lean_eval.sh     snippet runner (7 s)              scripts/trim_imports.py  minimal imports
 scripts/chain_graph.py   proof chain -> TikZ graph (step 1b)   scripts/chain_check.py  chain vs. Lean dependencies
 scripts/promote_candidates.py  what belongs in the library (step 7b)   scripts/sync_library.sh  workspace -> assets/lib
+scripts/repoint_names.py  re-point the .md files after a promotion   scripts/notation_check.py  do the cited Lean names exist?
+scripts/status.py        the status board of one paper directory (--check reruns the verdicts)
 scripts/build_profile.py where a build's time went; computational sites   scripts/sandbox_project.sh  verify an external project
 references/verify-existing.md  verifying someone else's Lean project (lessons of a six-hour run)
 CONTRIBUTING.md          how to send a pull request

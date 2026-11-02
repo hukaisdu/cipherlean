@@ -7,10 +7,13 @@ The mechanical part is `scripts/promote_candidates.py`; the judgement is yours a
 ## What the script does
 
 ```
-python3 $SKILL/scripts/promote_candidates.py CipherLean/<Slug>/Main.lean [--write]
+python3 $SKILL/scripts/promote_candidates.py CipherLean/<Slug>/<File>.lean [<File2>.lean …] [--write]
+python3 $SKILL/scripts/promote_candidates.py CipherLean/<Slug>/            # its built, non-template files
 ```
-loads the (already built) module next to the library and prints every declaration with its
-elaborated statement and a class:
+loads the (already built) modules next to the library in one Lean process and prints, per module, every
+declaration with its elaborated statement and a class. The paper objects are the definitions of *all* the
+files given, so run the pieces of a split theorem together: alone, a lemma of piece C about piece B's
+`Bout` came out as A "only library objects". `--write` saves one `PROMOTE.md` with all the tables.
 
 | class | meaning | default action |
 |---|---|---|
@@ -19,7 +22,7 @@ elaborated statement and a class:
 | E | an object the paper defined (`def`, `abbrev`, `structure`) | decide: a general notion (coset average, DDT as a matrix, a halfspace sum) is promoted with its B lemmas; a paper-specific one (`Φ[ψ,φ]`, a specific cipher's state, an abbreviation such as `Vec N := Vec (Fin N)`) stays |
 | F | general, Mathlib only (no library object) | move to `F2/Vec` or a new module; low priority |
 | D | the same statement already exists in the library | delete the copy, import the library |
-| C | concrete sizes or a named test instance (`toy*`, `*_counterexample`, PRESENT, ...) | stays with the paper; test instances are promoted only when the library needs one of that size |
+| C | concrete sizes or a named test instance (`toy*`, `*_counterexample`, PRESENT, a paper definition applied to numerals such as `map 3 3 0 1`, ...) | stays with the paper; test instances are promoted only when the library needs one of that size |
 
 `--write` saves the report as `PROMOTE.md` next to the file. The classes are heuristics: an alias
 of a library object (class E) makes its users class B, a lemma can be general and still too
@@ -54,7 +57,13 @@ detected. Read the statements, not only the table.
    as well as a paper's).
 6. In the paper file, replace the moved declaration by the library's name (keep a one-line instance
    under the paper's name if README or NOTATION refer to it), rebuild and re-check the paper file.
-7. Copy the library into the skill (`scripts/sync_library.sh`), commit, and open a pull request
+7. Re-point the Markdown files. Before the move, `repoint_names.py CipherLean/<Slug>/ name[=new] … --lib`
+   lists every `<Slug>.name` and every bare `` `name` `` in CHAIN.md, NOTATION.md, README.md, PROMOTE.md,
+   REVIEW.md (with `--lib` also `Lib/NOTATION.md`, `Lib/README.md`; `.lean` files are listed, never
+   rewritten); after it, `--apply` rewrites `<Slug>.name` → `CipherLean.new` and the bare renamed names.
+   Then `chain_check.py` and `notation_check.py … --also README.md CHAIN.md` must be clean: piece C of
+   WHConj3 had about forty such places, one of them a rename, and the stale ones surfaced only in review.
+8. Copy the library into the skill (`scripts/sync_library.sh`), commit, and open a pull request
    or push (CONTRIBUTING.md).
 
 ## The first two harvests (2026-11-01), as examples

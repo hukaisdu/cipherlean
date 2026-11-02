@@ -2,3 +2,10 @@ __pycache__/
 *.pyc
 .DS_Store
 *-workspace/
+
+# LaTeX build files of the shipped example graphs (CHAIN.tex and CHAIN.pdf stay tracked)
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+assets/examples/*/CHAIN.log

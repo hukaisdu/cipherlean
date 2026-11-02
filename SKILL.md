@@ -18,21 +18,21 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebFetch", "As
 
 # Theorem → Lean 4 formalization
 
-Deliverable for one paper theorem, a directory `CipherLean/<Slug>/` in the workspace: `README.md` (the statement as the paper
-states it, every hypothesis, the status table, the position at every stop), `CHAIN.md` + `CHAIN.pdf` (the proof chain, its
-graph and the roadmap, confirmed by the reader before any Lean), `NOTATION.md` (paper symbol ↔ Lean name), `.lean` files that
-`lake build` accepts with no `sorry` and standard axioms, a toy instance and one counterexample per hypothesis. The final
-message says what was proved, which hypotheses were added, where the Lean statement departs from the paper, and where the
-whole theorem stands. Lean checks proofs, not definitions (Hadipour, "Lean for Cryptanalysts", 2026): most of this is the statement.
+Deliverable for one paper theorem, a directory `CipherLean/<Slug>/` in the workspace: `README.md` (the statement as the
+paper states it, every hypothesis, the status table, the position at every stop), `CHAIN.md` + `CHAIN.pdf` (the proof chain,
+its graph and the roadmap, confirmed by the reader before any Lean), `NOTATION.md` (paper symbol ↔ Lean name), `.lean` files
+that `lake build` accepts with no `sorry` and standard axioms, a toy instance and one counterexample per hypothesis. The
+final message says what was proved, which hypotheses were added, where the Lean statement departs from the paper, and where
+the whole theorem stands. Lean checks proofs, not definitions (Hadipour, "Lean for Cryptanalysts", 2026).
 
 ## Workspace and commands
 
-Persistent Lake project at `~/cipherlean` (override with `CIPHERLEAN_WS`), created by `setup_env.sh --install`: Lean `v4.33.0`,
-Mathlib `v4.33.0` prebuilt (≈ 6 GB under `.lake/`), `autoImplicit = false`, one subdirectory per paper, and the shared library
-`CipherLean/Lib/` (vectors over `F_2`, characters, subspaces and duality, affine hulls, Walsh, DDT, linear structures, table
-S-boxes; its `README.md` and `NOTATION.md`), a symlink to the skill's `assets/lib` so that a promoted lemma is committed in
-the skill. Every paper file starts with `import CipherLean`; define an object yourself only when the library lacks it. Run
-everything from the workspace root (the scripts put `~/.elan/bin` on PATH).
+Persistent Lake project at `~/cipherlean` (override with `CIPHERLEAN_WS`), created by `setup_env.sh --install`: Lean
+`v4.33.0`, Mathlib `v4.33.0` prebuilt (≈ 6 GB under `.lake/`), `autoImplicit = false`, one subdirectory per paper, and the
+shared library `CipherLean/Lib/` (vectors over `F_2`, characters, subspaces and duality, affine hulls, Walsh, DDT, linear
+structures, table S-boxes; its `README.md` and `NOTATION.md`), a symlink to the skill's `assets/lib` so that a promoted
+lemma is committed in the skill. Every paper file starts with `import CipherLean`; define an object yourself only when the
+library lacks it. Run everything from the workspace root (the scripts put `~/.elan/bin` on PATH).
 
 | task | `$SKILL/scripts/cipherlean <subcommand>` from `~/cipherlean` (`$SKILL` = `~/.claude/skills/cipherlean`; the script paths `scripts/<name>` work too; this table is the only copy in the skill) |
 |---|---|
@@ -49,7 +49,7 @@ everything from the workspace root (the scripts put `~/.elan/bin` on PATH).
 | cited names exist? (step 7) | `cipherlean notation CipherLean/<Slug>/NOTATION.md <every piece file> --also README.md CHAIN.md` |
 | promotion candidates (step 7) | `cipherlean promote CipherLean/<Slug>/<File>.lean […] --write` (all pieces in one run; appends to `PROMOTE.md`) |
 | re-point after a move (step 7) | `cipherlean repoint CipherLean/<Slug>/ <name>[=<new>] … [--lib] [--apply]`; the library is the skill's `assets/lib` through the symlink, so commit there |
-| the same steps on a server | `CIPHERLEAN_REMOTE=user@host cipherlean remote sync\|build\|check\|chain\|trim\|lib\|eval …` (sources stay here) |
+| the same steps on a server | `CIPHERLEAN_REMOTE=user@host cipherlean remote sync\|build\|check\|chain\|trim\|lib\|pull\|eval …` (sources stay here; `lib` copies the library into the remote skill clone, `pull` pulls it after the commit) |
 | someone else's project | `cipherlean sandbox <project>`; `cipherlean profile <lake build log>` or `--sites <dir>`; then `references/verify-existing.md` |
 | independent review (step 8) | a fresh agent given `references/review-brief.md` |
 
@@ -58,32 +58,33 @@ With `--paper-dir` the real files live in `<paper repo>/formal/`, symlinked as `
 
 The reader is not watching the tool calls. At the end of every step, and whenever a job that takes minutes starts, print the
 status board and say which machine the job runs on and what the next gate is. At every stop — the gate of step 3, the end of
-every piece, every budget stop — print the Position block (`status.py <Slug> --position`: the end the user chose, pieces done
-of planned, rows proved of total, the size-weighted progress, the remaining pieces with their estimates, the next piece) and
-the colored graph (`chain_graph.py`, plus `--gaps`); update the Roadmap table (status, actual against estimate), paste the
-block under a dated heading in README's Roadmap section, name the next piece and ask which one to do. "Done" for a piece is
-never reported without the whole theorem's position. Keep the day's log (quoted heredoc) and read the task's `NOTATION.md`.
+every piece, every budget stop — print the Position block (`status.py <Slug> --position`: the end the user chose, pieces
+done of planned, rows proved of total, the size-weighted progress, the remaining pieces with their estimates, the next
+piece) and the colored graph (`chain_graph.py`, plus `--gaps`); update the Roadmap table (status, actual against estimate),
+paste the block under a dated heading in README's Roadmap section, name the next piece and ask which one to do. "Done" for a
+piece is never reported without the whole theorem's position. Keep the day's log (quoted heredoc) and read the task's
+`NOTATION.md`.
 
 ## Workflow
 ### 1. Check the environment (every task, seconds)
-Run `setup_env.sh --check`. All OK: go on. Something MISSING: say what `--install` does (elan, the toolchain ≈ 300 MB, shallow
-clones ≈ 170 MB, the prebuilt Mathlib ≈ 2 GB, 6 GB on disk, 10–30 min) and run it once the user agrees, or at once if they
-asked for the setup; it is idempotent, never overwrites a file, and is simply rerun after a failure.
+Run `setup_env.sh --check`. All OK: go on. Something MISSING: say what `--install` does (elan, the toolchain ≈ 300 MB,
+shallow clones ≈ 170 MB, the prebuilt Mathlib ≈ 2 GB, 6 GB on disk, 10–30 min) and run it once the user agrees, or at once
+if they asked for the setup; it is idempotent, never overwrites a file, and is simply rerun after a failure.
 
 ### 2. Pin the statement
 - Get the source: the LaTeX (arXiv e-print, the user's `paper/`) over the PDF; never work from memory of the paper. When the
   user's message is the source, quote it verbatim under "Source", write "no paper", skip the literature hunt. Read a cited
   result from its own source, not from the citing sentence.
-- Copy the statement verbatim into `README.md` with label and page; list (a) every object with its type, (b) every hypothesis,
-  marked *explicit* or *implicit* (the ones proofs use silently: "E is a permutation", "the mask is nonzero", "n ≥ 1"), (c) the
-  conclusion, (d) the proof as numbered steps — each becomes one row of the chain and one Lean lemma.
+- Copy the statement verbatim into `README.md` with label and page; list (a) every object with its type, (b) every
+  hypothesis, marked *explicit* or *implicit* (the ones proofs use silently: "E is a permutation", "the mask is nonzero", "n
+  ≥ 1"), (c) the conclusion, (d) the proof as numbered steps — each becomes one row of the chain and one Lean lemma.
 - Keep the paper's constants and generality; a needed specialization goes under "Departures from the paper" with its reason,
   an ambiguity with the reading taken. For a whole section, list every numbered statement first, then state them all.
 
 ### 3. The proof chain, its graph and the roadmap — the reader's gate
 Write `CHAIN.md` from the template: one row per thing the proof relies on (the target, every lemma and proof step, every
-definition, every cited result checked in its own source, every hypothesis or modelling assumption) with `uses` (`id?` for
-a premise the paper's text relies on but the Lean lemma will not: drawn dashed, accepted by `chain_check.py`), `where`
+definition, every cited result checked in its own source, every hypothesis or modelling assumption) with `uses` (`id?` for a
+premise the paper's text relies on but the Lean lemma will not: drawn dashed, accepted by `chain_check.py`), `where`
 (section and statement first, then `;` and notes), implicit hypotheses and `status: pending`. Then size the job in the
 Roadmap table: the end the user chooses (self-contained: every row proved here; relative: named lemmas accepted from a
 companion project), the milestones, and one row per piece with its rows, route (`prove here` · `port from <project>` ·
@@ -95,14 +96,14 @@ the graph, the questions and the Position block, and stop: nothing is encoded be
 first piece. This is the one gate of the workflow, where a misread theorem is cheapest to fix.
 
 ### 4. Skeleton: NOTATION.md and the statement with `sorry`
-Write `NOTATION.md` (paper symbol, Lean name, type, meaning, scope): encodings from the library first, then the cheatsheet §1;
-counts rather than probabilities (division is total in Lean, `x / 0 = 0`; the normalized form is a corollary). Create the
-file (`new_paper.sh`, `--file` per piece), write the definitions, then every row of the confirmed chain as a declaration with
-`sorry` in dependency order, each with a docstring quoting the paper (`/-- Paper: Theorem 2, "..." -/`), and compile together
-with the finite checks of step 5. Fill the `lean` column of CHAIN.md as you go (one declaration name or `—`; notes go in
-`implicit`) and set `status: stated`. A piece file imports the previous piece and, explicitly, the library modules it uses
-(cheatsheet idiom 35); when the last piece is done, `Main.lean` becomes the aggregator (imports of all pieces, the target
-restated) so no `sorry` stub survives. A wrong statement is cheap here, not after a 200-line proof.
+Write `NOTATION.md` (paper symbol, Lean name, type, meaning, scope): encodings from the library first, then the cheatsheet
+§1; counts rather than probabilities (division is total in Lean, `x / 0 = 0`; the normalized form is a corollary). Create
+the file (`new_paper.sh`, `--file` per piece), write the definitions, then every row of the confirmed chain as a declaration
+with `sorry` in dependency order, each with a docstring quoting the paper (`/-- Paper: Theorem 2, "..." -/`), and compile
+together with the finite checks of step 5. Fill the `lean` column of CHAIN.md as you go (one declaration name or `—`; notes
+go in `implicit`) and set `status: stated`. A piece file imports the previous piece and, explicitly, the library modules it
+uses (cheatsheet idiom 35); when the last piece is done, `Main.lean` becomes the aggregator (imports of all pieces, the
+target restated) so no `sorry` stub survives. A wrong statement is cheap here, not after a 200-line proof.
 
 ### 5. Test the statement before proving it
 On a toy instance (2–4 bits, a concrete S-box) prove by `decide` or `decide +kernel` that the conclusion holds where the
@@ -124,20 +125,21 @@ types is proved, not refuted. Kernel costs, `maxRecDepth`, a stuck `decide`: che
 #### Cases the paper settles by computation
 Formalize along the paper's case split, each computational case a closed decidable statement over a finite domain; symbolic
 splits (`m` odd or even, a parameter in a range) are `rcases` / `fin_cases` / `interval_cases` / `omega`, no axiom. For the
-computations, in order: (1) `decide +kernel` up to about 2^14–2^16 evaluations, no axiom; (2) make the kernel able — `BitVec`
-instead of `Vec (Fin n)`, `Nat` arithmetic, a search turned into the check of an offline certificate shipped as data; (3)
-`native_decide` only when the kernel cannot finish, with a kernel-checked bridge `checker_true : checker = true → P` (idiom
-26), the declaration reported as NATIVE (`check_lean.py --allow-native`) and everything depending on it stated as "proved
-relative to the compiler axiom"; `bv_decide` carries the same obligations. Record in CHAIN.md how each computational row is
-discharged; large closed data only through `opaque` (idiom 27); the first certificate module is built alone and profiled.
+computations, in order: (1) `decide +kernel` up to about 2^14–2^16 evaluations, no axiom; (2) make the kernel able —
+`BitVec` instead of `Vec (Fin n)`, `Nat` arithmetic, a search turned into the check of an offline certificate shipped as
+data; (3) `native_decide` only when the kernel cannot finish, with a kernel-checked bridge `checker_true : checker = true →
+P` (idiom 26), the declaration reported as NATIVE (`check_lean.py --allow-native`) and everything depending on it stated as
+"proved relative to the compiler axiom"; `bv_decide` carries the same obligations. Record in CHAIN.md how each computational
+row is discharged; large closed data only through `opaque` (idiom 27); the first certificate module is built alone and
+profiled.
 
 ### 7. Check, trim, report
 `chain_check.py` over every piece file compares the confirmed chain with the dependency graph Lean used (edges direct,
 statement-only, transitive, the paper's route or MISSING; extra edges; unknown names) and must end in `VERDICT: CONSISTENT`;
 explain every difference in CHAIN.md. `check_lean.py` builds each file, lists every declaration with its axioms and
 elaborated statement, and fails on `sorryAx`, on custom axioms and on the compiler-trusting axioms unless `--allow-native`
-covers the computational cases; read the printed statements against the paper once more — the human half of the check.
-Then `trim_imports.py --apply` (3–7 s loads instead of 27 s), the README status table (paper label · declaration · status ·
+covers the computational cases; read the printed statements against the paper once more — the human half of the check. Then
+`trim_imports.py --apply` (3–7 s loads instead of 27 s), the README status table (paper label · declaration · status ·
 axioms · note) and "Departures", and `notation_check.py --also README.md CHAIN.md`, so that every cited Lean name exists and
 every cited script lives in the paper directory. Say "proved" only after both verdicts, and only for the paper's statement
 in full (both directions of an "exactly", every case). In the reply: what is proved, what is `sorry` and why, the hypotheses
@@ -147,8 +149,8 @@ the paper left implicit, the rebuild commands, every caveat at the top, and the 
 but about a paper object · E an object the paper defined · F general, Mathlib only · D duplicate of a library statement · C
 toy); apply the five questions of `references/promotion.md`, give the user one recommendation per row, and after their
 decision move the accepted ones with that page's checklist (library names and variables, docstring with the source, a finite
-check per definition, the library rebuilt and checked, NOTATION and README rows, the paper file and its `.md`
-files re-pointed, the skill repository committed). Unpublished results stay with the paper however general they look.
+check per definition, the library rebuilt and checked, NOTATION and README rows, the paper file and its `.md` files
+re-pointed, the skill repository committed). Unpublished results stay with the paper however general they look.
 
 ### 8. Independent review (two agents)
 Lean checked the proof; nobody has checked that the *statement* is the paper's. For any result the user will cite, hand the
@@ -157,8 +159,9 @@ directory to a reviewer that has not seen your reasoning — a fresh subagent or
 with the paper, checks CHAIN.md row by row, reruns both scripts and appends `Round n — reviewer` to `REVIEW.md` (template
 `assets/REVIEW-template.md`) ending in `VERDICT: ACCEPT` or `REVISE` with objections `R<n>.<k>`. Answer each in `Round n —
 formalizer` (`fixed` / `rejected` with a checkable reason / `needs the user`), post objections and answers in the chat, fix
-every BLOCKER and MAJOR, ask for a new round; from round 2 the reviewer examines only what changed plus the answers. Finished
-when a round ends in ACCEPT and both checks pass; after three rounds without ACCEPT, stop and give the user the open objections.
+every BLOCKER and MAJOR, ask for a new round; from round 2 the reviewer examines only what changed plus the answers.
+Finished when a round ends in ACCEPT and both checks pass; after three rounds without ACCEPT, stop and give the user the
+open objections.
 
 ## Verifying an existing formalization
 When the Lean project already exists and the question is whether it proves the paper, `references/verify-existing.md`
@@ -171,11 +174,13 @@ uniformity, round invertibility, key-schedule facts); divisibility or counting s
 are satisfied exactly by the valid transitions. Modelling assumptions are hypotheses, never theorems; `PMF` only on request.
 
 ## Resources
-- `references/lean-crypto-cheatsheet.md` — encodings, compiled idioms, tactics, pitfalls, speed, names that do not exist; read before step 4.
+- `references/lean-crypto-cheatsheet.md` — encodings, compiled idioms, tactics, pitfalls, speed, names that do not exist;
+  read before step 4.
 - `references/workspace.md` — versions, what costs time, VS Code, upgrading, errors.
 - `references/promotion.md` — the candidate classes, the five questions, the moving checklist (step 7).
 - `references/review-brief.md` — the reviewer's instructions and the stopping rule (step 8).
 - `references/verify-existing.md` — verifying someone else's project, with the measured lessons.
 - `references/postmortems.md` — two runs that went wrong and the rule each left behind.
 - `references/ecosystem.md` — other Lean tools and what this skill borrows from each.
-- `assets/` — the templates (README, CHAIN, NOTATION, REVIEW, `file-template.lean`), the examples, the library `lib/`, the pinned workspace files.
+- `assets/` — the templates (README, CHAIN, NOTATION, REVIEW, `file-template.lean`), the examples, the library `lib/`, the
+  pinned workspace files.

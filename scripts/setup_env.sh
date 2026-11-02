@@ -144,6 +144,9 @@ elif [ "$MODE" = install ] && [ -f "$WS/lakefile.toml" ] && command -v lake >/de
   echo "  cloning Mathlib and its dependencies (shallow), then downloading the prebuilt oleans (lake exe cache get):"
   echo "  a few hundred MB of git data and about 2 GB of cache to download, 6 GB on disk, 10-30 min depending on the network"
   [ "$FULL_CLONE" = 1 ] || preclone "$WS"
+  # the cache unpacks 8 700 files in parallel: with a non-login shell's open-files limit (1024 over ssh on Ubuntu
+  # 24.04) it fails with "No file descriptors available (os error 24)", so raise the soft limit first
+  ulimit -n "$(ulimit -Hn)" 2>/dev/null || ulimit -n 65536 2>/dev/null || true
   if ! ( cd "$WS" && lake exe cache get ); then
     if [ "$FROM_SOURCE" = 1 ]; then
       echo "  cache download failed; compiling Mathlib from source (this takes hours)"

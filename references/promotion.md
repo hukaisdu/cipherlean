@@ -50,8 +50,9 @@ detected. Read the statements, not only the table.
 3. Add a finite check if it is a definition; keep the paper's toy where it is.
 4. `$SKILL/scripts/lake_build.sh CipherLean`, then `check_lean.py` on the module, then
    `trim_imports.py` only if a new import was added. With a remote workspace (`CIPHERLEAN_REMOTE`),
-   `remote.sh lib <touched library files>` syncs `CipherLean/Lib/` and `CipherLean.lean` there, rebuilds
-   the library and checks each file (`remote.sh sync/build/check/chain` cover only `CipherLean/<Slug>/`).
+   `remote.sh lib <touched library files>` copies the library into the remote skill clone's `assets/lib`,
+   rebuilds it there and checks each file (`remote.sh sync/build/check/chain` cover only `CipherLean/<Slug>/`);
+   after the commit and push of item 8, `remote.sh pull` pulls it there.
 5. Add a row to `CipherLean/Lib/NOTATION.md` and the module table of `CipherLean/Lib/README.md`. Then
    `notation_check.py CipherLean/Lib/NOTATION.md <the touched library files>` (it reads a library NOTATION
    as well as a paper's).

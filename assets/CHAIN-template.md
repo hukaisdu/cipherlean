@@ -44,10 +44,33 @@ One line each; these become named hypotheses in Lean and findings in the report.
 
 Ambiguities in the text, places where two readings differ, constants or conventions to fix.
 
+## Roadmap
+
+The whole map, confirmed with the chain and updated at every stop (`status.py <Slug>` prints the Position
+block from it; `chain_graph.py --gaps` draws what remains). The "End" line is the end the user chose; a
+"Milestone" line names an intermediate end worth reporting. One row per piece of work, in the order they
+are to be done: `rows` the ids of this table it discharges (`—` when its rows live in another chain, named
+in `route`); `route` one of `prove here` · `port from <project>` · `assume by citation` · `hypothesis` (of
+the theorem); `size` the estimate in sessions, with its evidence in parentheses (the existing project's
+line count, the number of computational cases, what a comparable piece took); `status` `done <date>` ·
+`next` · `in progress` · `planned`; `actual` the sessions and lines a done piece took (so the next estimate
+is better). Nothing is formalized until the table above, the graph and this roadmap are confirmed.
+
+End S: self-contained — every row of the chain proved here, standard axioms (`decide +kernel`; a disclosed `native_decide` only under step 5's rule).
+Milestone R: <an intermediate end, e.g. the theorem under one named hypothesis>, reached after piece <x>.
+
+| piece | title | rows | route | size | status | actual |
+|---|---|---|---|---|---|---|
+| A | <three words> | def:<x>, lem:<a> | prove here | 1 session (<evidence>) | next | |
+| B | <three words> | thm:<label>, step:<b> | prove here | 2–3 sessions (<evidence>) | planned | |
+| cite | cited results | ext:<y> | assume by citation | — | — | |
+| hyp | the theorem's hypotheses | assume:<z> | hypothesis | — | — | |
+
 ## Dependency graph
 
-`$SKILL/scripts/chain_graph.py CHAIN.md` writes `CHAIN.tex` (TikZ) and compiles `CHAIN.pdf`; the
-mermaid version below is kept in sync by the same script.
+`$SKILL/scripts/chain_graph.py CHAIN.md` writes `CHAIN.tex` (TikZ) and compiles `CHAIN.pdf` (border =
+kind of row, fill = status, legend with the counts and the roadmap's progress; `--gaps` draws only what
+remains as `CHAIN-gaps.pdf`); the mermaid version below is kept in sync by the same script.
 
 <!-- chain-graph:begin -->
 <!-- chain-graph:end -->

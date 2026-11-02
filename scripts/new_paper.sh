@@ -48,5 +48,5 @@ for pair in "file-template.lean:Main.lean" "README-template.md:README.md" "NOTAT
   [ -e "$DEST/$dst" ] || sed "s/<Slug>/$SLUG/g" "$ASSETS/$src" > "$DEST/$dst"
 done
 ls -la "$DEST/"
-echo "next: fill README.md (statement, hypotheses) and CHAIN.md (the proof chain, step 1b), draw the graph with chain_graph.py, get the reader's confirmation; then NOTATION.md and"
+echo "next: fill README.md (statement, hypotheses) and CHAIN.md (the proof chain and its Roadmap: end, pieces, route and size per piece), draw the graph with chain_graph.py, get the reader's confirmation; then NOTATION.md and"
 echo "      cd $WS && lake build CipherLean.$SLUG.Main"

@@ -30,6 +30,14 @@
 ## Departures from the paper
 - (generality, encoding, added hypotheses, readings of ambiguous passages)
 
+## Roadmap
+The plan (end, pieces, routes, sizes) is the Roadmap table of `CHAIN.md`; this section records the position
+at every stop (the chain gate, the end of each piece, each budget stop): paste `status.py <Slug> --position`
+under a dated heading, newest last, so the reader sees how the estimates met the actuals.
+
+### <date> — <after the chain gate / after piece A / budget stop in piece B>
+<the Position block>
+
 ## Rebuild
 ```
 cd ~/cipherlean && ~/.claude/skills/cipherlean/scripts/lake_build.sh CipherLean.<Slug>.Main && ~/.claude/skills/cipherlean/scripts/check_lean.py CipherLean/<Slug>/Main.lean

@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
 """status.py — the status board of one formalization directory, for the reader who was not watching.
 
-usage: status.py <Slug> [--ws DIR] [--check]
+usage: status.py <Slug> [--ws DIR] [--check] [--position]
 
-Prints, from the files alone (no Lean run unless --check): every .lean file with its line, source
+Prints first the Position block — where the whole theorem stands: the end the user chose and its milestones
+(the "## Roadmap" section of CHAIN.md), the rows by status, the pieces done of those planned with the
+size-weighted progress in sessions (actual sizes for the done pieces, estimates for the rest), the remaining
+pieces in order with their estimates, the next piece, and any row no piece lists or piece whose status cell
+disagrees with its rows. `--position` prints only that block (paste it into README's Roadmap section at every
+stop). Then, from the files alone (no Lean run unless --check): every .lean file with its line, source
 declaration and `sorry` counts (source declarations = `theorem/lemma/def/...` lines; check_lean.py counts
 the module's environment, which adds the auxiliary lemmas Lean generates, so its number can be larger);
-CHAIN.md rows by status (pending / stated / proved / cited / assumed) and the open questions for
-the reader; the README status table; REVIEW.md rounds, the last verdict and the objections still without
-a formalizer answer; every classification table of PROMOTE.md and PROMOTE-*.md (one per piece). With --check
-it also runs check_lean.py (--no-build) and chain_check.py once over all the .lean files (the pieces) and
-prints their verdict lines with the declaration counts. Run it at the end of every step and paste the board
-into the chat, and say on which machine a long job is running.
+CHAIN.md rows by status and the open questions for the reader; the README status table; REVIEW.md rounds,
+the last verdict and the objections still without a formalizer answer; every classification table of
+PROMOTE.md. With --check it also runs check_lean.py (--no-build) and chain_check.py once over all the .lean
+files (the pieces) and prints their verdict lines with the declaration counts. Run it at the end of every
+step and at every stop, paste the board into the chat, and say on which machine a long job is running.
 """
-import argparse, os, pathlib, re, subprocess, sys
+import argparse, datetime, os, pathlib, re, subprocess, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import chain_graph as cg  # noqa: E402  (parse_chain, nodes_edges, parse_roadmap, position, position_text)
 
 def table_rows(text, header_start):
     rows = []
@@ -31,11 +38,26 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("slug"); ap.add_argument("--ws", default=os.environ.get("CIPHERLEAN_WS", str(pathlib.Path.home() / "cipherlean")))
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--position", action="store_true", help="print only the Position block")
     a = ap.parse_args()
     ws = pathlib.Path(a.ws); d = ws / "CipherLean" / a.slug
     if not d.is_dir():
         sys.exit(f"status: {d} does not exist")
+    chain = d / "CHAIN.md"
+    when = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    if chain.exists():
+        text = chain.read_text(encoding="utf-8")
+        try:
+            nodes, _ = cg.nodes_edges(cg.parse_chain(text))
+        except SystemExit:
+            nodes = {}
+        block = cg.position_text(a.slug, cg.position(nodes, cg.parse_roadmap(text)), when)
+    else:
+        block = f"## Position — {a.slug} ({when})\n- no CHAIN.md yet: nothing is sized, nothing is proved"
+    if a.position:
+        print(block); return
     print(f"# Status — {a.slug} ({d})\n")
+    print(block + "\n")
     leans = sorted(d.glob("*.lean"))
     print("## Lean files")
     for f in leans:
@@ -44,7 +66,6 @@ def main():
         decls = len(re.findall(r"^(?:theorem|lemma|def|abbrev|instance|structure)\s", t, re.M))
         tag = "template, untouched" if "<Slug>" in t or "theorem main : True" in t else ""
         print(f"- `{f.name}`: {len(t.splitlines())} lines, {decls} source declarations, sorry {n_sorry}, native_decide {n_native} {tag}".rstrip())
-    chain = d / "CHAIN.md"
     if chain.exists():
         rows = table_rows(chain.read_text(encoding="utf-8"), "| id |")
         counts = {}

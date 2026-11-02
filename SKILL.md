@@ -91,7 +91,15 @@ the paper) and `CipherLean/<Slug>` is a symlink to them; without it they live in
 
 The reader is not watching the tool calls: at the end of every step, and whenever a job that takes
 minutes starts, print the status board (`$SKILL/scripts/status.py <Slug>`) in the chat and say which
-machine the job runs on and what the next gate is. Before starting, read the task's `NOTATION.md` if one exists and keep the day's log as
+machine the job runs on and what the next gate is. At every stop — the chain gate of step 1b, the end of
+every piece, every budget stop — print the Position block (`status.py <Slug> --position`: the end the user
+chose, pieces done of planned, rows proved of total, the size-weighted progress, the remaining pieces in
+order with their estimates, the next piece) with the colored graph (`chain_graph.py CHAIN.md`, and `--gaps`
+for what remains), name the next piece and ask which one to do. "Done" for a piece is never reported
+without the whole theorem's position. The sizing of step 1b writes the first roadmap (the Roadmap table of
+CHAIN.md: end, milestones, one row per piece with route and size with its evidence); every stop updates
+it (status cell, actual sizes against the estimates) and pastes the Position block under a dated heading
+in README's Roadmap section. Before starting, read the task's `NOTATION.md` if one exists and keep the day's log as
 usual (append it with a quoted heredoc, `<<'EOF'`: in an unquoted one the shell executes backticked words
 such as `` `simp only` `` and the entry loses text); the per-paper `NOTATION.md` created here is that table
 for the formalization task.
@@ -155,14 +163,19 @@ encoded before they confirm or correct the chain. This is the one deliberate gat
 it catches a misread theorem, a lemma applied outside its hypotheses, or a cited result quoted
 without its conditions, at the moment it is cheapest to fix.
 
-The chain also sizes the job, and the size goes to the reader with the chain. Count the rows that
-are case analyses, appendix tables, "verified by computer" steps, and inductions over a general
-parameter; look for an existing formalization of the same result and quote its size. One session
-delivers a chain of roughly ten rows with one or two computational cases; a theorem whose proof is
-seven directions, two appendix tables and a length induction (a conjecture of a paper under review:
-52 000 lines in its existing formalization) is a multi-week project, and saying so is the
-deliverable. For anything beyond one session, propose a split into lemma-sized pieces, each with
-its own chain and done criteria, and start with the first piece the user picks.
+The chain also sizes the job, and the size goes to the reader with the chain as the Roadmap table of
+CHAIN.md (template section "Roadmap"): the end the user chooses (self-contained: every row proved here; or
+relative: named lemmas accepted from a companion project), the milestones on the way, and one row per
+piece with its rows, its route (`prove here` · `port from <project>` · `assume by citation` ·
+`hypothesis`), its size in sessions with the evidence (the existing project's line count, the number of
+computational cases, what a comparable piece took) and its status. Count the rows that are case
+analyses, appendix tables, "verified by computer" steps, and inductions over a general parameter; look
+for an existing formalization of the same result and quote its size. One session delivers a chain of
+roughly ten rows with one or two computational cases; a theorem whose proof is seven directions, two
+appendix tables and a length induction (a conjecture of a paper under review: 52 000 lines in its
+existing formalization) is a multi-week project, and saying so is the deliverable. For anything beyond
+one session, the pieces are lemma-sized, each with its own done criteria, and the first piece the user
+picks starts; `status.py <Slug> --position` then reads the position from this table at every stop.
 
 A `?` after an id in `uses` (`step:feasible-all?`) marks a premise the paper's text relies on but the Lean
 lemma of that row will not use: the paper's route where Lean goes another way, or a proof step whose

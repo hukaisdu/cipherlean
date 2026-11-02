@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """chain_graph.py — draw the dependency graph of a proof chain (CHAIN.md) with TikZ, and keep a
-mermaid copy inside CHAIN.md.  (step 1b of the skill: the graph is part of what the reader confirms)
+mermaid copy inside CHAIN.md.  (step 3 of the skill: the graph is part of what the reader confirms)
 
 Reads the `| id | kind | title | statement | uses | ... |` table of CHAIN.md, lays the nodes out in
 layers (the target theorem on top, definitions and cited results at the bottom; a node sits one
 layer below everything that uses it), writes CHAIN.tex (standalone TikZ) next to CHAIN.md, compiles
-it with latexmk (-pdf -synctex=1) unless --no-pdf, and rewrites the mermaid block between
-`<!-- chain-graph:begin -->` and `<!-- chain-graph:end -->` in CHAIN.md.
+it with latexmk in a temporary directory unless --no-pdf (only CHAIN.tex and CHAIN.pdf stay next to
+CHAIN.md), and rewrites the mermaid block between `<!-- chain-graph:begin -->` and
+`<!-- chain-graph:end -->` in CHAIN.md.
 
 Each node shows the row's id, its title, and (in gray) where it lives in the paper: the first
 clause of the `where` column, cut at the first ";" — so write that column as "§7.3 Lemma 24
@@ -32,7 +33,7 @@ The sub-chain is written to `CHAIN-<id>.tex` / `.pdf` (`CHAIN-gaps`, `CHAIN-rows
 
 usage: chain_graph.py CHAIN.md [--no-pdf] [--tex-only] [--focus <id> [--depth N] | --rows a,b,c | --gaps] [--out <stem>] [--per-row N]
 """
-import argparse, pathlib, re, shutil, subprocess, sys
+import argparse, pathlib, re, shutil, subprocess, sys, tempfile
 
 KINDS = ["theorem", "lemma", "step", "def", "external", "assumption"]
 STATUSES = ["proved", "stated", "pending", "cited", "assumed"]
@@ -508,12 +509,16 @@ def main():
         lm = shutil.which("latexmk")
         if not lm:
             print("latexmk not found; CHAIN.tex written, PDF not compiled", file=sys.stderr); return
-        p = subprocess.run([lm, "-pdf", "-synctex=1", "-interaction=nonstopmode", "-halt-on-error", tex.name],
-                           cwd=tex.parent, capture_output=True, text=True)
-        if p.returncode == 0:
-            print(f"compiled {tex.with_suffix('.pdf')}")
-        else:
-            print(p.stdout[-1500:], file=sys.stderr); sys.exit("chain_graph: latexmk failed")
+        pdf = tex.with_suffix(".pdf")
+        with tempfile.TemporaryDirectory(prefix="chain_graph_") as td:      # no .aux/.log/.fls litter next to CHAIN.md
+            shutil.copy(tex, td)
+            p = subprocess.run([lm, "-pdf", "-interaction=nonstopmode", "-halt-on-error", tex.name],
+                               cwd=td, capture_output=True, text=True)
+            if p.returncode == 0:
+                shutil.copy(pathlib.Path(td) / pdf.name, pdf)
+                print(f"compiled {pdf}")
+            else:
+                print(p.stdout[-1500:], file=sys.stderr); sys.exit("chain_graph: latexmk failed")
 
 
 if __name__ == "__main__":

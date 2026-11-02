@@ -11,12 +11,13 @@
 #   remote.sh chain <Slug> <File.lean> [...]    sync, then chain_check.py CHAIN.md <File.lean> ... (all pieces at once)
 #   remote.sh trim  <Slug> <File.lean>          sync, trim_imports.py --apply there, copy the file back here
 #   remote.sh lib   [<File.lean> ...]           rsync CipherLean/Lib/ and CipherLean.lean, lake_build.sh CipherLean there,
-#                                               then check_lean.py on each library file given (step 7b)
+#                                               then check_lean.py on each library file given (step 7, promotion)
 #   remote.sh eval  < snippet.lean              run a Lean snippet there with `lake env lean`
 # Variables: CIPHERLEAN_WS (local workspace, default ~/cipherlean), CIPHERLEAN_REMOTE_WS (default ~/cipherlean),
 # CIPHERLEAN_REMOTE_SKILL (default ~/.claude/skills/cipherlean). Non-login ssh shells do not have ~/.elan/bin on
 # PATH, so every remote command starts with `export PATH="$HOME/.elan/bin:$PATH"`.
 set -euo pipefail
+case "${1:-}" in -h|--help|"") sed -n 2,18p "$0"; exit 0 ;; esac
 HOST=${CIPHERLEAN_REMOTE:-}
 [ -n "$HOST" ] || { echo "remote.sh: set CIPHERLEAN_REMOTE=user@host" >&2; exit 2; }
 WS=${CIPHERLEAN_WS:-$HOME/cipherlean}
@@ -25,7 +26,6 @@ RSKILL=${CIPHERLEAN_REMOTE_SKILL:-'$HOME/.claude/skills/cipherlean'}
 SSH="ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 $HOST"
 PRE="export PATH=\"\$HOME/.elan/bin:\$PATH\"; cd $RWS"
 cmd=${1:-}; shift || true
-case "$cmd" in -h|--help|"") sed -n 2,18p "$0"; exit 0 ;; esac
 sync_slug() {
   rsync -az --exclude '.lake' --exclude '*.aux' --exclude '*.log' --exclude '*.fls' --exclude '*.fdb_latexmk' \
     --exclude '*.synctex.gz' "$WS/CipherLean/$1/" "$HOST:$RWS/CipherLean/$1/"

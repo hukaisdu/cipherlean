@@ -44,15 +44,15 @@ mermaid version below is kept in sync by the same script.
 <!-- chain-graph:begin -->
 ```mermaid
 graph TD
-  cortranspose["cor:transpose<br/>DDT of inverse is transpose"]
-  lemddtinverse["lem:ddt-inverse<br/>entrywise identity"]
-  reminvFun["rem:invFun<br/>bijective-function spelling"]
-  remoneequation["rem:one-equation<br/>one inverse equation suffices"]
-  stepbijection["step:bijection<br/>change of variable is a bijection"]
-  stepimage["step:image<br/>the condition is preserved"]
-  defddt["def:ddt<br/>DDT entry"]
-  defddtMatrix["def:ddtMatrix<br/>DDT as a matrix"]
-  assumeperm["assume:perm<br/>S is a permutation"]
+  cortranspose["cor:transpose<br/>DDT of inverse is transpose<br/>source, last sentence"]
+  lemddtinverse["lem:ddt-inverse<br/>entrywise identity<br/>source"]
+  reminvFun["rem:invFun<br/>bijective-function spelling<br/>spelling used by Mathlib-style statements"]
+  remoneequation["rem:one-equation<br/>one inverse equation suffices<br/>finding of the formalization"]
+  stepbijection["step:bijection<br/>change of variable is a bijection<br/>standard argument (change of variable y = S(x))"]
+  stepimage["step:image<br/>the condition is preserved<br/>standard argument"]
+  defddt["def:ddt<br/>DDT entry<br/>source"]
+  defddtMatrix["def:ddtMatrix<br/>DDT as a matrix<br/>source, "the DDT of S""]
+  assumeperm["assume:perm<br/>S is a permutation<br/>source"]
   cortranspose --> lemddtinverse
   cortranspose --> defddtMatrix
   lemddtinverse --> stepbijection

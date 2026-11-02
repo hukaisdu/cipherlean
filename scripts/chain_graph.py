@@ -8,6 +8,12 @@ layer below everything that uses it), writes CHAIN.tex (standalone TikZ) next to
 it with latexmk (-pdf -synctex=1) unless --no-pdf, and rewrites the mermaid block between
 `<!-- chain-graph:begin -->` and `<!-- chain-graph:end -->` in CHAIN.md.
 
+Each node shows the row's id, its title, and (in gray) where it lives in the paper: the first
+clause of the `where` column, cut at the first ";" — so write that column as "§7.3 Lemma 24
+(lem:conjecture3-two-active); <longer notes>" and the graph shows the part before the ";".
+The H1 line of CHAIN.md ("# CHAIN — <Slug>: ...") is printed above the graph as its title, so
+it should name the paper the sections refer to.
+
 usage: chain_graph.py CHAIN.md [--no-pdf] [--tex-only]
 """
 import argparse, pathlib, re, shutil, subprocess, sys
@@ -46,6 +52,21 @@ def split_row(line):
     return cells
 
 
+def chain_title(text):
+    """The H1 line of CHAIN.md without the leading '# ' (used as the figure title)."""
+    for l in text.splitlines():
+        if l.startswith("# "):
+            return l[2:].strip()
+    return ""
+
+
+def where_short(w):
+    """The part of a `where` cell shown in the graph: up to the first ';', at most 60 characters."""
+    w = w.strip().strip("`")
+    w = w.split(";")[0].strip()
+    return (w[:57] + "...") if len(w) > 60 else w
+
+
 def parse_chain(text):
     lines = text.splitlines()
     for i, l in enumerate(lines):
@@ -72,7 +93,8 @@ def nodes_edges(rows):
         kind = r.get("kind", "").strip() or "step"
         if kind not in KINDS:
             print(f"chain_graph: unknown kind {kind!r} for {nid}, drawn as step", file=sys.stderr); kind = "step"
-        nodes[nid] = {"kind": kind, "title": r.get("title", "").strip(), "status": r.get("status", "").strip()}
+        nodes[nid] = {"kind": kind, "title": r.get("title", "").strip(), "status": r.get("status", "").strip(),
+                      "where": where_short(r.get("where", ""))}
     edges = []
     for r in rows:
         nid = r["id"].strip("`")
@@ -119,6 +141,8 @@ SYMBOLS = {"↦": r"$\mapsto$", "⊕": r"$\oplus$", "→": r"$\to$", "←": r"$\
            "∀": r"$\forall$", "∃": r"$\exists$", "⁻¹": r"$^{-1}$", "₀": r"$_0$", "₁": r"$_1$", "₂": r"$_2$",
            "ι": r"$\iota$", "κ": r"$\kappa$", "φ": r"$\varphi$", "ψ": r"$\psi$", "Φ": r"$\Phi$", "θ": r"$\theta$",
            "λ": r"$\lambda$", "α": r"$\alpha$", "β": r"$\beta$", "δ": r"$\delta$", "ε": r"$\varepsilon$",
+           "η": r"$\eta$", "μ": r"$\mu$", "χ": r"$\chi$", "Δ": r"$\Delta$", "∩": r"$\cap$", "∪": r"$\cup$",
+           "ℓ": r"$\ell$", "₃": r"$_3$", "§": r"\S{}", "′": "'", "ʹ": "'", "−": "-", "…": r"\dots{}",
            "—": "--", "–": "--", "’": "'", "“": "``", "”": "''"}
 
 
@@ -129,10 +153,13 @@ def tex_escape(s):
     for k, v in SYMBOLS.items():
         s = s.replace(k, v)
     s = s.replace("|", "$|$")
+    # <, > and => print as inverted ?/! in text mode; use math mode
+    s = s.replace("<=", "$\\le$").replace(">=", "$\\ge$").replace("=>", "$\\Rightarrow$")
+    s = s.replace("<", "$<$").replace(">", "$>$")
     return "".join(ch if ord(ch) < 128 else "?" for ch in s)
 
 
-def tikz(nodes, edges, depth):
+def tikz(nodes, edges, depth, title=""):
     by_layer = {}
     for n in nodes:
         by_layer.setdefault(depth[n], []).append(n)
@@ -153,15 +180,22 @@ def tikz(nodes, edges, depth):
                 label = r"\texttt{" + tex_escape(n) + "}"
                 if nodes[n]["title"]:
                     label += r"\\" + tex_escape(nodes[n]["title"])
+                if nodes[n]["where"]:
+                    label += r"\\{\tiny\color{gray!60!black} " + tex_escape(nodes[n]["where"]) + "}"
                 out.append(f"\\node[{STYLE[nodes[n]['kind']]}] ({tikz_id(n)}) at ({x:.2f},{pos[n][1]:.2f}) {{{label}}};")
         y -= 2.2 + 1.3 * (len(rows) - 1)
     for a, b, opt in edges:
         style = "->, gray!70!black, dashed" if opt else "->, gray!70!black"
         out.append(f"\\draw[{style}] ({tikz_id(a)}) -- ({tikz_id(b)});")
+    # figure title (the H1 of CHAIN.md: names the paper the sections refer to)
+    if title:
+        tx = min(p[0] for p in pos.values()) - 1.2
+        out.append(f"\\node[anchor=south west, font=\\small\\bfseries, text width=14cm, align=left] at ({tx:.2f},0.9) {{"
+                   + tex_escape(title) + "};")
     # legend
     lx = max(p[0] for p in pos.values()) + 3.4
     out.append(f"\\node[anchor=north west, text width=3.2cm, font=\\scriptsize, align=left] at ({lx:.2f},0.6) {{"
-               r"\textbf{Legend}\\ thick blue: target theorem\\ blue: lemma\\ dashed box: proof step\\ gray: definition\\ double: cited result\\ dotted: assumption\\ arrow: uses\\ dashed arrow: the paper's route, Lean may differ};")
+               r"\textbf{Legend}\\ thick blue: target theorem\\ blue: lemma\\ dashed box: proof step\\ gray: definition\\ double: cited result\\ dotted: assumption\\ gray line: where in the paper (the `where' column up to its first `;')\\ arrow: uses\\ dashed arrow: the paper's route, Lean may differ};")
     out += [r"\end{tikzpicture}", r"\end{document}"]
     return "\n".join(out) + "\n"
 
@@ -173,7 +207,7 @@ def tikz_id(n):
 def mermaid(nodes, edges):
     out = ["```mermaid", "graph TD"]
     for n, info in nodes.items():
-        label = n + ("<br/>" + info["title"] if info["title"] else "")
+        label = n + ("<br/>" + info["title"] if info["title"] else "") + ("<br/>" + info["where"] if info["where"] else "")
         out.append(f'  {tikz_id(n)}["{label}"]')
     for a, b, opt in edges:
         out.append(f"  {tikz_id(a)} {'-.->' if opt else '-->'} {tikz_id(b)}")
@@ -200,7 +234,7 @@ def main():
         sys.exit("chain_graph: the table has no rows yet")
     depth = layers(nodes, edges)
     tex = path.with_name("CHAIN.tex")
-    tex.write_text(tikz(nodes, edges, depth), encoding="utf-8")
+    tex.write_text(tikz(nodes, edges, depth, chain_title(text)), encoding="utf-8")
     print(f"{len(nodes)} nodes, {len(edges)} edges, {max(depth.values()) + 1} layers -> {tex}")
     if not a.tex_only:
         mm = mermaid(nodes, edges)

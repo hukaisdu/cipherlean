@@ -9,16 +9,19 @@ until this table and the graph below are confirmed.
 
 | id | kind | title | statement | uses | where | implicit | lean | status |
 |---|---|---|---|---|---|---|---|---|
-| thm:<label> | theorem | <three words> | <verbatim statement> | lem:<a>, step:<b> | §<n> p.<m> | — | — | pending |
-| lem:<a> | lemma | <three words> | <statement> | def:<x>, ext:<y> | §<n> eq. (<k>) | <hypothesis the proof uses silently, or —> | — | pending |
-| step:<b> | step | <three words> | <what this proof step claims> | def:<x> | proof of <label>, line "<first words>" | — | — | pending |
-| def:<x> | def | <three words> | <definition as the paper states it> | — | §<n> | — | — | pending |
-| ext:<y> | external | <three words> | <the cited result, checked in its own source> | — | [<author year>, Thm <k>] | <conditions the citing sentence omits> | — | cited |
-| assume:<z> | assumption | <three words> | <modelling assumption or hypothesis of the theorem> | — | §<n> | — | — | assumed |
+| thm:<label> | theorem | <three words> | <verbatim statement> | lem:<a>, step:<b> | §<n>.<m> Theorem <k> (<label>), p. <q>; <notes> | — | — | pending |
+| lem:<a> | lemma | <three words> | <statement> | def:<x>, ext:<y> | §<n>.<m> Lemma <k> (<label>); eq. (<k>) | <hypothesis the proof uses silently, or —> | — | pending |
+| step:<b> | step | <three words> | <what this proof step claims> | def:<x> | §<n>.<m> proof of <label>; line "<first words>" | — | — | pending |
+| def:<x> | def | <three words> | <definition as the paper states it> | — | §<n>.<m> <name> | — | — | pending |
+| ext:<y> | external | <three words> | <the cited result, checked in its own source> | — | [<author year>, Thm <k>]; <where our paper cites it> | <conditions the citing sentence omits> | — | cited |
+| assume:<z> | assumption | <three words> | <modelling assumption or hypothesis of the theorem> | — | §<n>.<m> | — | — | assumed |
 
 `kind`: theorem · lemma · step (one step of a proof) · def · external (cited result, checked in its
 own source) · assumption (a hypothesis of the theorem or a modelling assumption stated as such).
-`uses`: comma-separated ids. `implicit`: a hypothesis the text uses without stating, or `—`.
+`uses`: comma-separated ids. `where`: the paper's section and statement first (`§7.3 Lemma 24 (lem:…)`),
+then `;` and notes — the graph prints the part before the `;` under each node, and the H1 line of this
+file is the graph's title, so it names the paper; rows from another paper say that paper first.
+`implicit`: a hypothesis the text uses without stating, or `—`.
 `lean`: the Lean declaration that discharges the row (filled in step 3; a library lemma is allowed).
 A row the paper settles by computation says so in `implicit` ("computation: 2^12 cases") and, once
 formalized, names the route in `lean` (`decide +kernel`, or the `checker_eval` of a native bridge).

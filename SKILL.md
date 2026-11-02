@@ -132,7 +132,9 @@ Write `CipherLean/<Slug>/CHAIN.md` from the template (`new_paper.sh` creates it)
 the proof relies on — the target theorem, every lemma and proof step, every definition, every cited
 result (checked in its own source, with the conditions the citing sentence omits), every hypothesis
 or modelling assumption — with its paper label, statement, `uses` (the rows it relies on directly),
-location, implicit hypotheses noticed, and `status: pending`. Then
+its location (`where`: section and statement first, e.g. `§7.3 Lemma 24 (lem:…)`, then `;` and notes;
+the graph prints the part before the `;` under each node and the file's H1 line as its title, so that
+line names the paper), implicit hypotheses noticed, and `status: pending`. Then
 `$SKILL/scripts/chain_graph.py CHAIN.md`: it draws the dependency graph in TikZ (`CHAIN.tex`,
 compiled to `CHAIN.pdf`; target on top, definitions and cited results at the bottom, dashed arrows
 for a route the paper takes but Lean may not) and keeps a mermaid copy inside CHAIN.md. Give the

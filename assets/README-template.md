@@ -33,7 +33,9 @@ One line per check: the declaration and the number it pins (the narration is the
 `standard` = `propext`, `Classical.choice`, `Quot.sound`; name every other axiom (a `native_decide` finite check).
 
 ## Departures from the paper
-- (generality, encoding, added hypotheses, readings of ambiguous passages)
+- (generality, encoding, added hypotheses, readings of ambiguous passages. A specialization such as the masks
+  fixed to one coordinate by a change of basis — the Halfspace example — is recorded here with the reason: it
+  is the difference between "Theorem 1 is formalized" and "a special case of Theorem 1 is formalized".)
 
 ## Roadmap
 The plan (end, pieces, routes, sizes) is the Roadmap table of `CHAIN.md`; this section records the position

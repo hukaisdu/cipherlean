@@ -6,7 +6,8 @@
 #   setup      setup_env.sh          check / install the environment (--check, --install, --update-library, …)
 #   new        new_paper.sh          scaffold CipherLean/<Slug>/ (README, CHAIN, NOTATION, Main.lean; --file <Piece>)
 #   graph      chain_graph.py        CHAIN.md → CHAIN.tex + CHAIN.pdf (+ mermaid); --gaps, --focus, --rows
-#   status     status.py             the Position block and the status board (--position, --check)
+#   status     status.py             the Position block and the status board (--position, --check, --json)
+#   page       project_page.py       the project page CipherLean/<Slug>/PROJECT.html (--check reruns the verdicts)
 #   eval       lean_eval.sh          run a Lean snippet (light preset ≈ 7 s; --full)
 #   search     search_mathlib.sh     find a lemma: local grep, Loogle, LeanSearch
 #   build      lake_build.sh         lake build <targets> under the workspace lock
@@ -30,6 +31,7 @@ case "$sub" in
   new)      exec bash "$HERE/new_paper.sh" "$@" ;;
   graph)    exec python3 "$HERE/chain_graph.py" "$@" ;;
   status)   exec python3 "$HERE/status.py" "$@" ;;
+  page)     exec python3 "$HERE/project_page.py" "$@" ;;
   eval)     exec bash "$HERE/lean_eval.sh" "$@" ;;
   search)   exec bash "$HERE/search_mathlib.sh" "$@" ;;
   build)    exec bash "$HERE/lake_build.sh" "$@" ;;
@@ -43,6 +45,6 @@ case "$sub" in
   remote)   exec bash "$HERE/remote.sh" "$@" ;;
   profile)  exec python3 "$HERE/build_profile.py" "$@" ;;
   sandbox)  exec bash "$HERE/sandbox_project.sh" "$@" ;;
-  ""|-h|--help|help) sed -n '2,23p' "$0"; exit 0 ;;
+  ""|-h|--help|help) sed -n '2,24p' "$0"; exit 0 ;;
   *) echo "cipherlean: unknown subcommand '$sub' (see cipherlean --help)" >&2; exit 2 ;;
 esac

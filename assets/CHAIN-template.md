@@ -59,18 +59,21 @@ are to be done: `rows` the ids of this table it discharges (`—` when its rows 
 in `route`); `route` one of `prove here` · `port from <project>` · `assume by citation` · `hypothesis` (of
 the theorem); `size` the estimate in sessions, with its evidence in parentheses (the existing project's
 line count, the number of computational cases, what a comparable piece took); `status` `done <date>` ·
-`next` · `in progress` · `planned`; `actual` the sessions and lines a done piece took (so the next estimate
-is better). Nothing is formalized until the table above, the graph and this roadmap are confirmed.
+`next` · `in progress` · `waiting — <what the reader is to decide, and where>` · `planned`; `actual` the
+sessions and lines a done piece took (so the next estimate is better); `session` the session doing the piece
+(its name and, where the app gives one, its link); `start` and `end` (`YYYY-MM-DD HH:MM`) when it began and
+when its last step (review, promotion) ended. The project page (`cipherlean page <Slug>` → PROJECT.html) is
+drawn from this table. Nothing is formalized until the table above, the graph and this roadmap are confirmed.
 
 End S: self-contained — every row of the chain proved here, standard axioms (`decide +kernel`; a disclosed `native_decide` only under the computational-cases rule of step 6).
 Milestone R: <an intermediate end, e.g. the theorem under one named hypothesis>, reached after piece <x>.
 
-| piece | title | rows | route | size | status | actual |
-|---|---|---|---|---|---|---|
-| A | <three words> | def:<x>, lem:<a> | prove here | 1 session (<evidence>) | next | |
-| B | <three words> | thm:<label>, step:<b> | prove here | 2–3 sessions (<evidence>) | planned | |
-| cite | cited results | ext:<y> | assume by citation | — | — | |
-| hyp | the theorem's hypotheses | assume:<z> | hypothesis | — | — | |
+| piece | title | rows | route | size | status | actual | session | start | end |
+|---|---|---|---|---|---|---|---|---|---|
+| A | <three words> | def:<x>, lem:<a> | prove here | 1 session (<evidence>) | next | | <session name> <link> | <YYYY-MM-DD HH:MM> | |
+| B | <three words> | thm:<label>, step:<b> | prove here | 2–3 sessions (<evidence>) | planned | | | | |
+| cite | cited results | ext:<y> | assume by citation | — | — | | | | |
+| hyp | the theorem's hypotheses | assume:<z> | hypothesis | — | — | | | | |
 
 ## Dependency graph
 

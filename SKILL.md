@@ -39,7 +39,8 @@ from the workspace root (the scripts put `~/.elan/bin` on PATH).
 | environment (step 1) | `cipherlean setup --check` (2 s); `--install [--examples]` once; `--update-library` after a `git pull` of the skill |
 | scaffold a paper | `cipherlean new <Slug> [--paper-dir <paper repo>] [--file <Piece>]` (README, CHAIN, NOTATION, Main.lean; `--file` adds a piece file) |
 | graph and roadmap (step 3) | `cipherlean graph CipherLean/<Slug>/CHAIN.md` → `CHAIN.tex`, `CHAIN.pdf`, mermaid; `--gaps` what remains; `--focus <id> [--depth N]` or `--rows a,b,c` one piece's sub-chain |
-| position and status board | `cipherlean status <Slug>` (`--position` the Position block alone; `--check` reruns the verdicts on one Lean listing, `cipherlean inspect <files> --out FILE.json`, which every check also accepts as `--listing`) |
+| position and status board | `cipherlean status <Slug>` (`--position` the Position block alone; `--check` reruns the verdicts on one Lean listing, `cipherlean inspect <files> --out FILE.json`, which every check also accepts as `--listing`; `--json` the whole board) |
+| project page | `cipherlean page <Slug> [--check]` → `CipherLean/<Slug>/PROJECT.html`, one file that opens offline: the progress strip, what waits for the reader, the pieces with session, start and end, the clickable chain |
 | try a snippet (7 s) | `printf '#check @Foo.bar\n' \| cipherlean eval -` (`--full` for all of Mathlib) |
 | find a lemma | `cipherlean search "<name fragment or statement shape>"` (local grep, Loogle, LeanSearch) |
 | build one module | `cipherlean build CipherLean.<Slug>.<File>` (`lake build` under the workspace lock; `CipherLean` rebuilds the library) |
@@ -53,12 +54,13 @@ from the workspace root (the scripts put `~/.elan/bin` on PATH).
 | someone else's project | `cipherlean sandbox <project>`; `cipherlean profile <lake build log>` or `--sites <dir>`; then `references/verify-existing.md` |
 | independent review (step 8) | a fresh agent given `references/review-brief.md` |
 
-The reader is not watching the tool calls. At the end of every step, and whenever a job that takes minutes starts, print the
-status board and say which machine the job runs on and what the next gate is. At every stop — the gate of step 3, the end of every
-piece, every budget stop — print the Position block (`status.py <Slug> --position`: the end the user chose, pieces done of
-planned, rows proved of total, the size-weighted progress, the remaining pieces with their estimates, the next piece) and the
-colored graph (`chain_graph.py`, plus `--gaps`); update the Roadmap table (status, actual against estimate), paste the block under
-a dated heading in README's Roadmap section, name the next piece and ask which one to do. "Done" for a piece is never reported
+The reader is not watching the tool calls. At the end of every step, and whenever a job that takes minutes starts, print the status
+board and say which machine the job runs on and what the next gate is. At every stop — the gate of step 3, the end of every piece,
+every budget stop — print the Position block (`status.py <Slug> --position`: the end the user chose, pieces done of planned, rows
+proved of total, the size-weighted progress, the remaining pieces with their estimates, the next piece) and the colored graph
+(`chain_graph.py`, plus `--gaps`); update the Roadmap table (status, `waiting — <what>` at a gate, actual against estimate, the
+piece's session, start and end), paste the block under a dated heading in README's Roadmap section, regenerate the project page
+(`cipherlean page <Slug>`) and give its path, name the next piece and ask which one to do. "Done" for a piece is never reported
 without the whole theorem's position. Append the day's log with a quoted heredoc and read the task's `NOTATION.md` first.
 
 ## Workflow

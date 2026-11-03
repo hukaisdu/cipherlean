@@ -61,7 +61,8 @@ MERMAID_FILL = {"proved": "#d4f0d4", "stated": "#fff3b0", "pending": "#f8d0d0", 
 def parse_roadmap(text):
     """The "## Roadmap" section of CHAIN.md: {"end": str, "milestones": [str], "pieces": [row dicts]} or None.
     The section holds a line "End …: <the end the user chose>", optional "Milestone …: …" lines and the
-    pieces table `| piece | rows | route | size | status | actual |` (assets/CHAIN-template.md)."""
+    pieces table `| piece | title | rows | route | size | status | actual | session | start | end |`
+    (assets/CHAIN-template.md; the last three columns are optional)."""
     m = re.search(r"^## Roadmap.*?$", text, re.M)
     if not m:
         return None
@@ -145,7 +146,8 @@ def position(nodes, roadmap):
             pos["warnings"].append(f"piece {name}: every row proved but the status cell says '{p.get('status', '').strip()}' (mark it done, with the actual size)")
         entry = {"piece": name, "rows": rows, "route": p.get("route", "").strip(), "size": p.get("size", "").strip(),
                  "status": p.get("status", "").strip(), "actual": p.get("actual", "").strip(), "est": est, "act": act,
-                 "done": done, "work": work, "title": p.get("title", "").strip()}
+                 "done": done, "work": work, "title": p.get("title", "").strip(),
+                 "session": p.get("session", "").strip(), "start": p.get("start", "").strip(), "end": p.get("end", "").strip()}
         pos["pieces"].append(entry)
         if not work:
             continue
@@ -163,7 +165,7 @@ def position(nodes, roadmap):
                 pos["sessions_total_lo"] += est[0]; pos["sessions_total_hi"] += est[1]; pos["sessions_total_mid"] += (est[0] + est[1]) / 2
             else:
                 pos["unsized"].append(name)
-    nxt = [e for e in pos["remaining"] if re.match(r"\s*(next|in progress|running)", e["status"], re.I)]
+    nxt = [e for e in pos["remaining"] if re.match(r"\s*(next|in progress|running|waiting)", e["status"], re.I)]
     pos["next"] = (nxt or pos["remaining"] or [None])[0]
     pos["unassigned"] = [n for n in nodes if n not in listed]
     return pos

@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__SLUG__ · Project</title>
+<style>
+:root {
+  --bg: #f7f6f2; --surface: #ffffff; --ink: #1c2230; --muted: #5f6779; --faint: #8a91a0; --line: #e2dfd6;
+  --accent: #1f3a93; --accent-soft: #e5ebfa; --amber: #a86512; --amber-soft: #fbefdc;
+  --proved: #d4f0d4; --stated: #fff3b0; --pending: #f8d0d0; --cited: #e6e6e6; --none: #ffffff;
+  --done: #3f8f4f; --planned: #ffffff; --edge: #9aa1ad; --code: #f0eee8;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", Roboto, Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12141a; --surface: #1b1e26; --ink: #e5e8ef; --muted: #a2aaba; --faint: #747c8c; --line: #2c313c;
+    --accent: #8eaaff; --accent-soft: #232c45; --amber: #e3a54e; --amber-soft: #3a2e1c;
+    --proved: #22432b; --stated: #4a4120; --pending: #4f2828; --cited: #33363e; --none: #1b1e26;
+    --done: #5fb571; --planned: #1b1e26; --edge: #5c6372; --code: #262a33;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12141a; --surface: #1b1e26; --ink: #e5e8ef; --muted: #a2aaba; --faint: #747c8c; --line: #2c313c;
+  --accent: #8eaaff; --accent-soft: #232c45; --amber: #e3a54e; --amber-soft: #3a2e1c;
+  --proved: #22432b; --stated: #4a4120; --pending: #4f2828; --cited: #33363e; --none: #1b1e26;
+  --done: #5fb571; --planned: #1b1e26; --edge: #5c6372; --code: #262a33;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); }
+main { max-width: 1180px; margin: 0 auto; padding: 28px 16px 64px; }
+h1 { font-size: 26px; line-height: 1.2; margin: 4px 0 6px; letter-spacing: -0.01em; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+h3 { font-size: 17px; margin: 0 0 8px; }
+section { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+.eyebrow { font-size: 12px; color: var(--faint); letter-spacing: 0.06em; text-transform: uppercase; }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+code { font-family: var(--mono); font-size: 0.88em; background: var(--code); padding: 0 4px; border-radius: 4px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+button { font: inherit; color: inherit; }
+.meta { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 14px 0 0; font-size: 14px; }
+.meta dt { color: var(--muted); }
+.meta dd { margin: 0; }
+.big { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; margin: 2px 0 14px; }
+.big .num { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.big .lbl { color: var(--muted); font-size: 13px; margin-left: 6px; }
+.strip { display: flex; gap: 3px; height: 44px; position: relative; }
+.seg { flex: 1 1 0; min-width: 22px; border: 1px solid var(--line); border-radius: 5px; background: var(--planned); cursor: pointer;
+       display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; padding: 0 2px; overflow: hidden; white-space: nowrap; }
+.seg.done { background: var(--done); border-color: var(--done); color: #fff; }
+.seg.current { background: var(--accent-soft); border: 2px solid var(--accent); color: var(--accent); }
+.seg.waiting { background: var(--amber-soft); border: 2px solid var(--amber); color: var(--amber); }
+.seg.planned { border-style: dashed; color: var(--muted); }
+.seg.sel { outline: 3px solid var(--ink); outline-offset: 1px; }
+.axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--faint); margin-top: 6px; position: relative; height: 18px; }
+.now { flex: none; width: 2px; margin: -4px 3px; background: var(--ink); position: relative; }
+.now span { position: absolute; top: 54px; left: 1px; transform: translateX(-50%); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.rowsbar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin-top: 18px; border: 1px solid var(--line); }
+.rowsbar div { height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); margin-top: 8px; }
+.sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; border: 1px solid var(--line); vertical-align: -1px; margin-right: 5px; }
+.f-proved { background: var(--proved); } .f-stated { background: var(--stated); } .f-pending { background: var(--pending); }
+.f-cited, .f-assumed { background: var(--cited); } .f-none { background: var(--none); }
+#waiting { border-left: 4px solid var(--amber); }
+#waiting.calm { border-left-color: var(--done); }
+#waiting ul { margin: 0; padding-left: 20px; }
+#waiting li { margin: 4px 0; }
+.linkbtn { background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--line); padding: 6px 8px; white-space: nowrap; }
+td { border-bottom: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+tr.piece { cursor: pointer; }
+tr.piece:hover td { background: var(--accent-soft); }
+tr.piece.sel td { background: var(--accent-soft); }
+tr.piece.context td { color: var(--muted); }
+.icon { font-size: 15px; width: 22px; text-align: center; }
+.icon.done { color: var(--done); } .icon.current { color: var(--accent); } .icon.waiting { color: var(--amber); } .icon.planned { color: var(--faint); }
+.nowrap { white-space: nowrap; }
+.detail { padding: 6px 4px 10px 34px; }
+tr.detailrow > td { background: var(--bg); border-bottom: 2px solid var(--accent); }
+.detail dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0 0 10px; font-size: 14px; }
+.detail dt { color: var(--muted); }
+.detail dd { margin: 0; overflow-wrap: anywhere; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 1px 8px; cursor: pointer; color: var(--ink); }
+.badge { display: inline-block; font-size: 12px; border-radius: 10px; padding: 1px 8px; border: 1px solid var(--line); margin-left: 6px; font-weight: 500; vertical-align: 2px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 10px; font-size: 14px; }
+.toggle { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+.toggle.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chainbox { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 16px; }
+.graphwrap { overflow: auto; max-height: 78vh; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+#nodeinfo { font-size: 14px; overflow-wrap: anywhere; }
+#nodeinfo .lbl { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 10px; }
+svg text { fill: var(--ink); font-family: var(--sans); }
+svg .nid { font-family: var(--mono); font-size: 11px; font-weight: 600; }
+svg .ntitle { font-size: 11px; }
+svg .nwhere { font-size: 9.5px; fill: var(--faint); }
+svg .node { cursor: pointer; }
+svg .node rect.box { stroke: var(--ink); stroke-width: 1; }
+svg .k-theorem rect.box { stroke: var(--accent); stroke-width: 3; }
+svg .k-lemma rect.box { stroke: var(--accent); stroke-width: 2; }
+svg .k-step rect.box { stroke-dasharray: 5 3; }
+svg .k-external rect.box { stroke-width: 3; }
+svg .k-external rect.inner { fill: none; stroke: var(--surface); stroke-width: 1.2; }
+svg .k-assumption rect.box { stroke-dasharray: 1.5 3; }
+svg .s-proved rect.box { fill: var(--proved); } svg .s-stated rect.box { fill: var(--stated); }
+svg .s-pending rect.box { fill: var(--pending); } svg .s-cited rect.box, svg .s-assumed rect.box { fill: var(--cited); }
+svg .s-none rect.box { fill: var(--none); }
+svg .node.dim { opacity: 0.18; }
+svg .node.sel rect.box { stroke: var(--amber); stroke-width: 4; }
+svg .node.inpiece rect.box { filter: drop-shadow(0 0 3px var(--accent)); }
+svg path.edge { fill: none; stroke: var(--edge); stroke-width: 1; }
+svg path.edge.opt { stroke-dasharray: 4 3; }
+svg path.edge.dim { opacity: 0.08; }
+svg path.edge.on { stroke: var(--amber); stroke-width: 2; opacity: 1; }
+svg marker path { fill: var(--edge); }
+.qtext { white-space: pre-wrap; font-size: 14px; margin-top: 10px; }
+footer { color: var(--faint); font-size: 12px; margin-top: 20px; }
+@media (max-width: 860px) {
+  .chainbox { grid-template-columns: 1fr; }
+  h1 { font-size: 22px; }
+  section { padding: 16px 14px; }
+  .big .num { font-size: 24px; }
+  .seg { min-width: 14px; font-size: 10px; padding: 0; }
+  .detail { padding-left: 4px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">cipherlean · project page</div>
+    <h1 id="slug"></h1>
+    <div id="subtitle" class="muted"></div>
+    <dl class="meta" id="meta"></dl>
+  </header>
+  <section id="where"><h2>Where the project stands</h2><div id="wherebody"></div></section>
+  <section id="waiting"><h2>Waiting for you</h2><div id="waitbody"></div></section>
+  <section id="pieces"><h2>Pieces</h2><div class="tablewrap"><table id="piecetable"></table></div></section>
+  <section id="chain"><h2>Proof chain</h2>
+    <div class="toolbar">
+      <button class="toggle" id="gaps" type="button">Only what remains</button>
+      <button class="toggle" id="clear" type="button">Clear selection</button>
+      <span class="legend" id="chainlegend"></span>
+    </div>
+    <div class="chainbox"><div class="graphwrap" id="graphwrap"></div><aside id="nodeinfo"></aside></div>
+  </section>
+  <section id="files"><h2>Lean files, checks and review</h2><div id="filesbody"></div></section>
+  <section id="questions"><h2>Questions for the reader</h2><div id="qbody"></div></section>
+  <footer id="foot"></footer>
+</main>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(function () {
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const P = D.position || { pieces: [], rows: {}, warnings: [], unassigned: [], milestones: [] };
+  const LY = D.layout;
+  const rowById = Object.fromEntries(D.rows.map(r => [r.id, r]));
+  const pieceById = Object.fromEntries(P.pieces.map(p => [p.piece, p]));
+  const STATUSES = ['proved', 'stated', 'pending', 'cited', 'assumed'];
+  const ICON = { done: '✓', current: '◐', waiting: '⏸', planned: '○', context: '·' };
+  const STATE_WORD = { done: 'done', current: 'next', waiting: 'waiting for you', planned: 'planned', context: 'not work' };
+
+  function h(tag, attrs, ...kids) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === undefined || v === null || v === false) continue;
+      if (k === 'class') e.className = v;
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? '' : v);
+    }
+    for (const k of kids.flat()) if (k !== null && k !== undefined && k !== false) e.append(k instanceof Node ? k : document.createTextNode(String(k)));
+    return e;
+  }
+  function rich(s) {
+    const f = document.createDocumentFragment();
+    String(s || '').split('`').forEach((p, i) => { if (p) f.append(i % 2 ? h('code', {}, p) : document.createTextNode(p)); });
+    return f;
+  }
+  function stClass(s) { return STATUSES.includes(s) ? s : 'none'; }
+  function pieceState(p) {
+    if (!p.work) return 'context';
+    if (p.done) return 'done';
+    const s = (p.status || '').toLowerCase();
+    if (s.startsWith('waiting')) return 'waiting';
+    if (/^(next|in progress|running)/.test(s)) return 'current';
+    return 'planned';
+  }
+  function mid(s) { return s ? (s[0] + s[1]) / 2 : null; }
+  function sizeOf(p) { return mid(p.done ? (p.act || p.est) : p.est) || 1; }
+  function fmt(x) { return Number.isInteger(x) ? String(x) : x.toFixed(1); }
+  function range(lo, hi) { return lo === hi ? '≈ ' + fmt(lo) : '≈ ' + fmt(lo) + '–' + fmt(hi); }
+  function parseTime(s) { const m = /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?/.exec(s || ''); return m ? new Date(m[1] + 'T' + (m[2] || '00:00')) : null; }
+  function duration(p) {
+    const a = parseTime(p.start), b = parseTime(p.end);
+    if (!a || !b || !/\d:\d/.test(p.start) || !/\d:\d/.test(p.end)) return '';
+    const hrs = (b - a) / 36e5; return hrs >= 0 ? (hrs < 48 ? fmt(Math.round(hrs * 10) / 10) + ' h' : fmt(Math.round(hrs / 24)) + ' d') : '';
+  }
+  function sessionNode(cell) {
+    if (!cell) return h('span', { class: 'faint' }, '—');
+    const m = /\S+:\/\/\S+/.exec(cell);
+    if (!m) return rich(cell);
+    const label = cell.replace(m[0], '').replace(/[·,;]\s*$/, '').trim() || 'open session';
+    return h('a', { href: m[0], title: m[0] }, label);
+  }
+  function rowChip(id, opt) {
+    const r = rowById[id];
+    return h('button', { type: 'button', class: 'chip f-' + stClass(r ? r.status : ''), title: r ? (r.title + ' — ' + (r.status || 'no status')) : 'not in this chain',
+                         onclick: () => { if (r) { selectNode(id); document.getElementById('chain').scrollIntoView({ behavior: 'smooth', block: 'start' }); } } },
+             id + (opt ? '?' : ''));
+  }
+
+  // header
+  document.getElementById('slug').textContent = D.slug;
+  document.getElementById('subtitle').textContent = (D.title || '').replace(/^CHAIN\s*—\s*/, '');
+  const starts = P.pieces.map(p => p.start).filter(Boolean).sort();
+  const ends = P.pieces.flatMap(p => [p.start, p.end]).filter(Boolean).sort();
+  const meta = document.getElementById('meta');
+  const addMeta = (k, v) => meta.append(h('dt', {}, k), h('dd', {}, v));
+  addMeta('End', P.end ? rich(P.end) : h('span', { class: 'faint' }, 'not chosen yet: CHAIN.md has no Roadmap section'));
+  (P.milestones || []).forEach(m => { const i = m.indexOf(':'); addMeta(i > 0 ? m.slice(0, i) : 'Milestone', rich(i > 0 ? m.slice(i + 1).trim() : m)); });
+  addMeta('Started', starts.length ? starts[0] : h('span', { class: 'faint' }, 'not recorded (Roadmap column start)'));
+  addMeta('Last recorded', ends.length ? ends[ends.length - 1] : h('span', { class: 'faint' }, '—'));
+  addMeta('Page written', D.when + (D.checks ? ' (verdicts rerun ' + D.checks.when + ')' : ''));
+
+  // where the project stands
+  const work = P.pieces.filter(p => p.work);
+  const wb = document.getElementById('wherebody');
+  if (!work.length) {
+    wb.append(h('p', { class: 'muted' }, 'No piece to prove in the Roadmap table yet.'));
+  } else {
+    const done = work.filter(p => p.done);
+    const rem = work.filter(p => !p.done);
+    let rlo = 0, rhi = 0;
+    rem.forEach(p => { if (p.est) { rlo += p.est[0]; rhi += p.est[1]; } });
+    const pct = P.sessions_total_mid ? Math.round(100 * P.sessions_done / P.sessions_total_mid) : 0;
+    const big = h('div', { class: 'big' },
+      h('div', {}, h('span', { class: 'num' }, done.length + ' / ' + work.length), h('span', { class: 'lbl' }, 'pieces done')),
+      h('div', {}, h('span', { class: 'num' }, fmt(P.sessions_done) + ' / ' + range(P.sessions_total_lo, P.sessions_total_hi).replace('≈ ', '≈')), h('span', { class: 'lbl' }, 'sessions')),
+      h('div', {}, h('span', { class: 'num' }, pct + ' %'), h('span', { class: 'lbl' }, 'by size')),
+      h('div', {}, h('span', { class: 'num' }, rem.length ? range(rlo, rhi) : '0'), h('span', { class: 'lbl' }, 'sessions to go')));
+    wb.append(big);
+    const strip = h('div', { class: 'strip', id: 'strip' });
+    let marked = false;
+    work.forEach(p => {
+      const st = pieceState(p);
+      if (!p.done && !marked && done.length) { strip.append(h('div', { class: 'now', title: 'where the project stands' }, h('span', {}, 'now'))); marked = true; }
+      strip.append(h('button', { type: 'button', class: 'seg ' + st, 'data-piece': p.piece, style: 'flex-grow:' + sizeOf(p),
+        title: p.piece + ' — ' + (p.title || '') + '\n' + STATE_WORD[st] + '; size ' + (p.size.split('(')[0].trim() || '?') + (p.actual ? '; actual ' + p.actual.split(';')[0] : ''),
+        onclick: () => selectPiece(p.piece, true) }, p.piece));
+    });
+    wb.append(strip);
+    wb.append(h('div', { class: 'axis' }, h('span', {}, 'start'), h('span', {}, 'end · ' + range(P.sessions_total_lo, P.sessions_total_hi) + ' sessions')));
+    if (P.next) wb.append(h('p', {}, 'Next: ', h('button', { type: 'button', class: 'linkbtn', onclick: () => selectPiece(P.next.piece, true) }, P.next.piece),
+      ' — ', rich(P.next.title || ''), h('span', { class: 'muted' }, ' · ' + (P.next.size.split('(')[0].trim() || 'no size') + ' · '), rich(P.next.status || '')));
+  }
+  const counts = P.rows || {};
+  const total = P.total_rows || D.rows.length;
+  if (total) {
+    const bar = h('div', { class: 'rowsbar' });
+    const lg = h('div', { class: 'legend' });
+    STATUSES.forEach(s => { const n = counts[s] || 0; if (n) bar.append(h('div', { class: 'f-' + s, style: 'flex:' + n, title: s + ' ' + n })); lg.append(h('span', {}, h('span', { class: 'sw f-' + s }), s + ' ' + n)); });
+    lg.append(h('span', {}, 'of ' + total + ' chain rows'));
+    wb.append(bar, lg);
+  }
+
+  // waiting for you
+  const wl = h('ul', {});
+  P.pieces.filter(p => pieceState(p) === 'waiting').forEach(p => wl.append(h('li', {},
+    'Piece ', h('button', { type: 'button', class: 'linkbtn', onclick: () => selectPiece(p.piece, true) }, p.piece), ': ', rich(p.status),
+    p.session ? [' — session ', sessionNode(p.session)] : null)));
+  (P.warnings || []).forEach(w => wl.append(h('li', {}, 'Check: ', rich(w))));
+  if ((P.unassigned || []).length && P.pieces.length) wl.append(h('li', {}, 'Rows on no piece: ', h('span', { class: 'chips', style: 'display:inline-flex' }, P.unassigned.map(id => rowChip(id)))));
+  if (D.review && D.review.open.length) wl.append(h('li', {}, 'Review objections without an answer: ' + D.review.open.join(', ')));
+  if (D.checks) {
+    D.checks.files.filter(f => !/PASS/.test(f.verdict)).forEach(f => wl.append(h('li', {}, 'check_lean ' + f.file + ': ' + (f.verdict || 'no verdict (build it first)'))));
+    if (D.checks.chain && !/^VERDICT: CONSISTENT/.test(D.checks.chain.verdict)) wl.append(h('li', {}, 'chain_check: ' + (D.checks.chain.verdict || 'no verdict')));
+  }
+  const wsec = document.getElementById('waiting');
+  if (wl.children.length) document.getElementById('waitbody').append(wl);
+  else { wsec.classList.add('calm'); document.getElementById('waitbody').append(h('p', { class: 'muted', style: 'margin:0' }, 'Nothing waits for you' + (P.next ? '; the next piece is ' + P.next.piece + '.' : '.'))); }
+
+  // pieces table
+  const tbl = document.getElementById('piecetable');
+  tbl.append(h('thead', {}, h('tr', {}, ['', 'Piece', 'Title', 'Session', 'Start', 'End', 'Size (estimate)', 'Actual', 'Status'].map(t => h('th', {}, t)))));
+  const tb = h('tbody', {});
+  P.pieces.forEach(p => {
+    const st = pieceState(p);
+    const tr = h('tr', { class: 'piece ' + st, 'data-piece': p.piece, tabindex: '0', onclick: (ev) => { if (ev.target.closest('a')) return; selectPiece(p.piece, false); },
+                         onkeydown: (ev) => { if (ev.key === 'Enter') selectPiece(p.piece, false); } },
+      h('td', { class: 'icon ' + st, title: STATE_WORD[st] }, ICON[st]),
+      h('td', { class: 'nowrap' }, h('strong', {}, p.piece)),
+      h('td', {}, rich(p.title)),
+      h('td', { class: 'nowrap' }, sessionNode(p.session)),
+      h('td', { class: 'nowrap' }, p.start || '—'),
+      h('td', { class: 'nowrap' }, (p.end || '—') + (duration(p) ? ' (' + duration(p) + ')' : '')),
+      h('td', { class: 'nowrap' }, p.size ? rich(p.size.split('(')[0].trim()) : '—'),
+      h('td', { class: 'nowrap' }, p.actual ? rich(p.actual.split(';')[0]) : '—'),
+      h('td', {}, rich(p.status || '—')));
+    tb.append(tr);
+  });
+  tbl.append(tb);
+
+  function pieceDetail(p) {
+    document.querySelectorAll('tr.detailrow').forEach(e => e.remove());
+    if (!p) return;
+    const anchor = document.querySelector('tr.piece[data-piece="' + CSS.escape(p.piece) + '"]');
+    const box = h('td', { colspan: '9' });
+    anchor.after(h('tr', { class: 'detailrow', id: 'piecedetail' }, box));
+    const st = pieceState(p);
+    const d = h('div', { class: 'detail' });
+    d.append(h('h3', {}, 'Piece ' + p.piece + ' — ', rich(p.title), h('span', { class: 'badge' }, ICON[st] + ' ' + STATE_WORD[st])));
+    const dl = h('dl', {});
+    const add = (k, v) => { if (v) dl.append(h('dt', {}, k), h('dd', {}, v)); };
+    add('Route', rich(p.route));
+    add('Size', rich(p.size));
+    add('Actual', p.actual ? rich(p.actual) : null);
+    add('Status', rich(p.status));
+    add('Session', p.session ? sessionNode(p.session) : null);
+    add('Start · end', (p.start || p.end) ? (p.start || '—') + ' → ' + (p.end || '—') + (duration(p) ? ' (' + duration(p) + ')' : '') : null);
+    const subs = (D.sub || {})[p.piece] || [];
+    if (subs.length) add('Its own chain', h('span', {}, subs.map((s, i) => [i ? ', ' : '', h('a', { href: s.href }, s.slug + '/' + s.file)])));
+    d.append(dl);
+    if (p.rows.length) {
+      d.append(h('div', { class: 'muted', style: 'font-size:13px;margin:6px 0' }, 'Rows of this chain (' + p.rows.length + '); click one to see it in the graph'));
+      d.append(h('div', { class: 'chips' }, p.rows.map(id => rowChip(id))));
+    } else d.append(h('p', { class: 'muted' }, 'Its rows live in another chain (see the route).'));
+    const files = [...new Set(p.rows.flatMap(id => (rowById[id] || { files: [] }).files))].sort();
+    if (files.length) {
+      const ul = h('ul', { style: 'margin:6px 0 0;padding-left:20px' });
+      files.forEach(f => {
+        const lf = D.lean_files.find(x => x.file === f);
+        const ck = D.checks ? D.checks.files.find(x => x.file === f) : null;
+        ul.append(h('li', {}, h('code', {}, f), lf ? ' — ' + lf.lines + ' lines, sorry ' + lf.sorry + ', native_decide ' + lf.native_decide : (f.startsWith('Lib/') ? ' — shared library' : ''),
+          ck ? ' — ' + (ck.verdict || 'no verdict') : ''));
+      });
+      d.append(h('div', { class: 'muted', style: 'font-size:13px;margin:12px 0 0' }, 'Files that declare its Lean names'), ul);
+    }
+    const rounds = D.review ? D.review.rounds.filter(r => r.piece === p.piece && r.role === 'reviewer') : [];
+    if (rounds.length) d.append(h('p', { style: 'margin:12px 0 0' }, h('span', { class: 'muted' }, 'Independent review: '),
+      rounds.map(r => 'round ' + r.round + (r.date ? ' (' + r.date + ')' : '') + ' ' + (r.verdict || '—')).join(' · ')));
+    box.append(d);
+  }
+
+  // graph
+  const NS = 'http://www.w3.org/2000/svg';
+  function s(tag, attrs, ...kids) { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v); kids.forEach(k => e.append(k)); return e; }
+  function cut(t, n) { t = String(t || ''); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
+  const users = {}; D.rows.forEach(r => users[r.id] = []);
+  D.edges.forEach(e => { if (users[e.to]) users[e.to].push(e.from); });
+  const prem = {}; D.rows.forEach(r => prem[r.id] = []);
+  D.edges.forEach(e => { if (prem[e.from]) prem[e.from].push(e); });
+  const nodeEls = {}, edgeEls = [];
+  const gw = document.getElementById('graphwrap');
+  if (D.rows.length) {
+    const svg = s('svg', { viewBox: '0 0 ' + LY.w + ' ' + LY.h, width: LY.w, height: LY.h, role: 'img', 'aria-label': 'Dependency graph of the proof chain' });
+    svg.append(s('defs', {}, s('marker', { id: 'arr', viewBox: '0 0 10 10', refX: '9', refY: '5', markerWidth: '7', markerHeight: '7', orient: 'auto-start-reverse' }, s('path', { d: 'M0,0 L10,5 L0,10 z' }))));
+    const ge = s('g', {}), gn = s('g', {});
+    svg.append(ge, gn);
+    const hw = LY.nw / 2, hh = LY.nh / 2;
+    D.edges.forEach(e => {
+      const a = LY.pos[e.from], b = LY.pos[e.to]; if (!a || !b) return;
+      const x1 = a[0], y1 = a[1] + hh, x2 = b[0], y2 = b[1] - hh, dy = Math.max(30, (y2 - y1) / 2);
+      const el = s('path', { class: 'edge' + (e.optional ? ' opt' : ''), d: `M${x1},${y1} C${x1},${y1 + dy} ${x2},${y2 - dy} ${x2},${y2}`, 'marker-end': 'url(#arr)' });
+      ge.append(el); edgeEls.push({ el, from: e.from, to: e.to });
+    });
+    D.rows.forEach(r => {
+      const p = LY.pos[r.id]; if (!p) return;
+      const g = s('g', { class: 'node k-' + r.kind + ' s-' + stClass(r.status), transform: `translate(${p[0] - hw},${p[1] - hh})`, tabindex: '0', role: 'button', 'aria-label': r.id });
+      g.append(s('title', {}, document.createTextNode(r.id + ' — ' + r.title + (r.where_short ? '\n' + r.where_short : '') + '\nstatus: ' + (r.status || '—'))));
+      g.append(s('rect', { class: 'box', width: LY.nw, height: LY.nh, rx: (r.kind === 'theorem' || r.kind === 'lemma') ? 8 : 3 }));
+      if (r.kind === 'external') g.append(s('rect', { class: 'inner', x: 3.5, y: 3.5, width: LY.nw - 7, height: LY.nh - 7, rx: 2 }));
+      g.append(s('text', { class: 'nid', x: 8, y: 17 }, document.createTextNode(cut(r.id, 25))));
+      g.append(s('text', { class: 'ntitle', x: 8, y: 33 }, document.createTextNode(cut(r.title, 27))));
+      g.append(s('text', { class: 'nwhere', x: 8, y: 48 }, document.createTextNode(cut(r.where_short, 32))));
+      g.addEventListener('click', ev => { ev.stopPropagation(); selectNode(r.id); });
+      g.addEventListener('keydown', ev => { if (ev.key === 'Enter') selectNode(r.id); });
+      gn.append(g); nodeEls[r.id] = g;
+    });
+    svg.addEventListener('click', () => selectNode(null));
+    gw.append(svg);
+  } else gw.append(h('p', { class: 'muted', style: 'padding:12px' }, 'No chain table in CHAIN.md yet.'));
+  const cl = document.getElementById('chainlegend');
+  STATUSES.forEach(st => cl.append(h('span', {}, h('span', { class: 'sw f-' + st }), st)));
+  cl.append(h('span', { class: 'faint' }, 'border: thick blue target · blue lemma · dashed step · double cited · dotted assumption; arrow: uses (dashed: the paper\'s route)'));
+
+  let selPiece = null, selNode = null, gapsOnly = false;
+  function refresh() {
+    const pr = selPiece && pieceById[selPiece] ? new Set(pieceById[selPiece].rows) : null;
+    const nb = selNode ? new Set([selNode, ...users[selNode], ...prem[selNode].map(e => e.to)]) : null;
+    for (const [id, g] of Object.entries(nodeEls)) {
+      let dim = false;
+      if (nb) dim = !nb.has(id);
+      else { if (pr && !pr.has(id)) dim = true; if (gapsOnly && !rowById[id].gap) dim = true; }
+      g.classList.toggle('dim', dim);
+      g.classList.toggle('sel', id === selNode);
+      g.classList.toggle('inpiece', !!pr && pr.has(id) && !nb);
+    }
+    edgeEls.forEach(e => {
+      let on = false, dim = false;
+      if (nb) { on = e.from === selNode || e.to === selNode; dim = !on; }
+      else {
+        if (pr) dim = !(pr.has(e.from) && pr.has(e.to));
+        if (gapsOnly && !(rowById[e.from].gap && rowById[e.to].gap)) dim = true;
+      }
+      e.el.classList.toggle('on', on); e.el.classList.toggle('dim', dim);
+    });
+    document.querySelectorAll('[data-piece]').forEach(el => el.classList.toggle('sel', el.dataset.piece === selPiece));
+    document.getElementById('gaps').classList.toggle('on', gapsOnly);
+  }
+  function nodeInfo(id) {
+    const box = document.getElementById('nodeinfo');
+    box.replaceChildren();
+    if (!id) { box.append(h('p', { class: 'muted' }, 'Click a row of the graph to see its statement, where it is in the paper, its Lean name, its premises and its users. Click a piece above to light up its rows.')); return; }
+    const r = rowById[id];
+    box.append(h('h3', {}, h('code', {}, r.id), h('span', { class: 'badge f-' + stClass(r.status) }, r.status || 'no status')));
+    box.append(h('div', {}, h('strong', {}, rich(r.title)), h('span', { class: 'muted' }, ' · ' + r.kind + (r.piece ? ' · piece ' : '')),
+      r.piece ? h('button', { type: 'button', class: 'linkbtn', onclick: () => selectPiece(r.piece, true) }, r.piece) : null));
+    const sec = (k, v) => { if (v) box.append(h('div', { class: 'lbl' }, k), h('div', {}, v)); };
+    sec('Statement', rich(r.statement));
+    sec('Where', rich(r.where));
+    sec('Implicit hypotheses', r.implicit && r.implicit !== '—' ? rich(r.implicit) : null);
+    sec('Lean', r.lean && r.lean !== '—' ? h('span', {}, rich(r.lean), r.files.length ? h('span', { class: 'muted' }, ' in ' + r.files.join(', ')) : null) : null);
+    sec('Uses', prem[id].length ? h('div', { class: 'chips' }, prem[id].map(e => rowChip(e.to, e.optional))) : null);
+    sec('Used by', users[id].length ? h('div', { class: 'chips' }, users[id].map(u => rowChip(u))) : null);
+  }
+  function selectNode(id) {
+    selNode = id;
+    nodeInfo(id); refresh();
+    if (id && nodeEls[id]) { const p = LY.pos[id]; gw.scrollTo({ left: Math.max(0, p[0] - gw.clientWidth / 2), top: Math.max(0, p[1] - gw.clientHeight / 2), behavior: 'smooth' }); }
+  }
+  function selectPiece(name, scroll) {
+    selPiece = selPiece === name && !scroll ? null : name;
+    selNode = null; nodeInfo(null);
+    pieceDetail(selPiece ? pieceById[selPiece] : null);
+    refresh();
+    if (scroll && selPiece) document.getElementById('piecedetail').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  document.getElementById('gaps').addEventListener('click', () => { gapsOnly = !gapsOnly; selNode = null; nodeInfo(null); refresh(); });
+  document.getElementById('clear').addEventListener('click', () => { selPiece = null; selNode = null; gapsOnly = false; nodeInfo(null); pieceDetail(null); refresh(); });
+  nodeInfo(null);
+
+  // files, checks, review
+  const fb = document.getElementById('filesbody');
+  if (D.lean_files.length) {
+    const t = h('table', {});
+    t.append(h('thead', {}, h('tr', {}, ['File', 'Lines', 'Declarations', 'sorry', 'native_decide', 'check_lean'].map(x => h('th', {}, x)))));
+    const b = h('tbody', {});
+    D.lean_files.forEach(f => {
+      const ck = D.checks ? D.checks.files.find(x => x.file === f.file) : null;
+      b.append(h('tr', {}, h('td', {}, h('code', {}, f.file), f.template ? h('span', { class: 'faint' }, ' (template)') : null), h('td', {}, f.lines), h('td', {}, f.decls),
+        h('td', {}, f.sorry), h('td', {}, f.native_decide), h('td', {}, ck ? (ck.verdict || 'no verdict') + (ck.declarations ? ' · ' + ck.declarations.split(' (')[0] + ' declarations' : '') : h('span', { class: 'faint' }, '—'))));
+    });
+    t.append(b);
+    fb.append(h('div', { class: 'tablewrap' }, t));
+  } else fb.append(h('p', { class: 'muted' }, 'No .lean file yet.'));
+  if (D.checks && D.checks.chain) fb.append(h('p', {}, h('span', { class: 'muted' }, 'chain_check over ' + D.checks.chain.files.join(', ') + ': '), D.checks.chain.verdict || 'no verdict'));
+  if (!D.checks) fb.append(h('p', { class: 'faint' }, 'Verdicts were not rerun for this page; regenerate it with --check to rerun check_lean and chain_check.'));
+  if (D.review) {
+    const rv = D.review.rounds.filter(r => r.role === 'reviewer');
+    fb.append(h('p', {}, h('span', { class: 'muted' }, 'Independent review (REVIEW.md): '),
+      rv.map(r => 'round ' + r.round + (r.piece ? ' piece ' + r.piece : '') + ' ' + (r.verdict || '—')).join(' · ') || 'no round yet',
+      '; objections without an answer: ' + (D.review.open.join(', ') || 'none')));
+  }
+
+  // questions
+  const qb = document.getElementById('qbody');
+  if (D.questions) {
+    const det = h('details', {}, h('summary', {}, D.questions.count + ' numbered questions in CHAIN.md (answered ones included; the gate of each piece settles its own)'));
+    det.append(h('div', { class: 'qtext' }, rich(D.questions.text)));
+    qb.append(det);
+  } else qb.append(h('p', { class: 'muted' }, 'CHAIN.md has no questions section.'));
+
+  document.getElementById('foot').append('Written by cipherlean project_page.py from CHAIN.md, README.md, REVIEW.md and the .lean files of ', h('code', {}, D.dir),
+    '. Regenerate with ', h('code', {}, 'cipherlean page ' + D.slug + ' [--check]'), '; nothing on this page updates by itself.');
+})();
+</script>
+</body>
+</html>
